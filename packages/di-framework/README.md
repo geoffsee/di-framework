@@ -1,6 +1,6 @@
 # Dependency Injection Framework
 
-[![CI](https://github.com/geoffsee/di-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/geoffsee/dependency-injection-framework/actions/workflows/ci.yml)
+[![CI](https://github.com/geoffsee/di-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/geoffsee/di-framework/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/di-framework.svg)](https://www.npmjs.com/package/di-framework)
 [![license](https://img.shields.io/github/license/geoffsee/di-framework.svg)](LICENSE)
 
