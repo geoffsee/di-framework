@@ -5,6 +5,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  INSTANCE: 'Writerside/d'
+  DOCKER_VERSION: '2.1.1479-p3869'
+
 permissions:
   contents: read
   pages: write
@@ -20,19 +24,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Build Writerside docs using Docker
+      - name: Build docs using Writerside Docker builder
         uses: JetBrains/writerside-github-action@v4
         with:
-          instance: Writerside/d
-          artifact: webHelpD2-all.zip
-          docker-version: 2.1.1479-p3869
+          instance: ${{ env.INSTANCE }}
+          docker-version: ${{ env.DOCKER_VERSION }}
+          artifact: 'webHelpD2-all.zip'
 
-      - name: Upload artifact
+      - name: Save artifact with build results
         uses: actions/upload-artifact@v4
         with:
           name: docs
-          path: artifacts/webHelpD2-all.zip
+          path: artifacts/*
           retention-days: 7
 
   deploy:
@@ -52,6 +58,8 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        with:
+          enablement: true
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
