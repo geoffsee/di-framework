@@ -22,7 +22,7 @@ The decorators are fully integrated with SWC's native support - no need for `ref
 ### 1. Basic Service
 
 ```typescript
-import { Container } from './decorators';
+import { Container } from 'di-framework/decorators';
 
 @Container()
 export class DatabaseService {
@@ -35,8 +35,8 @@ export class DatabaseService {
 ### 2. Service with Dependencies
 
 ```typescript
-import { Container, Component } from './decorators';
-import { DatabaseService } from './DatabaseService';
+import { Container, Component } from 'di-framework/decorators';
+import { DatabaseService } from 'di-framework/services/DatabaseService';
 
 @Container()
 export class UserService {
@@ -56,8 +56,8 @@ Note: Property injection is used for all dependencies. This works seamlessly wit
 ### 3. Resolve Services
 
 ```typescript
-import { getContainer } from './container';
-import { UserService } from './UserService';
+import { getContainer } from 'di-framework/container';
+import { UserService } from 'di-framework/services/UserService';
 
 const container = getContainer();
 const userService = container.resolve<UserService>(UserService);
@@ -75,7 +75,7 @@ Marks a class as injectable and automatically registers it with the DI container
 **Options:**
 - `singleton?: boolean` (default: `true`) - Create a new instance each time or reuse the same instance
 - `container?: DIContainer` - Specify a custom container (defaults to global container)
-  - Note: Import as `import { Container as DIContainer } from './container'` to avoid name collision with the `@Container` decorator.
+  - Note: Import as `import { Container as DIContainer } from 'di-framework/container'` to avoid name collision with the `@Container` decorator.
 
 **Example:**
 ```typescript
@@ -114,7 +114,7 @@ export class ReportService {
 Returns the global DI container instance.
 
 ```typescript
-import { getContainer } from './container';
+import { getContainer } from 'di-framework/container';
 
 const container = getContainer();
 ```
@@ -373,7 +373,7 @@ class MyService {
 
 ```typescript
 // Create a test container
-import { Container as DIContainer } from './container';
+import { Container as DIContainer } from 'di-framework/container';
 
 const testContainer = new DIContainer();
 
