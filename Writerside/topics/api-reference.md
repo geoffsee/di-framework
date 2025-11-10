@@ -80,7 +80,7 @@ export class UserService {
 
 ## Container API
 
-### getContainer()
+### useContainer()
 
 Returns the global DI container instance.
 
@@ -89,9 +89,9 @@ Returns the global DI container instance.
 **Example:**
 
 ```typescript
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 
-const container = getContainer();
+const container = useContainer();
 ```
 
 ### container.register(serviceClass, options?)

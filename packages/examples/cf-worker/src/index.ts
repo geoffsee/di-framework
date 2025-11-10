@@ -1,10 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
-import { getContainer } from "di-framework/container";
+import { useContainer } from "di-framework/container";
 import { LoggerService } from "di-framework/services/LoggerService";
 import { handleRequest } from "./router";
 
 // Wire up a couple of tokens via factory to demonstrate string-token injection
-const container = getContainer();
+const container = useContainer();
 if (!container.has("APP_NAME")) {
   container.registerFactory(
     "APP_NAME",

@@ -56,10 +56,10 @@ Note: Property injection is used for all dependencies. This works seamlessly wit
 ### 3. Resolve Services
 
 ```typescript
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 import { UserService } from 'di-framework/services/UserService';
 
-const container = getContainer();
+const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
 
 // All dependencies are automatically injected!
@@ -109,14 +109,14 @@ export class ReportService {
 }
 ```
 
-### `getContainer()`
+### `useContainer()`
 
 Returns the global DI container instance.
 
 ```typescript
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 
-const container = getContainer();
+const container = useContainer();
 ```
 
 ### `container.register(serviceClass, options?)`
@@ -317,7 +317,7 @@ export class ApplicationContext {
 }
 
 // Usage
-const container = getContainer();
+const container = useContainer();
 const appContext = container.resolve(ApplicationContext);
 appContext.setEnv(env);
 appContext.setCtx(ctx);

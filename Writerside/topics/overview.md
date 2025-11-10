@@ -49,7 +49,7 @@ export class ApplicationContext {
 }
 
 // Usage
-const container = getContainer();
+const container = useContainer();
 const appContext = container.resolve(ApplicationContext);
 ```
 
@@ -65,7 +65,7 @@ const appContext = container.resolve(ApplicationContext);
 
 ```typescript
 import { Container, Component } from 'di-framework/decorators';
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 
 // Define a service
 @Container()
@@ -87,7 +87,7 @@ export class UserService {
 }
 
 // Resolve and use
-const container = getContainer();
+const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
 userService.getUser('123');
 ```

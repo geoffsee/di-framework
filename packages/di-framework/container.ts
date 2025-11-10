@@ -291,7 +291,7 @@ export const container = new Container();
 /**
  * Get the global DI container
  */
-export function getContainer(): Container {
+export function useContainer(): Container {
   return container;
 }
 

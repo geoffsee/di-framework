@@ -24,7 +24,7 @@ jobs:
       - name: Build Writerside docs using Docker
         uses: JetBrains/writerside-github-action@v4
         with:
-          instance: d
+          instance: Writerside/d
           artifact: webHelpD2-all.zip
           docker-version: 2.1.1479-p3869
 

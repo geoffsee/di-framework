@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { getContainer } from '../container';
+import { useContainer } from '../container';
 import { Container as Injectable, Component } from '../decorators';
 
 beforeEach(() => {
-  getContainer().clear();
+  useContainer().clear();
 });
 
 describe('Constructor parameter injection with @Component', () => {
@@ -19,7 +19,7 @@ describe('Constructor parameter injection with @Component', () => {
       }
     }
 
-    const c = getContainer();
+    const c = useContainer();
     const s = c.resolve(Service);
     expect(s.dep).toBeInstanceOf(Repo);
     // default singleton
@@ -37,7 +37,7 @@ describe('Constructor parameter injection with @Component', () => {
       }
     }
 
-    const c = getContainer();
+    const c = useContainer();
     c.registerFactory(TOKEN, () => 'https://example.test');
 
     const api = c.resolve(ApiClient);

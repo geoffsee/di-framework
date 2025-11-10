@@ -1,11 +1,11 @@
-import { getContainer } from "di-framework/container";
+import { useContainer } from "di-framework/container";
 import { ConfigService } from "./services/ConfigService";
 import { CounterService } from "./services/CounterService";
 import { LoggerService } from "di-framework/services/LoggerService";
 import { DatabaseService } from "di-framework/services/DatabaseService";
 import { UserService } from "di-framework/services/UserService";
 
-const container = getContainer();
+const container = useContainer();
 
 function json(data: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(data, null, 2), {

@@ -4,7 +4,7 @@
  * This file demonstrates advanced usage patterns of the DI framework
  */
 
-import { Container as DIContainer, getContainer } from 'di-framework/container';
+import { Container as DIContainer, useContainer } from 'di-framework/container';
 import { Container, Component } from 'di-framework/decorators';
 
 // ============================================================================
@@ -269,7 +269,7 @@ export async function runAdvancedExamples(): Promise<void> {
   console.log('Advanced Dependency Injection Framework Examples');
   console.log('='.repeat(70) + '\n');
 
-  const container = getContainer();
+  const container = useContainer();
 
   // Example 1: Multi-level dependency chains
   console.log('--- Example 1: Multi-Level Dependency Chains ---\n');

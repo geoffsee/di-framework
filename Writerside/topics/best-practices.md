@@ -191,7 +191,7 @@ export class Application {
 }
 
 // In your entry point
-const container = getContainer();
+const container = useContainer();
 const app = container.resolve(Application);
 await app.initialize();
 ```

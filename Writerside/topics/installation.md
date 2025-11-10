@@ -72,7 +72,7 @@ Create a simple test file to verify the installation:
 
 ```typescript
 import { Container } from 'di-framework/decorators';
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 
 @Container()
 class TestService {
@@ -81,7 +81,7 @@ class TestService {
   }
 }
 
-const container = getContainer();
+const container = useContainer();
 const service = container.resolve(TestService);
 console.log(service.getMessage());
 ```

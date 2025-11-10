@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { Container, getContainer, container as globalContainer } from '../container';
+import { Container, useContainer, container as globalContainer } from '../container';
 
 class Foo { value = Math.random(); }
 class Bar { constructor(public foo: Foo) {} }
@@ -79,7 +79,7 @@ describe('Container - property injection circular detection (via nested resolve 
 });
 
 describe('Global container export utilities', () => {
-  it('getContainer() returns the singleton container instance', () => {
-    expect(getContainer()).toBe(globalContainer);
+  it('useContainer() returns the singleton container instance', () => {
+    expect(useContainer()).toBe(globalContainer);
   });
 });

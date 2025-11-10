@@ -8,7 +8,7 @@
  * No external dependencies required (no reflect-metadata needed).
  */
 
-import { getContainer, Container as DIContainer, defineMetadata, getOwnMetadata, getMetadata } from './container';
+import { useContainer, Container as DIContainer, defineMetadata, getOwnMetadata, getMetadata } from './container';
 
 const INJECTABLE_METADATA_KEY = 'di:injectable';
 const INJECT_METADATA_KEY = 'di:inject';
@@ -34,7 +34,7 @@ export function Container(
   options: { singleton?: boolean; container?: DIContainer } = {}
 ) {
   return function <T extends { new (...args: any[]): {} }>(constructor: T) {
-    const container = options.container ?? getContainer();
+    const container = options.container ?? useContainer();
     const singleton = options.singleton ?? true;
 
     // Mark as injectable using our metadata store
@@ -115,5 +115,5 @@ export function isInjectable(target: any): boolean {
  * Get the container instance used by decorators
  */
 export function getInjectionContainer(): DIContainer {
-  return getContainer();
+  return useContainer();
 }

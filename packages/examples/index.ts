@@ -5,7 +5,7 @@
  * compared to the manual approach shown in SAMPLE.ts
  */
 
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 import { DatabaseService } from 'di-framework/services/DatabaseService';
 import { LoggerService } from 'di-framework/services/LoggerService';
 import { UserService } from 'di-framework/services/UserService';
@@ -18,7 +18,7 @@ console.log();
 
 // Get the global DI container
 // All @Container decorated classes are automatically registered
-const container = getContainer();
+const container = useContainer();
 
 console.log('Registered services:', container.getServiceNames());
 console.log();

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { getContainer, Container as DIContainer } from '../container';
+import { useContainer, Container as DIContainer } from '../container';
 import { Container as Injectable, Component, isInjectable, getInjectionContainer } from '../decorators';
 
 // Reset the global container before each test to avoid cross-test pollution
 beforeEach(() => {
-  getContainer().clear();
+  useContainer().clear();
 });
 
 describe('Decorators - @Container and @Component integration', () => {
@@ -31,7 +31,7 @@ describe('Decorators - @Container and @Component integration', () => {
       dep!: Dep;
     }
 
-    const c = getContainer();
+    const c = useContainer();
     const consumer = c.resolve(Consumer);
     expect(consumer.dep).toBeInstanceOf(Dep);
 
@@ -49,7 +49,7 @@ describe('Decorators - @Container and @Component integration', () => {
       apiKey!: string;
     }
 
-    const c = getContainer();
+    const c = useContainer();
     c.registerFactory(TOKEN, () => 'secret-123');
 
     const u = c.resolve(UsesToken);
@@ -72,7 +72,7 @@ describe('Decorators - @Container and @Component integration', () => {
       @Component(TOKEN) cfg!: { env: string };
     }
 
-    const c = getContainer();
+    const c = useContainer();
     c.registerFactory(TOKEN, () => ({ env: 'test' }));
 
     const s = c.resolve(Service);
@@ -87,7 +87,7 @@ describe('Decorators - singleton option and container injection', () => {
     @Injectable({ singleton: false })
     class Transient { x = Math.random(); }
 
-    const c = getContainer();
+    const c = useContainer();
     const a = c.resolve(Transient);
     const b = c.resolve(Transient);
     expect(a).not.toBe(b);
@@ -101,6 +101,6 @@ describe('Decorators - singleton option and container injection', () => {
 
     expect(custom.has(LocalService)).toBe(true);
     // Not registered in the global container since a custom one was used
-    expect(getContainer().has(LocalService)).toBe(false);
+    expect(useContainer().has(LocalService)).toBe(false);
   });
 });

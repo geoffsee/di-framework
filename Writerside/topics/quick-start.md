@@ -69,10 +69,10 @@ export class UserService {
 To use your services, resolve them from the container:
 
 ```typescript
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 import { UserService } from './UserService';
 
-const container = getContainer();
+const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
 
 // All dependencies are automatically injected!
@@ -146,10 +146,10 @@ export class UserService {
 }
 
 // main.ts
-import { getContainer } from 'di-framework/container';
+import { useContainer } from 'di-framework/container';
 import { UserService } from './UserService';
 
-const container = getContainer();
+const container = useContainer();
 const userService = container.resolve(UserService);
 const user = userService.getUser('123');
 console.log(user);
