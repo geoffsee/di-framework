@@ -4,8 +4,8 @@
  * Shows how to write tests with mocked dependencies
  */
 
-import { Container as DIContainer } from './container';
-import { Container, Component } from './decorators';
+import { Container as DIContainer } from 'di-framework/container';
+import { Container, Component } from 'di-framework/decorators';
 
 // ============================================================================
 // Service Definitions
@@ -15,7 +15,7 @@ interface IEmailService {
   send(to: string, subject: string, body: string): Promise<void>;
 }
 
-@Injectable()
+@Container()
 class RealEmailService implements IEmailService {
   async send(to: string, subject: string, body: string): Promise<void> {
     console.log(`[REAL] Sending email to ${to}: ${subject}`);
@@ -24,10 +24,10 @@ class RealEmailService implements IEmailService {
   }
 }
 
-@Injectable()
+@Container()
 class UserService {
   constructor(
-    @Inject(RealEmailService) private emailService: IEmailService
+    @Component(RealEmailService) private emailService: IEmailService
   ) {}
 
   async registerUser(email: string, name: string): Promise<void> {
@@ -144,7 +144,7 @@ async function testUserServiceWithMocks(): Promise<void> {
   const runner = new TestRunner();
 
   // Create test container with mocked dependencies
-  const testContainer = new Container();
+  const testContainer = new (Container as any)();
   const mockEmailService = new MockEmailService();
 
   // Register mock instead of real service
@@ -154,7 +154,7 @@ async function testUserServiceWithMocks(): Promise<void> {
   testContainer.register(UserService);
 
   // Resolve service (will use mock email service)
-  const userService = testContainer.resolve<UserService>(UserService);
+  const userService = (testContainer.resolve as any)(UserService);
 
   await runner.test('Should register user and send welcome email', async () => {
     mockEmailService.clearSentEmails();
@@ -166,7 +166,7 @@ async function testUserServiceWithMocks(): Promise<void> {
       'Should send exactly 1 email'
     );
 
-    const email = mockEmailService.getSentEmails()[0];
+    const email = mockEmailService.getSentEmails()[0]!;
     runner.assertEqual(email.to, 'john@example.com', 'Email should go to user');
     runner.assertEqual(email.subject, 'Welcome!', 'Subject should be Welcome!');
     runner.assert(
@@ -185,7 +185,7 @@ async function testUserServiceWithMocks(): Promise<void> {
       'Should send exactly 1 email'
     );
 
-    const email = mockEmailService.getSentEmails()[0];
+    const email = mockEmailService.getSentEmails()[0]!;
     runner.assertEqual(
       email.to,
       'jane@example.com',
@@ -219,12 +219,12 @@ async function testContainerIsolation(): Promise<void> {
 
   // Test 1: Each container has its own instance
   await runner.test('Each container should have isolated instances', async () => {
-    const container1 = new Container();
+    const container1 = new (Container as any)();
     const mockEmail1 = new MockEmailService();
     container1.registerFactory('email', () => mockEmail1);
     container1.register(UserService);
 
-    const container2 = new Container();
+    const container2 = new (Container as any)();
     const mockEmail2 = new MockEmailService();
     container2.registerFactory('email', () => mockEmail2);
     container2.register(UserService);
@@ -235,13 +235,13 @@ async function testContainerIsolation(): Promise<void> {
 
   // Test 2: Singleton within container
   await runner.test('Singleton services should return same instance', async () => {
-    const testContainer = new Container();
+    const testContainer = new (Container as any)();
     const mockEmail = new MockEmailService();
     testContainer.registerFactory('email', () => mockEmail, { singleton: true });
     testContainer.register(UserService);
 
-    const service1 = testContainer.resolve<UserService>(UserService);
-    const service2 = testContainer.resolve<UserService>(UserService);
+    const service1 = (testContainer.resolve as any)(UserService);
+    const service2 = (testContainer.resolve as any)(UserService);
 
     runner.assert(service1 === service2, 'Should return same singleton instance');
   });
@@ -256,7 +256,7 @@ async function testErrorScenarios(): Promise<void> {
   const runner = new TestRunner();
 
   await runner.test('Should throw for unregistered service', async () => {
-    const testContainer = new Container();
+    const testContainer = new (Container as any)();
 
     try {
       testContainer.resolve('NonExistentService');

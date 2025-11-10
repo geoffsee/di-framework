@@ -5,7 +5,7 @@
  * Similar to the SAMPLE.ts ApplicationContext but using DI framework
  */
 
-import { Container, Component } from '../decorators';
+import { Container } from '../decorators';
 import { DatabaseService } from './DatabaseService';
 import { UserService } from './UserService';
 import { LoggerService } from './LoggerService';
@@ -15,16 +15,11 @@ export class ApplicationContext {
   private env: Record<string, any> = {};
   private executionContext: any = null;
 
-  @Component(DatabaseService)
-  public db!: DatabaseService;
-
-  @Component(UserService)
-  public users!: UserService;
-
-  @Component(LoggerService)
-  public logger!: LoggerService;
-
-  constructor() {
+  constructor(
+    public readonly db: DatabaseService,
+    public readonly users: UserService,
+    public readonly logger: LoggerService
+  ) {
     console.log('[ApplicationContext] Created with all dependencies');
   }
 

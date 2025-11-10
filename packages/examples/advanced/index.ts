@@ -4,14 +4,14 @@
  * This file demonstrates advanced usage patterns of the DI framework
  */
 
-import { Container as DIContainer, getContainer } from './container';
-import { Container, Component } from './decorators';
+import { Container as DIContainer, getContainer } from 'di-framework/container';
+import { Container, Component } from 'di-framework/decorators';
 
 // ============================================================================
 // Example 1: Multi-Level Dependency Chains
 // ============================================================================
 
-@Injectable()
+@Container()
 class EmailService {
   send(to: string, subject: string, body: string): void {
     console.log(`📧 Email sent to ${to}`);
@@ -20,9 +20,9 @@ class EmailService {
   }
 }
 
-@Injectable()
+@Container()
 class NotificationService {
-  @Inject(EmailService)
+  @Component(EmailService)
   private email!: EmailService;
 
   constructor() {}
@@ -32,9 +32,9 @@ class NotificationService {
   }
 }
 
-@Injectable()
+@Container()
 class UserRegistrationService {
-  @Inject(NotificationService)
+  @Component(NotificationService)
   private notifications!: NotificationService;
 
   constructor() {}
@@ -65,7 +65,7 @@ interface AppConfig {
   environment: string;
 }
 
-@Injectable()
+@Container()
 class ConfigService {
   private config: AppConfig = {
     apiUrl: 'https://api.example.com',
@@ -82,11 +82,11 @@ class ConfigService {
   }
 }
 
-@Injectable()
+@Container()
 class ApiService {
   private baseUrl: string = '';
 
-  @Inject(ConfigService)
+  @Component(ConfigService)
   private config!: ConfigService;
 
   constructor() {
@@ -111,12 +111,12 @@ class ApiService {
 // Example 4: Transient Services for Request Scoping
 // ============================================================================
 
-@Injectable({ singleton: false })
+@Container({ singleton: false })
 class RequestLogger {
   private requestId: string = Math.random().toString(36).substring(7);
   private startTime: number = Date.now();
 
-  @Inject(ConfigService)
+  @Component(ConfigService)
   private config!: ConfigService;
 
   constructor() {
@@ -137,9 +137,9 @@ class RequestLogger {
   }
 }
 
-@Injectable()
+@Container()
 class RequestHandler {
-  @Inject(ApiService)
+  @Component(ApiService)
   private api!: ApiService;
 
   constructor() {}
@@ -160,7 +160,7 @@ interface Lifecycle {
   onDestroy?(): void;
 }
 
-@Injectable()
+@Container()
 class CacheService implements Lifecycle {
   private cache = new Map<string, any>();
   private hitCount = 0;
@@ -193,9 +193,9 @@ class CacheService implements Lifecycle {
   }
 }
 
-@Injectable()
+@Container()
 class CachedDataService {
-  @Inject(CacheService)
+  @Component(CacheService)
   private cache!: CacheService;
 
   constructor() {}
@@ -214,7 +214,7 @@ class CachedDataService {
 // Example 6: Composite Services
 // ============================================================================
 
-@Injectable()
+@Container()
 class AuthService {
   authenticate(username: string, password: string): boolean {
     console.log(`🔐 Authenticating user: ${username}`);
@@ -222,7 +222,7 @@ class AuthService {
   }
 }
 
-@Injectable()
+@Container()
 class PermissionService {
   hasPermission(userId: string, action: string): boolean {
     console.log(`✓ Checking permission for ${userId} to ${action}`);
@@ -230,15 +230,15 @@ class PermissionService {
   }
 }
 
-@Injectable()
+@Container()
 class SecureApiService {
-  @Inject(ApiService)
+  @Component(ApiService)
   private api!: ApiService;
 
-  @Inject(AuthService)
+  @Component(AuthService)
   private auth!: AuthService;
 
-  @Inject(PermissionService)
+  @Component(PermissionService)
   private permissions!: PermissionService;
 
   constructor() {}
@@ -279,7 +279,7 @@ export async function runAdvancedExamples(): Promise<void> {
 
   // Example 2: Testing with custom container
   console.log('--- Example 2: Custom Container for Testing ---\n');
-  const testContainer = new Container();
+  const testContainer = new (Container as any)();
   testContainer.register(ConfigService);
   testContainer.register(TestEmailService);
   // In a real test, you'd also register NotificationService, etc.

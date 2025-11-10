@@ -4,7 +4,7 @@
  * Demonstrates constructor dependency injection
  */
 
-import { Container, Component } from '../decorators';
+import { Container } from '../decorators';
 import { DatabaseService } from './DatabaseService';
 import { LoggerService } from './LoggerService';
 
@@ -18,13 +18,10 @@ interface User {
 export class UserService {
   private users: Map<string, User> = new Map();
 
-  @Component(DatabaseService)
-  private db!: DatabaseService;
-
-  @Component(LoggerService)
-  private logger!: LoggerService;
-
-  constructor() {
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly logger: LoggerService
+  ) {
     console.log('[UserService] Created with dependencies');
   }
 

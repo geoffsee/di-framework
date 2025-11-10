@@ -5,11 +5,11 @@
  * compared to the manual approach shown in SAMPLE.ts
  */
 
-import { getContainer } from './container';
-import { DatabaseService } from './services/DatabaseService';
-import { LoggerService } from './services/LoggerService';
-import { UserService } from './services/UserService';
-import { ApplicationContext } from './services/ApplicationContext';
+import { getContainer } from 'di-framework/container';
+import { DatabaseService } from 'di-framework/services/DatabaseService';
+import { LoggerService } from 'di-framework/services/LoggerService';
+import { UserService } from 'di-framework/services/UserService';
+import { ApplicationContext } from 'di-framework/services/ApplicationContext';
 
 console.log('='.repeat(60));
 console.log('Dependency Injection Framework Demo');
@@ -56,7 +56,7 @@ console.log();
 console.log('--- Listing all users ---');
 const users = appContext.users.listUsers();
 console.log(`Total users: ${users.length}`);
-users.forEach(u => {
+users.forEach((u: any) => {
   console.log(`  - ${u.name} (${u.email})`);
 });
 console.log();
@@ -74,7 +74,7 @@ console.log();
 console.log('--- Application logs ---');
 const logs = appContext.logger.getLogs();
 console.log(`Total log entries: ${logs.length}`);
-logs.forEach(log => {
+logs.forEach((log: any) => {
   console.log(`  ${log}`);
 });
 console.log();

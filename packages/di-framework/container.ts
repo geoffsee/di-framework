@@ -176,7 +176,7 @@ export class Container {
 
     // Get constructor parameter types from metadata
     const paramTypes = getMetadata(DESIGN_PARAM_TYPES_KEY, type) || [];
-    const paramNames = this.getConstructorParamNames(type);
+    const paramNames = this.getConstructorParamNames(type as Constructor<T>);
 
     // Resolve dependencies
     const dependencies: any[] = [];
@@ -248,11 +248,17 @@ export class Container {
   private getConstructorParamNames(target: Constructor): string[] {
     const funcStr = target.toString();
     const match = funcStr.match(/constructor\s*\(([^)]*)\)/);
-    if (!match) return [];
+    if (!match || !match[1]) return [];
 
-    return match[1]
+    const paramsStr = match[1];
+    return paramsStr
       .split(',')
-      .map((param) => param.trim().split('=')[0].split(':')[0].trim())
+      .map((param) => {
+        const trimmed = param.trim();
+        const withoutDefault = trimmed.split('=')[0] || '';
+        const withoutType = withoutDefault.split(':')[0] || '';
+        return withoutType.trim();
+      })
       .filter((param) => param);
   }
 

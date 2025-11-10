@@ -1,54 +1,16 @@
 {
-  "name": "di-framework",
-  "version": "1.0.0",
-  "description": "Lightweight, zero-dependency TypeScript dependency injection framework using decorators. Works seamlessly with SWC and TypeScript's native decorator support.",
-  "main": "container.ts",
-  "types": "container.ts",
-  "module": "container.ts",
-  "author": "github.com/geoffsee",
+  "name": "@geoffsee/di-framework",
+  "module": "build.ts",
   "type": "module",
-  "keywords": [
-    "dependency-injection",
-    "di",
-    "ioc",
-    "inversion-of-control",
-    "decorators",
-    "typescript",
-    "swc",
-    "framework"
+  "private": true,
+  "workspaces": [
+    "packages/di-framework",
+    "packages/examples"
   ],
-  "exports": {
-    ".": {
-      "import": "./container.ts",
-      "types": "./container.ts"
-    },
-    "./container": "./container.ts",
-    "./decorators": "./decorators.ts",
-    "./types": "./types.ts"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/geoffsee/dependency-injection-framework"
-  },
-  "bugs": {
-    "url": "https://github.com/geoffsee/dependency-injection-framework/issues"
-  },
-  "homepage": "https://github.com/geoffsee/dependency-injection-framework#readme",
-  "scripts": {
-    "test": "bun test"
+  "devDependencies": {
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "devDependencies": {},
-  "files": [
-    "container.ts",
-    "decorators.ts",
-    "types.ts",
-    "README.md",
-    "MIGRATION_GUIDE.md",
-    "services",
-    "examples"
-  ]
+  }
 }

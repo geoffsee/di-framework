@@ -122,9 +122,9 @@ export type PartialService<T> = Partial<T>;
  *   logger: mockLogger
  * });
  */
-export interface MockServiceOptions<T> {
+export type MockServiceOptions<T> = {
   [K in keyof T]?: T[K];
-}
+};
 
 /**
  * Represents a resolvable service in the container
