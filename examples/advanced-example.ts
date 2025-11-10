@@ -1,0 +1,334 @@
+/**
+ * Advanced Dependency Injection Framework Examples
+ *
+ * This file demonstrates advanced usage patterns of the DI framework
+ */
+
+import { Container as DIContainer, getContainer } from './container';
+import { Container, Component } from './decorators';
+
+// ============================================================================
+// Example 1: Multi-Level Dependency Chains
+// ============================================================================
+
+@Injectable()
+class EmailService {
+  send(to: string, subject: string, body: string): void {
+    console.log(`📧 Email sent to ${to}`);
+    console.log(`   Subject: ${subject}`);
+    console.log(`   Body: ${body}`);
+  }
+}
+
+@Injectable()
+class NotificationService {
+  @Inject(EmailService)
+  private email!: EmailService;
+
+  constructor() {}
+
+  notifyUser(userId: string, message: string): void {
+    this.email.send(`user${userId}@example.com`, 'Notification', message);
+  }
+}
+
+@Injectable()
+class UserRegistrationService {
+  @Inject(NotificationService)
+  private notifications!: NotificationService;
+
+  constructor() {}
+
+  registerUser(name: string): void {
+    console.log(`✅ User registered: ${name}`);
+    this.notifications.notifyUser('1', `Welcome ${name}!`);
+  }
+}
+
+// ============================================================================
+// Example 2: Custom Container for Testing
+// ============================================================================
+
+class TestEmailService extends EmailService {
+  send(to: string, subject: string, body: string): void {
+    console.log(`[TEST] Email to ${to}: ${subject}`);
+  }
+}
+
+// ============================================================================
+// Example 3: Configuration Service with Factory
+// ============================================================================
+
+interface AppConfig {
+  apiUrl: string;
+  apiKey: string;
+  environment: string;
+}
+
+@Injectable()
+class ConfigService {
+  private config: AppConfig = {
+    apiUrl: 'https://api.example.com',
+    apiKey: process.env.API_KEY || 'default-key',
+    environment: process.env.NODE_ENV || 'development'
+  };
+
+  get(key: keyof AppConfig): string {
+    return this.config[key];
+  }
+
+  getAll(): AppConfig {
+    return { ...this.config };
+  }
+}
+
+@Injectable()
+class ApiService {
+  private baseUrl: string = '';
+
+  @Inject(ConfigService)
+  private config!: ConfigService;
+
+  constructor() {
+    // baseUrl will be set after injection
+  }
+
+  setConfig(config: ConfigService): void {
+    this.config = config;
+    this.baseUrl = config.get('apiUrl');
+  }
+
+  call(endpoint: string): Promise<any> {
+    if (!this.baseUrl) {
+      this.baseUrl = this.config.get('apiUrl');
+    }
+    console.log(`🌐 API Call: ${this.baseUrl}${endpoint}`);
+    return Promise.resolve({ success: true });
+  }
+}
+
+// ============================================================================
+// Example 4: Transient Services for Request Scoping
+// ============================================================================
+
+@Injectable({ singleton: false })
+class RequestLogger {
+  private requestId: string = Math.random().toString(36).substring(7);
+  private startTime: number = Date.now();
+
+  @Inject(ConfigService)
+  private config!: ConfigService;
+
+  constructor() {
+    // Config will be injected
+  }
+
+  onInit(): void {
+    console.log(`🔍 [Request ${this.requestId}] Created in ${this.config.get('environment')}`);
+  }
+
+  log(message: string): void {
+    const elapsed = Date.now() - this.startTime;
+    console.log(`[Request ${this.requestId}] (${elapsed}ms) ${message}`);
+  }
+
+  getRequestId(): string {
+    return this.requestId;
+  }
+}
+
+@Injectable()
+class RequestHandler {
+  @Inject(ApiService)
+  private api!: ApiService;
+
+  constructor() {}
+
+  async handle(endpoint: string, logger: RequestLogger): Promise<void> {
+    logger.log('Handling request...');
+    const result = await this.api.call(endpoint);
+    logger.log(`Response received: ${JSON.stringify(result)}`);
+  }
+}
+
+// ============================================================================
+// Example 5: Service with Optional Lifecycle Methods
+// ============================================================================
+
+interface Lifecycle {
+  onInit?(): void;
+  onDestroy?(): void;
+}
+
+@Injectable()
+class CacheService implements Lifecycle {
+  private cache = new Map<string, any>();
+  private hitCount = 0;
+  private missCount = 0;
+
+  onInit(): void {
+    console.log('🗄️ Cache service initialized');
+  }
+
+  onDestroy(): void {
+    console.log(`🗄️ Cache service destroyed (${this.hitCount} hits, ${this.missCount} misses)`);
+  }
+
+  set(key: string, value: any): void {
+    this.cache.set(key, value);
+  }
+
+  get(key: string): any {
+    if (this.cache.has(key)) {
+      this.hitCount++;
+      return this.cache.get(key);
+    }
+    this.missCount++;
+    return undefined;
+  }
+
+  clear(): void {
+    this.cache.clear();
+    console.log('🗄️ Cache cleared');
+  }
+}
+
+@Injectable()
+class CachedDataService {
+  @Inject(CacheService)
+  private cache!: CacheService;
+
+  constructor() {}
+
+  getData(key: string): any {
+    let data = this.cache.get(key);
+    if (!data) {
+      data = { id: key, timestamp: Date.now() };
+      this.cache.set(key, data);
+    }
+    return data;
+  }
+}
+
+// ============================================================================
+// Example 6: Composite Services
+// ============================================================================
+
+@Injectable()
+class AuthService {
+  authenticate(username: string, password: string): boolean {
+    console.log(`🔐 Authenticating user: ${username}`);
+    return username === 'admin' && password === 'password';
+  }
+}
+
+@Injectable()
+class PermissionService {
+  hasPermission(userId: string, action: string): boolean {
+    console.log(`✓ Checking permission for ${userId} to ${action}`);
+    return true;
+  }
+}
+
+@Injectable()
+class SecureApiService {
+  @Inject(ApiService)
+  private api!: ApiService;
+
+  @Inject(AuthService)
+  private auth!: AuthService;
+
+  @Inject(PermissionService)
+  private permissions!: PermissionService;
+
+  constructor() {}
+
+  async secureCall(
+    endpoint: string,
+    username: string,
+    password: string
+  ): Promise<any> {
+    if (!this.auth.authenticate(username, password)) {
+      throw new Error('Authentication failed');
+    }
+
+    if (!this.permissions.hasPermission(username, 'api:call')) {
+      throw new Error('Permission denied');
+    }
+
+    return this.api.call(endpoint);
+  }
+}
+
+// ============================================================================
+// Demo: Running all examples
+// ============================================================================
+
+export async function runAdvancedExamples(): Promise<void> {
+  console.log('\n' + '='.repeat(70));
+  console.log('Advanced Dependency Injection Framework Examples');
+  console.log('='.repeat(70) + '\n');
+
+  const container = getContainer();
+
+  // Example 1: Multi-level dependency chains
+  console.log('--- Example 1: Multi-Level Dependency Chains ---\n');
+  const registration = container.resolve(UserRegistrationService);
+  registration.registerUser('Alice');
+  console.log();
+
+  // Example 2: Testing with custom container
+  console.log('--- Example 2: Custom Container for Testing ---\n');
+  const testContainer = new Container();
+  testContainer.register(ConfigService);
+  testContainer.register(TestEmailService);
+  // In a real test, you'd also register NotificationService, etc.
+  console.log('✓ Test container created with mock services\n');
+
+  // Example 3: Configuration Service
+  console.log('--- Example 3: Configuration Service ---\n');
+  const config = container.resolve(ConfigService);
+  console.log('Config:', config.getAll());
+  const api = container.resolve(ApiService);
+  await api.call('/users');
+  console.log();
+
+  // Example 4: Transient Services
+  console.log('--- Example 4: Transient Services for Requests ---\n');
+  const handler = container.resolve(RequestHandler);
+  const logger1 = container.resolve(RequestLogger);
+  const logger2 = container.resolve(RequestLogger);
+  console.log(`Same instance? ${logger1.getRequestId() === logger2.getRequestId()}`); // false
+  await handler.handle('/data', logger1);
+  console.log();
+
+  // Example 5: Lifecycle Methods
+  console.log('--- Example 5: Service Lifecycle ---\n');
+  const cache = container.resolve(CacheService);
+  (cache as any).onInit?.();
+  const cachedData = container.resolve(CachedDataService);
+  console.log('First call:', cachedData.getData('user:1'));
+  console.log('Second call (cached):', cachedData.getData('user:1'));
+  console.log('New data:', cachedData.getData('user:2'));
+  (cache as any).onDestroy?.();
+  console.log();
+
+  // Example 6: Composite Services
+  console.log('--- Example 6: Composite Services ---\n');
+  const secureApi = container.resolve(SecureApiService);
+  try {
+    await secureApi.secureCall('/protected', 'admin', 'password');
+  } catch (error) {
+    console.log('Error:', (error as Error).message);
+  }
+  console.log();
+
+  console.log('='.repeat(70));
+  console.log('All examples completed successfully!');
+  console.log('='.repeat(70));
+}
+
+// Run examples if this file is executed directly
+if (import.meta.main) {
+  runAdvancedExamples();
+}
