@@ -7,6 +7,7 @@
     <build-profile instance="d">
         <variables>
             <noindex-content>true</noindex-content>
+            <custom-css>footer.css</custom-css>
         </variables>
     </build-profile>
 
