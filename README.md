@@ -1,5 +1,7 @@
 # di-framework
 
+[Documentation](https://geoffsee.github.io/di-framework)
+
 ```
 npm i di-framework
 ```

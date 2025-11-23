@@ -1,4 +1,4 @@
-# Dependency Injection Framework
+# geoffsee/di-framework
 
 A lightweight, type-safe dependency injection framework for TypeScript using decorators. This framework automatically manages service instantiation, dependency resolution, and lifecycle management.
 

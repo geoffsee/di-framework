@@ -357,6 +357,22 @@ describe('UserService', () => {
 
 **Why:** Isolated containers prevent test pollution and make tests independent.
 
+## 9. Add Observability to DI
+
+Hook into container events to log or measure dependency resolution:
+
+```typescript
+const stop = container.on('resolved', ({ key, fromCache }) => {
+  const name = typeof key === 'string' ? key : key.name;
+  logger.debug(`Resolved ${name} (cached=${fromCache})`);
+});
+
+// Stop listening if needed
+stop();
+```
+
+**Why:** Observability helps debug missing registrations, unexpected transient resolutions, and slow dependency graphs in production.
+
 ## Summary Checklist
 
 - ✅ Decorate all services with `@Container()`
@@ -373,6 +389,7 @@ describe('UserService', () => {
 - ✅ Document dependencies
 - ✅ Avoid circular dependencies
 - ✅ Test with isolated containers
+- ✅ Add observability via container events
 
 ## Next Steps
 

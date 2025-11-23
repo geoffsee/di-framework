@@ -14,6 +14,30 @@ type ServiceDefinition<T = any> = {
   instance?: T;
 };
 
+type ContainerEventName = 'registered' | 'resolved' | 'cleared' | 'constructed';
+type ContainerEventPayloads = {
+  registered: {
+    key: string | Constructor;
+    singleton: boolean;
+    kind: 'class' | 'factory';
+  };
+  resolved: {
+    key: string | Constructor;
+    instance: any;
+    singleton: boolean;
+    fromCache: boolean;
+  };
+  constructed: {
+    key: Constructor;
+    instance: any;
+    overrides: Record<number, any>;
+  };
+  cleared: {
+    count: number;
+  };
+};
+type Listener<T> = (payload: T) => void;
+
 const INJECTABLE_METADATA_KEY = 'di:injectable';
 const INJECT_METADATA_KEY = 'di:inject';
 const DESIGN_PARAM_TYPES_KEY = 'design:paramtypes';
@@ -59,6 +83,7 @@ function getOwnMetadata(
 export class Container {
   private services = new Map<string | Constructor, ServiceDefinition>();
   private resolutionStack = new Set<string | Constructor>();
+  private listeners = new Map<ContainerEventName, Set<Listener<any>>>();
 
   /**
    * Register a service class as injectable
@@ -76,6 +101,12 @@ export class Container {
       type: serviceClass,
       singleton: options.singleton ?? true,
     });
+
+    this.emit('registered', {
+      key: serviceClass,
+      singleton: options.singleton ?? true,
+      kind: 'class',
+    });
     return this;
   }
 
@@ -90,6 +121,11 @@ export class Container {
     this.services.set(name, {
       type: factory,
       singleton: options.singleton ?? true,
+    });
+    this.emit('registered', {
+      key: name,
+      singleton: options.singleton ?? true,
+      kind: 'factory',
     });
     return this;
   }
@@ -113,8 +149,16 @@ export class Container {
       throw new Error(`Service '${keyStr}' is not registered in the DI container`);
     }
 
+    const wasCached = definition.singleton && !!definition.instance;
+
     // Return cached singleton
     if (definition.singleton && definition.instance) {
+      this.emit('resolved', {
+        key,
+        instance: definition.instance,
+        singleton: true,
+        fromCache: true,
+      });
       return definition.instance;
     }
 
@@ -128,9 +172,42 @@ export class Container {
         definition.instance = instance;
       }
 
+      this.emit('resolved', {
+        key,
+        instance,
+        singleton: definition.singleton,
+        fromCache: wasCached,
+      });
+
       return instance;
     } finally {
       this.resolutionStack.delete(key);
+    }
+  }
+
+  /**
+   * Construct a new instance without registering it in the container.
+   * Supports constructor overrides for primitives/config (constructor pattern).
+   * Always returns a fresh instance (no caching).
+   */
+  public construct<T>(
+    serviceClass: Constructor<T>,
+    overrides: Record<number, any> = {}
+  ): T {
+    const keyStr = serviceClass.name;
+    if (this.resolutionStack.has(serviceClass)) {
+      throw new Error(
+        `Circular dependency detected while constructing ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(' -> ')} -> ${keyStr}`
+      );
+    }
+
+    this.resolutionStack.add(serviceClass);
+    try {
+      const instance = this.instantiate<T>(serviceClass, overrides);
+      this.emit('constructed', { key: serviceClass, instance, overrides });
+      return instance;
+    } finally {
+      this.resolutionStack.delete(serviceClass);
     }
   }
 
@@ -145,7 +222,9 @@ export class Container {
    * Clear all registered services
    */
   public clear(): void {
+    const count = this.services.size;
     this.services.clear();
+    this.emit('cleared', { count });
   }
 
   /**
@@ -162,9 +241,71 @@ export class Container {
   }
 
   /**
+   * Fork the container (prototype pattern): clone registrations into a new container.
+   * Optionally carry over existing singleton instances.
+   */
+  public fork(options: { carrySingletons?: boolean } = {}): Container {
+    const clone = new Container();
+
+    this.services.forEach((def, key) => {
+      clone.services.set(key, {
+        ...def,
+        instance: options.carrySingletons ? def.instance : undefined,
+      });
+    });
+
+    return clone;
+  }
+
+  /**
+   * Subscribe to container lifecycle events (observer pattern).
+   * Returns an unsubscribe function.
+   */
+  public on<K extends keyof ContainerEventPayloads>(
+    event: K,
+    listener: Listener<ContainerEventPayloads[K]>
+  ): () => void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+
+    this.listeners.get(event)!.add(listener as Listener<any>);
+    return () => this.off(event, listener);
+  }
+
+  /**
+   * Remove a previously registered listener
+   */
+  public off<K extends keyof ContainerEventPayloads>(
+    event: K,
+    listener: Listener<ContainerEventPayloads[K]>
+  ): void {
+    this.listeners.get(event)?.delete(listener as Listener<any>);
+  }
+
+  private emit<K extends keyof ContainerEventPayloads>(
+    event: K,
+    payload: ContainerEventPayloads[K]
+  ): void {
+    const listeners = this.listeners.get(event);
+    if (!listeners || listeners.size === 0) return;
+
+    listeners.forEach((listener) => {
+      try {
+        (listener as Listener<any>)(payload);
+      } catch (err) {
+        console.error(`[Container] listener for '${event}' threw`, err);
+      }
+    });
+  }
+
+  /**
    * Private method to instantiate a service
    */
-  private instantiate<T>(type: Constructor<T> | ServiceFactory<T>): T {
+  private instantiate<T>(
+    type: Constructor<T> | ServiceFactory<T>,
+    overrides: Record<number, any> = {}
+  ): T {
     if (typeof type !== 'function') {
       throw new Error('Service type must be a constructor or factory function');
     }
@@ -183,6 +324,11 @@ export class Container {
     const injectMetadata = getOwnMetadata(INJECT_METADATA_KEY, type) || {};
     const paramCount = Math.max(paramTypes.length, paramNames.length);
     for (let i = 0; i < paramCount; i++) {
+      if (Object.prototype.hasOwnProperty.call(overrides, i)) {
+        dependencies.push(overrides[i]);
+        continue;
+      }
+
       const paramType = paramTypes[i];
       const paramName = paramNames[i];
 

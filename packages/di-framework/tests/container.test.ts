@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { Container, useContainer, container as globalContainer } from '../container';
+import { Component } from '../decorators';
 
 class Foo { value = Math.random(); }
 class Bar { constructor(public foo: Foo) {} }
@@ -81,5 +82,67 @@ describe('Container - property injection circular detection (via nested resolve 
 describe('Global container export utilities', () => {
   it('useContainer() returns the singleton container instance', () => {
     expect(useContainer()).toBe(globalContainer);
+  });
+});
+
+describe('Container - observer pattern hooks', () => {
+  it('emits register, resolve, and clear events', () => {
+    const events: Array<{ type: string; payload: any }> = [];
+    const c = new Container();
+
+    c.on('registered', (payload) => events.push({ type: 'registered', payload }));
+    c.on('resolved', (payload) => events.push({ type: 'resolved', payload }));
+    c.on('cleared', (payload) => events.push({ type: 'cleared', payload }));
+
+    c.register(Foo);
+    c.registerFactory('value', makeValueFactory, { singleton: false });
+
+    c.resolve(Foo);
+    c.resolve('value');
+    c.clear();
+
+    expect(events.find((e) => e.type === 'registered' && e.payload.key === Foo)).toBeTruthy();
+    expect(events.filter((e) => e.type === 'resolved').length).toBe(2);
+    expect(events.find((e) => e.type === 'cleared')).toBeTruthy();
+  });
+});
+
+describe('Container - constructor and prototype helpers', () => {
+  it('construct() creates fresh instances with overrides', () => {
+    class Dep { id = 'dep'; }
+    class NeedsOverrides {
+      dep: Dep;
+      name: string;
+      constructor(@Component(Dep) dep: Dep, name: string) {
+        this.dep = dep;
+        this.name = name;
+      }
+    }
+
+    const c = new Container();
+    c.register(Dep);
+
+    const instance = c.construct(NeedsOverrides, { 1: 'example' });
+    expect(instance.dep).toBe(c.resolve(Dep));
+    expect(instance.name).toBe('example');
+    expect(c.has(NeedsOverrides)).toBe(false);
+  });
+
+  it('fork() clones registrations and optionally carries singletons', () => {
+    const c = new Container();
+    c.register(Foo);
+
+    const originalFoo = c.resolve(Foo);
+
+    const freshFork = c.fork();
+    const forkFoo = freshFork.resolve(Foo);
+    expect(forkFoo).not.toBe(originalFoo);
+
+    const carriedFork = c.fork({ carrySingletons: true });
+    const carriedFoo = carriedFork.resolve(Foo);
+    expect(carriedFoo).toBe(originalFoo);
+
+    freshFork.registerFactory('newFactory', () => 123);
+    expect(c.has('newFactory')).toBe(false);
   });
 });

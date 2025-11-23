@@ -167,6 +167,48 @@ const names = container.getServiceNames();
 console.log(names); // ['DatabaseService', 'UserService', ...]
 ```
 
+### `container.on(event, listener)`
+
+Subscribe to DI container lifecycle events (observer pattern).
+
+**Events:**
+- `registered` - fired when a class or factory is registered
+- `resolved` - fired whenever a service is resolved (cached or fresh)
+- `constructed` - fired when `construct()` creates a new instance
+- `cleared` - fired when the container is cleared
+
+**Example:**
+```typescript
+const unsubscribe = container.on('resolved', ({ key, fromCache }) => {
+  console.log(`Resolved ${typeof key === 'string' ? key : key.name} (fromCache=${fromCache})`);
+});
+
+unsubscribe(); // stop listening
+```
+
+### `container.construct(serviceClass, overrides?)`
+
+Create a fresh instance without registering it, while still honoring dependency injection. Useful for constructor-pattern scenarios where you need to supply specific primitives/config values.
+
+```typescript
+import { Component } from 'di-framework/decorators';
+import { LoggerService } from 'di-framework/services/LoggerService';
+
+class Greeter {
+  constructor(@Component(LoggerService) private logger: LoggerService, private greeting: string) {}
+}
+
+const greeter = container.construct(Greeter, { 1: 'hello world' });
+```
+
+### `container.fork(options?)`
+
+Clone the container registrations (prototype pattern) into a new container. Pass `{ carrySingletons: true }` to reuse existing singleton instances; default is to start with fresh instances.
+
+```typescript
+const testContainer = container.fork({ carrySingletons: false });
+```
+
 ## Advanced Examples
 
 ### Multiple Dependencies

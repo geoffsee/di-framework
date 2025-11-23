@@ -142,6 +142,43 @@ describe('Service lifecycle', () => {
 });
 ```
 
+## Reusing Setup with fork()
+
+Share a seeded container across tests while keeping isolation:
+
+```typescript
+import { Container as DIContainer } from 'di-framework/container';
+
+const base = new DIContainer();
+base.register(DatabaseService);
+base.register(LoggerService);
+
+beforeEach(() => {
+  testContainer = base.fork({ carrySingletons: true }); // reuse expensive singletons
+});
+```
+
+**Why:** Avoid re-registering common services while ensuring tests cannot mutate each other's registrations.
+
+## Construct Instances with Overrides
+
+Build ad-hoc instances for tests without registering them:
+
+```typescript
+class Greeter {
+  constructor(@Component(LoggerService) private logger: LoggerService, private greeting: string) {}
+}
+
+it('should allow override of primitive args', () => {
+  const c = new DIContainer();
+  c.register(LoggerService);
+  const greeter = c.construct(Greeter, { 1: 'hello test' });
+  expect(greeter).toBeInstanceOf(Greeter);
+});
+```
+
+**Why:** Handy for targeted unit tests where you need DI-managed dependencies plus specific literal parameters.
+
 ## Testing Error Scenarios
 
 Test error handling and validation:

@@ -151,6 +151,62 @@ const workerService = workerContainer.resolve(WorkerService);
 - Testing with isolated environments
 - Microservices within a monorepo
 
+## Fork Containers (Prototype Pattern)
+
+Clone an existing container and optionally carry over singleton instances:
+
+```typescript
+// Seed the base container
+container.register(DatabaseService);
+container.register(LoggerService);
+const sharedDb = container.resolve(DatabaseService);
+
+// Create an isolated fork for a tenant/request
+const tenantContainer = container.fork({ carrySingletons: true });
+tenantContainer.registerFactory('config', () => loadTenantConfig());
+
+// Resolves share the DatabaseService instance but have their own registrations
+const tenantCtx = tenantContainer.resolve(ApplicationContext);
+```
+
+**Why:** Quickly spin up scoped containers without re-registering every service. Carry over expensive singletons (DB connections) while keeping registrations isolated.
+
+## Observability with Container Events
+
+Use the observer hooks to add diagnostics or metrics around registration and resolution:
+
+```typescript
+const stop = container.on('resolved', ({ key, singleton, fromCache }) => {
+  const name = typeof key === 'string' ? key : key.name;
+  metrics.increment('di.resolve', { name, singleton, fromCache });
+});
+
+// Later, if needed:
+stop();
+```
+
+**Use cases:**
+- Log or trace dependency graphs during debugging
+- Emit metrics for cache hit/miss on singletons
+- Enforce policies (e.g., warn on transient resolutions in hot paths)
+
+## Construct with Overrides (Constructor Pattern)
+
+Create fresh instances without registering them, and override constructor arguments for primitives or config:
+
+```typescript
+import { Component } from 'di-framework/decorators';
+import { container } from 'di-framework/container';
+
+class EmailService {
+  constructor(@Component(LoggerService) private logger: LoggerService, private sender: string) {}
+}
+
+const emailer = container.construct(EmailService, { 1: 'no-reply@example.com' });
+```
+
+**Why:** Useful for ad-hoc utilities, one-off jobs, or tests where you need DI-managed dependencies plus specific literal parameters.
+
 ## Configuration Services
 
 Create configuration services using factory functions:

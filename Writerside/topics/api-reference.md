@@ -183,6 +183,57 @@ const names = container.getServiceNames();
 console.log(names); // ['DatabaseService', 'UserService', ...]
 ```
 
+### container.on(event, listener) / container.off(event, listener)
+
+Subscribe to container lifecycle events (observer pattern). Returns an unsubscribe function from `on`.
+
+**Events:**
+- `registered` - `{ key, singleton, kind }`
+- `resolved` - `{ key, instance, singleton, fromCache }`
+- `constructed` - `{ key, instance, overrides }`
+- `cleared` - `{ count }`
+
+**Example:**
+
+```typescript
+const stop = container.on('resolved', ({ key, fromCache }) => {
+  const name = typeof key === 'string' ? key : key.name;
+  console.log(`Resolved ${name} (from cache: ${fromCache})`);
+});
+
+// Later, to unsubscribe
+stop();
+```
+
+### container.construct(serviceClass, overrides?)
+
+Create a fresh instance without registering it, while still resolving dependencies. Use `overrides` to supply specific constructor arguments (by index) such as primitives or config values.
+
+**Example:**
+
+```typescript
+import { Component } from 'di-framework/decorators';
+import { container } from 'di-framework/container';
+import { LoggerService } from 'di-framework/services/LoggerService';
+
+class Greeter {
+  constructor(@Component(LoggerService) private logger: LoggerService, private greeting: string) {}
+}
+
+const greeter = container.construct(Greeter, { 1: 'Hello from config' });
+```
+
+### container.fork(options?)
+
+Clone all registrations into a new container (prototype pattern). Pass `{ carrySingletons: true }` to reuse existing singleton instances; default is to start with fresh instances.
+
+**Example:**
+
+```typescript
+const child = container.fork({ carrySingletons: true });
+const app = child.resolve(ApplicationContext); // shares singletons, isolated registrations
+```
+
 ## Lifecycle Methods
 
 Services can optionally implement lifecycle methods that are called by the framework or your application code.
