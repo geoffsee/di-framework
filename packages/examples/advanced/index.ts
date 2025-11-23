@@ -1,5 +1,5 @@
 /**
- * Advanced Dependency Injection Framework Examples
+ * Advanced di-framework Examples
  *
  * This file demonstrates advanced usage patterns of the DI framework
  */
@@ -266,7 +266,7 @@ class SecureApiService {
 
 export async function runAdvancedExamples(): Promise<void> {
   console.log('\n' + '='.repeat(70));
-  console.log('Advanced Dependency Injection Framework Examples');
+  console.log('Advanced di-framework Examples');
   console.log('='.repeat(70) + '\n');
 
   const container = useContainer();

@@ -1,5 +1,5 @@
 /**
- * Dependency Injection Framework Demo
+ * di-framework Demo
  *
  * This demonstrates how the DI framework simplifies service management
  * compared to the manual approach shown in SAMPLE.ts
@@ -12,7 +12,7 @@ import { UserService } from 'di-framework/services/UserService';
 import { ApplicationContext } from 'di-framework/services/ApplicationContext';
 
 console.log('='.repeat(60));
-console.log('Dependency Injection Framework Demo');
+console.log('di-framework Demo');
 console.log('='.repeat(60));
 console.log();
 
