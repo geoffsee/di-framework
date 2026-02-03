@@ -9,6 +9,7 @@ A lightweight, type-safe Dependency Injection framework for TypeScript using dec
 - **Automatic Resolution**: Dependencies are automatically resolved and injected.
 - **Lifecycle Management**: Built-in support for singleton and transient service lifecycles.
 - **Factory Functions**: Register services using factory functions for complex initialization.
+- **Telemetry**: Built-in support for method tracking and monitoring with `@Telemetry` and `@TelemetryListener`.
 - **Error Detection**: Detects circular dependencies and unregistered services at runtime.
 - **Testing Support**: Easy to test with mock service registration.
 

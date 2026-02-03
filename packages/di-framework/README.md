@@ -109,6 +109,39 @@ export class ReportService {
 }
 ```
 
+### `@Telemetry(options?)`
+
+Marks a method for telemetry tracking. When called, it emits a `telemetry` event on the container. Works with both synchronous and asynchronous methods.
+
+**Options:**
+- `logging?: boolean` (default: `false`) - If true, logs the method execution details (status and duration) to the console.
+
+**Example:**
+```typescript
+@Container()
+export class ApiService {
+  @Telemetry({ logging: true })
+  async fetchData(id: string) {
+    // ...
+  }
+}
+```
+
+### `@TelemetryListener()`
+
+Marks a method as a listener for telemetry events. The method will be automatically registered to the container's `telemetry` event when the service is instantiated.
+
+**Example:**
+```typescript
+@Container()
+export class MonitoringService {
+  @TelemetryListener()
+  onTelemetry(event: any) {
+    console.log(`Method ${event.className}.${event.methodName} took ${event.endTime - event.startTime}ms`);
+  }
+}
+```
+
 ### `useContainer()`
 
 Returns the global DI container instance.

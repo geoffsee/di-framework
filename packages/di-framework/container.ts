@@ -14,7 +14,7 @@ type ServiceDefinition<T = any> = {
   instance?: T;
 };
 
-type ContainerEventName = 'registered' | 'resolved' | 'cleared' | 'constructed';
+type ContainerEventName = 'registered' | 'resolved' | 'cleared' | 'constructed' | 'telemetry';
 type ContainerEventPayloads = {
   registered: {
     key: string | Constructor;
@@ -35,12 +35,23 @@ type ContainerEventPayloads = {
   cleared: {
     count: number;
   };
+  telemetry: {
+    className: string;
+    methodName: string;
+    args: any[];
+    startTime: number;
+    endTime?: number;
+    result?: any;
+    error?: any;
+  };
 };
 type Listener<T> = (payload: T) => void;
 
 const INJECTABLE_METADATA_KEY = 'di:injectable';
 const INJECT_METADATA_KEY = 'di:inject';
 const DESIGN_PARAM_TYPES_KEY = 'design:paramtypes';
+export const TELEMETRY_METADATA_KEY = 'di:telemetry';
+export const TELEMETRY_LISTENER_METADATA_KEY = 'di:telemetry-listener';
 
 /**
  * Simple metadata storage that doesn't require reflect-metadata
@@ -357,6 +368,9 @@ export class Container {
     // Create instance
     const instance = new (type as Constructor<T>)(...dependencies);
 
+    // Apply Telemetry and TelemetryListener
+    this.applyTelemetry(instance, type as Constructor<T>);
+
     // Call @Component() decorators on properties
     // Check both the instance and the constructor prototype for metadata
     const injectProperties = getMetadata(INJECT_METADATA_KEY, type) || {};
@@ -375,6 +389,81 @@ export class Container {
     });
 
     return instance;
+  }
+
+  /**
+   * Apply telemetry tracking and listeners to an instance
+   */
+  private applyTelemetry<T>(instance: T, constructor: Constructor<T>): void {
+    const className = constructor.name;
+
+    // Handle @TelemetryListener
+    const listenerMethods: string[] = getMetadata(TELEMETRY_LISTENER_METADATA_KEY, constructor.prototype) || [];
+    listenerMethods.forEach((methodName) => {
+      const method = (instance as any)[methodName];
+      if (typeof method === 'function') {
+        this.on('telemetry', (payload) => {
+          try {
+            method.call(instance, payload);
+          } catch (err) {
+            console.error(`[Container] TelemetryListener '${className}.${methodName}' threw`, err);
+          }
+        });
+      }
+    });
+
+    // Handle @Telemetry
+    const telemetryMethods: Record<string, any> = getMetadata(TELEMETRY_METADATA_KEY, constructor.prototype) || {};
+    Object.entries(telemetryMethods).forEach(([methodName, options]) => {
+      const originalMethod = (instance as any)[methodName];
+      if (typeof originalMethod === 'function') {
+        const self = this;
+        (instance as any)[methodName] = function (...args: any[]) {
+          const startTime = Date.now();
+          const emit = (result?: any, error?: any) => {
+            const payload = {
+              className,
+              methodName,
+              args,
+              startTime,
+              endTime: Date.now(),
+              result,
+              error,
+            };
+
+            if (options.logging) {
+              const duration = payload.endTime - payload.startTime;
+              const status = error ? `ERROR: ${error.message || error}` : 'SUCCESS';
+              console.log(`[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`);
+            }
+
+            self.emit('telemetry', payload);
+          };
+
+          try {
+            const result = originalMethod.apply(this, args);
+
+            if (result instanceof Promise) {
+              return result
+                .then((val) => {
+                  emit(val);
+                  return val;
+                })
+                .catch((err) => {
+                  emit(undefined, err);
+                  throw err;
+                });
+            }
+
+            emit(result);
+            return result;
+          } catch (err) {
+            emit(undefined, err);
+            throw err;
+          }
+        };
+      }
+    });
   }
 
   /**

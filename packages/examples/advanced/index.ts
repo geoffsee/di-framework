@@ -5,7 +5,7 @@
  */
 
 import { Container as DIContainer, useContainer } from 'di-framework/container';
-import { Container, Component } from 'di-framework/decorators';
+import { Container, Component, Telemetry, TelemetryListener } from 'di-framework/decorators';
 
 // ============================================================================
 // Example 1: Multi-Level Dependency Chains
@@ -261,6 +261,34 @@ class SecureApiService {
 }
 
 // ============================================================================
+// Example 7: Telemetry and Event Monitoring
+// ============================================================================
+
+@Container()
+class AnalyticsService {
+  @TelemetryListener()
+  trackMethodCall(event: any): void {
+    const { className, methodName, startTime, endTime, error } = event;
+    const duration = endTime ? (endTime - startTime).toFixed(2) : 'N/A';
+    console.log(`📊 [Analytics] ${className}.${methodName} - ${error ? 'FAILED' : 'SUCCESS'} (${duration}ms)`);
+  }
+}
+
+@Container()
+class PaymentProcessor {
+  @Component(AnalyticsService)
+  private analytics!: AnalyticsService;
+
+  @Telemetry({ logging: true })
+  async processPayment(amount: number): Promise<boolean> {
+    console.log(`💳 Processing payment of $${amount}...`);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return true;
+  }
+}
+
+// ============================================================================
 // Demo: Running all examples
 // ============================================================================
 
@@ -321,6 +349,12 @@ export async function runAdvancedExamples(): Promise<void> {
   } catch (error) {
     console.log('Error:', (error as Error).message);
   }
+  console.log();
+
+  // Example 7: Telemetry
+  console.log('--- Example 7: Telemetry and Event Monitoring ---\n');
+  const processor = container.resolve(PaymentProcessor);
+  await processor.processPayment(49.99);
   console.log();
 
   console.log('='.repeat(70));

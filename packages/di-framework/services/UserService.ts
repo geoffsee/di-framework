@@ -4,7 +4,7 @@
  * Demonstrates constructor dependency injection
  */
 
-import { Container } from '../decorators';
+import { Container, Telemetry } from '../decorators';
 import { DatabaseService } from './DatabaseService';
 import { LoggerService } from './LoggerService';
 
@@ -25,6 +25,7 @@ export class UserService {
     console.log('[UserService] Created with dependencies');
   }
 
+  @Telemetry({ logging: true })
   createUser(id: string, name: string, email: string): User {
     const user: User = { id, name, email };
     this.users.set(id, user);
@@ -33,6 +34,7 @@ export class UserService {
     return user;
   }
 
+  @Telemetry({ logging: true })
   getUser(id: string): User | undefined {
     const user = this.users.get(id);
     if (user) {
@@ -42,6 +44,7 @@ export class UserService {
     return user;
   }
 
+  @Telemetry({ logging: true })
   listUsers(): User[] {
     const users = Array.from(this.users.values());
     this.logger.log(`Listed ${users.length} users`);

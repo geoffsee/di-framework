@@ -179,6 +179,31 @@ it('should allow override of primitive args', () => {
 
 **Why:** Handy for targeted unit tests where you need DI-managed dependencies plus specific literal parameters.
 
+## Testing Telemetry
+
+You can test telemetry by creating a service with `@TelemetryListener` or by subscribing to the container's `telemetry` event:
+
+```typescript
+it('should emit telemetry events', async () => {
+  const testContainer = new DIContainer();
+  let telemetryPayload: any = null;
+  
+  testContainer.on('telemetry', (payload) => {
+    telemetryPayload = payload;
+  });
+  
+  testContainer.register(ApiService);
+  const api = testContainer.resolve(ApiService);
+  
+  await api.fetchData('123');
+  
+  expect(telemetryPayload).toBeDefined();
+  expect(telemetryPayload.className).toBe('ApiService');
+  expect(telemetryPayload.methodName).toBe('fetchData');
+  expect(telemetryPayload.endTime - telemetryPayload.startTime).toBeGreaterThanOrEqual(0);
+});
+```
+
 ## Testing Error Scenarios
 
 Test error handling and validation:

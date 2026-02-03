@@ -118,6 +118,53 @@ export class ApplicationContext {
 }
 ```
 
+## Telemetry and Monitoring
+
+The framework provides built-in support for tracking method execution using the `@Telemetry` and `@TelemetryListener` decorators.
+
+### Tracking Methods with @Telemetry
+
+Use `@Telemetry` to track execution of any method in an injectable service. It automatically captures:
+- Start and end times (duration)
+- Method arguments
+- Return value
+- Errors (if the method throws)
+
+```typescript
+@Container()
+export class ApiService {
+  @Telemetry({ logging: true }) // Logs duration and status to console
+  async fetchData(id: string) {
+    const response = await fetch(`https://api.example.com/data/${id}`);
+    return response.json();
+  }
+}
+```
+
+### Listening to Events with @TelemetryListener
+
+Use `@TelemetryListener` to create monitoring services that react to telemetry events from across your application:
+
+```typescript
+@Container()
+export class MonitoringService {
+  @TelemetryListener()
+  onTelemetry(event: any) {
+    const { className, methodName, startTime, endTime, error } = event;
+    const duration = endTime - startTime;
+    
+    if (error) {
+      console.error(`Alert: ${className}.${methodName} failed after ${duration}ms:`, error);
+    } else {
+      console.log(`Metric: ${className}.${methodName} took ${duration}ms`);
+    }
+    
+    // Send to external monitoring service (e.g., Datadog, Sentry)
+    metricsService.timing(`${className}.${methodName}`, duration);
+  }
+}
+```
+
 ## Custom Containers
 
 Create isolated containers for different parts of your application:
