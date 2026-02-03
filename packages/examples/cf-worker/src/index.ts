@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { useContainer } from "di-framework/container";
-import { LoggerService } from "di-framework/services/LoggerService";
+import { LoggerService } from "../../services/LoggerService";
 import { handleRequest } from "./router";
 
 // Wire up a couple of tokens via factory to demonstrate string-token injection

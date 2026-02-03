@@ -24,11 +24,7 @@
     },
     "./container": "./container.ts",
     "./decorators": "./decorators.ts",
-    "./types": "./types.ts",
-    "./services/ApplicationContext": "./services/ApplicationContext.ts",
-    "./services/DatabaseService": "./services/DatabaseService.ts",
-    "./services/LoggerService": "./services/LoggerService.ts",
-    "./services/UserService": "./services/UserService.ts"
+    "./types": "./types.ts"
   },
   "license": "MIT",
   "repository": {
@@ -52,7 +48,6 @@
     "types.ts",
     "README.md",
     "MIGRATION_GUIDE.md",
-    "services",
     "examples"
   ]
 }

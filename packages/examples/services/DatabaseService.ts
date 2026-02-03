@@ -4,7 +4,7 @@
  * Demonstrates a simple injectable service
  */
 
-import { Container } from '../decorators';
+import { Container } from '../../di-framework/decorators';
 
 @Container()
 export class DatabaseService {

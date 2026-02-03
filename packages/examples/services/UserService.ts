@@ -4,7 +4,7 @@
  * Demonstrates constructor dependency injection
  */
 
-import { Container, Telemetry } from '../decorators';
+import { Container, Component, Telemetry } from '../../di-framework/decorators';
 import { DatabaseService } from './DatabaseService';
 import { LoggerService } from './LoggerService';
 
@@ -19,8 +19,8 @@ export class UserService {
   private users: Map<string, User> = new Map();
 
   constructor(
-    private readonly db: DatabaseService,
-    private readonly logger: LoggerService
+    @Component(DatabaseService) private readonly db: DatabaseService,
+    @Component(LoggerService) private readonly logger: LoggerService
   ) {
     console.log('[UserService] Created with dependencies');
   }

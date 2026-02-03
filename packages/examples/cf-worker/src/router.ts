@@ -1,9 +1,9 @@
 import { useContainer } from "di-framework/container";
 import { ConfigService } from "./services/ConfigService";
 import { CounterService } from "./services/CounterService";
-import { LoggerService } from "di-framework/services/LoggerService";
-import { DatabaseService } from "di-framework/services/DatabaseService";
-import { UserService } from "di-framework/services/UserService";
+import { LoggerService } from "../../services/LoggerService";
+import { DatabaseService } from "../../services/DatabaseService";
+import { UserService } from "../../services/UserService";
 
 const container = useContainer();
 

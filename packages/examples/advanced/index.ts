@@ -4,8 +4,8 @@
  * This file demonstrates advanced usage patterns of the DI framework
  */
 
-import { Container as DIContainer, useContainer } from 'di-framework/container';
-import { Container, Component, Telemetry, TelemetryListener } from 'di-framework/decorators';
+import { Container as DIContainer, useContainer } from '../../di-framework/container';
+import { Container, Component, Telemetry, TelemetryListener } from '../../di-framework/decorators';
 
 // ============================================================================
 // Example 1: Multi-Level Dependency Chains
@@ -307,7 +307,7 @@ export async function runAdvancedExamples(): Promise<void> {
 
   // Example 2: Testing with custom container
   console.log('--- Example 2: Custom Container for Testing ---\n');
-  const testContainer = new (Container as any)();
+  const testContainer = new DIContainer();
   testContainer.register(ConfigService);
   testContainer.register(TestEmailService);
   // In a real test, you'd also register NotificationService, etc.

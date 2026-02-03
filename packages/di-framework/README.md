@@ -36,7 +36,7 @@ export class DatabaseService {
 
 ```typescript
 import { Container, Component } from 'di-framework/decorators';
-import { DatabaseService } from 'di-framework/services/DatabaseService';
+import { DatabaseService } from './services/DatabaseService';
 
 @Container()
 export class UserService {
@@ -57,7 +57,7 @@ Note: Property injection is used for all dependencies. This works seamlessly wit
 
 ```typescript
 import { useContainer } from 'di-framework/container';
-import { UserService } from 'di-framework/services/UserService';
+import { UserService } from './services/UserService';
 
 const container = useContainer();
 const userService = container.resolve<UserService>(UserService);

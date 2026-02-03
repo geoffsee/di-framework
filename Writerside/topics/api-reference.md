@@ -250,7 +250,7 @@ Create a fresh instance without registering it, while still resolving dependenci
 ```typescript
 import { Component } from 'di-framework/decorators';
 import { container } from 'di-framework/container';
-import { LoggerService } from 'di-framework/services/LoggerService';
+import { LoggerService } from '../../packages/examples/services/LoggerService';
 
 class Greeter {
   constructor(@Component(LoggerService) private logger: LoggerService, private greeting: string) {}
