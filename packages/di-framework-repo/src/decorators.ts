@@ -1,4 +1,4 @@
-import { Container } from 'di-framework/decorators';
+import { Container } from '@di-framework/di-framework/decorators';
 
 /**
  * Optional decorator to register a repository with di-framework.

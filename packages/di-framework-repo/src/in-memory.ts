@@ -1,5 +1,5 @@
-import { EntityRepository } from './repository.ts';
-import { EntityId, PaginatedResult } from './types.ts';
+import { EntityRepository } from './repository';
+import type { EntityId, PaginatedResult } from './types';
 
 export class InMemoryRepository<E extends { id: ID }, ID extends string | number = EntityId> extends EntityRepository<E, ID> {
     protected items = new Map<ID, E>();

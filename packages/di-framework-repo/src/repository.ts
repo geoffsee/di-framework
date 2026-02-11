@@ -1,5 +1,5 @@
-import { StorageAdapter } from './adapter.ts';
-import { EntityId, PaginatedResult } from './types.ts';
+import type { StorageAdapter } from './adapter';
+import type { EntityId, PaginatedResult } from './types';
 
 export abstract class BaseRepository<E, ID = EntityId> {
     protected constructor(protected readonly adapter: StorageAdapter<E, ID>) {}

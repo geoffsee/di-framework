@@ -8,6 +8,10 @@
     "packages/examples",
     "packages/di-framework-repo"
   ],
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "publish": "bun run scripts/publish.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "happy-dom": "^20.0.10"
