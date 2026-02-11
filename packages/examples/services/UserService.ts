@@ -4,9 +4,9 @@
  * Demonstrates constructor dependency injection
  */
 
-import { Container, Component, Telemetry } from '../../di-framework/decorators';
-import { DatabaseService } from './DatabaseService';
-import { LoggerService } from './LoggerService';
+import { Container, Component, Telemetry } from "../../di-framework/decorators";
+import { DatabaseService } from "./DatabaseService";
+import { LoggerService } from "./LoggerService";
 
 interface User {
   id: string;
@@ -20,9 +20,9 @@ export class UserService {
 
   constructor(
     @Component(DatabaseService) private readonly db: DatabaseService,
-    @Component(LoggerService) private readonly logger: LoggerService
+    @Component(LoggerService) private readonly logger: LoggerService,
   ) {
-    console.log('[UserService] Created with dependencies');
+    console.log("[UserService] Created with dependencies");
   }
 
   @Telemetry({ logging: true })
@@ -48,7 +48,7 @@ export class UserService {
   listUsers(): User[] {
     const users = Array.from(this.users.values());
     this.logger.log(`Listed ${users.length} users`);
-    this.db.query('SELECT * FROM users');
+    this.db.query("SELECT * FROM users");
     return users;
   }
 }

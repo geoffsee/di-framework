@@ -8,7 +8,9 @@ export class ConfigService {
     return {
       appName: this.appName,
       hasDurableObject: Boolean((env as any)?.MY_DURABLE_OBJECT),
-      compatibilityDate: (env as any)?.__STATIC_CONTENT_MANIFEST ? undefined : undefined,
+      compatibilityDate: (env as any)?.__STATIC_CONTENT_MANIFEST
+        ? undefined
+        : undefined,
     };
   }
 }

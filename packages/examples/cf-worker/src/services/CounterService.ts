@@ -3,7 +3,9 @@ import { LoggerService } from "../../../services/LoggerService";
 
 @Container()
 export class CounterService {
-  constructor(@Component(LoggerService) private readonly logger: LoggerService) {}
+  constructor(
+    @Component(LoggerService) private readonly logger: LoggerService,
+  ) {}
 
   private getStub(env: any) {
     return (env as any).MY_DURABLE_OBJECT.getByName("counter");

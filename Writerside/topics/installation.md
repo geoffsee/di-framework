@@ -10,19 +10,19 @@ No external dependencies required! The framework works with SWC and TypeScript's
 ## Install the Package
 
 ```bash
-npm install di-framework
+npm install @di-framework/di-framework
 ```
 
 or with yarn:
 
 ```bash
-yarn add di-framework
+yarn add @di-framework/di-framework
 ```
 
 or with bun:
 
 ```bash
-bun add di-framework
+bun add @di-framework/di-framework
 ```
 
 ## Configuration
@@ -71,13 +71,13 @@ The decorators are fully integrated with SWC's native support - **no need for `r
 Create a simple test file to verify the installation:
 
 ```typescript
-import { Container } from 'di-framework/decorators';
-import { useContainer } from 'di-framework/container';
+import { Container } from "@di-framework/di-framework/decorators";
+import { useContainer } from "@di-framework/di-framework/container";
 
 @Container()
 class TestService {
   getMessage() {
-    return 'DI Framework is working!';
+    return "DI Framework is working!";
   }
 }
 

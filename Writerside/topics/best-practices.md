@@ -31,7 +31,7 @@ Constructor injection makes dependencies explicit and ensures they're available 
 export class UserService {
   constructor(
     @Component(DatabaseService) private db: DatabaseService,
-    @Component(LoggerService) private logger: LoggerService
+    @Component(LoggerService) private logger: LoggerService,
   ) {}
 }
 
@@ -53,9 +53,7 @@ Use property injection sparingly, primarily for optional dependencies:
 // Good - Limited property injection
 @Container()
 export class UserService {
-  constructor(
-    @Component(DatabaseService) private db: DatabaseService
-  ) {}
+  constructor(@Component(DatabaseService) private db: DatabaseService) {}
 
   @Component(CacheService)
   private cache?: CacheService; // Optional dependency
@@ -78,7 +76,7 @@ This framework uses a lightweight metadata store - you don't need reflect-metada
 
 ```typescript
 // Good - No reflect-metadata import needed
-import { Container, Component } from 'di-framework/decorators';
+import { Container, Component } from "@di-framework/di-framework/decorators";
 
 @Container()
 export class MyService {
@@ -86,7 +84,7 @@ export class MyService {
 }
 
 // Avoid - Unnecessary import
-import 'reflect-metadata';
+import "reflect-metadata";
 ```
 
 **Why:** The framework is designed to work without reflect-metadata, keeping your bundle size small.
@@ -107,7 +105,7 @@ export class ConsoleLogger implements ILogger {
   log(message: string) {
     console.log(message);
   }
-  
+
   error(error: Error) {
     console.error(error);
   }
@@ -178,7 +176,7 @@ export class Application {
   constructor(
     @Component(DatabaseService) private db: DatabaseService,
     @Component(AuthService) private auth: AuthService,
-    @Component(CacheService) private cache: CacheService
+    @Component(CacheService) private cache: CacheService,
   ) {}
 
   async initialize() {
@@ -186,7 +184,7 @@ export class Application {
     await this.db.connect();
     await this.cache.connect();
     this.auth.setup();
-    console.log('Application initialized successfully');
+    console.log("Application initialized successfully");
   }
 }
 
@@ -204,20 +202,24 @@ Register configuration as factory services:
 
 ```typescript
 // Good - Configuration as factory
-container.registerFactory('config', () => ({
-  database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432')
-  },
-  api: {
-    key: process.env.API_KEY
-  }
-}), { singleton: true });
+container.registerFactory(
+  "config",
+  () => ({
+    database: {
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "5432"),
+    },
+    api: {
+      key: process.env.API_KEY,
+    },
+  }),
+  { singleton: true },
+);
 
 @Container()
 export class DatabaseService {
-  constructor(@Component('config') private config: any) {
-    console.log('Connecting to:', this.config.database.host);
+  constructor(@Component("config") private config: any) {
+    console.log("Connecting to:", this.config.database.host);
   }
 }
 ```
@@ -253,21 +255,21 @@ Each service should have a single, well-defined purpose:
 @Container()
 export class UserRepository {
   // Only handles data access
-  findById(id: string) { }
-  save(user: User) { }
+  findById(id: string) {}
+  save(user: User) {}
 }
 
 @Container()
 export class UserValidator {
   // Only handles validation
-  validate(user: User) { }
+  validate(user: User) {}
 }
 
 @Container()
 export class UserService {
   constructor(
     @Component(UserRepository) private repo: UserRepository,
-    @Component(UserValidator) private validator: UserValidator
+    @Component(UserValidator) private validator: UserValidator,
   ) {}
 
   // Orchestrates user operations
@@ -288,10 +290,10 @@ Add comments to clarify why dependencies are needed:
 @Container()
 export class OrderService {
   constructor(
-    @Component(DatabaseService) private db: DatabaseService,     // Data persistence
+    @Component(DatabaseService) private db: DatabaseService, // Data persistence
     @Component(PaymentService) private payment: PaymentService, // Payment processing
-    @Component(EmailService) private email: EmailService,       // Order confirmations
-    @Component(LoggerService) private logger: LoggerService     // Audit trail
+    @Component(EmailService) private email: EmailService, // Order confirmations
+    @Component(LoggerService) private logger: LoggerService, // Audit trail
   ) {}
 }
 ```
@@ -316,7 +318,7 @@ class ServiceB {
 
 // Good - Clear hierarchy
 @Container()
-class SharedService { }
+class SharedService {}
 
 @Container()
 class ServiceA {
@@ -337,9 +339,9 @@ Use separate containers for testing:
 
 ```typescript
 // Good - Test isolation
-import { Container as DIContainer } from 'di-framework/container';
+import { Container as DIContainer } from "@di-framework/di-framework/container";
 
-describe('UserService', () => {
+describe("UserService", () => {
   let testContainer: DIContainer;
 
   beforeEach(() => {
@@ -348,7 +350,7 @@ describe('UserService', () => {
     testContainer.register(UserService);
   });
 
-  it('should create user', () => {
+  it("should create user", () => {
     const service = testContainer.resolve(UserService);
     // Test implementation
   });
@@ -362,8 +364,8 @@ describe('UserService', () => {
 Hook into container events to log or measure dependency resolution:
 
 ```typescript
-const stop = container.on('resolved', ({ key, fromCache }) => {
-  const name = typeof key === 'string' ? key : key.name;
+const stop = container.on("resolved", ({ key, fromCache }) => {
+  const name = typeof key === "string" ? key : key.name;
   logger.debug(`Resolved ${name} (cached=${fromCache})`);
 });
 

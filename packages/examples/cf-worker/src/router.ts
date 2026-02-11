@@ -112,7 +112,7 @@ export async function handleRequest(request: Request, env: any, ctx: any) {
   if (path === "/api/count" && request.method === "POST") {
     let delta = 1;
     try {
-      const body = await request.json().catch(() => ({})) as any;
+      const body = (await request.json().catch(() => ({}))) as any;
       if (typeof body?.delta === "number") delta = body.delta;
     } catch {
       // ignore

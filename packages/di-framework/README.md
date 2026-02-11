@@ -6,12 +6,12 @@
 
 A lightweight, type-safe Dependency Injection framework for TypeScript using decorators. This framework automatically manages service instantiation, dependency resolution, and lifecycle management.
 
-
 ## Installation
 
 No external dependencies required! The framework works with SWC and TypeScript's native decorator support.
 
 Just ensure you have:
+
 - TypeScript 5.0+
 - SWC or TypeScript compiler with `experimentalDecorators` and `emitDecoratorMetadata` enabled
 
@@ -22,12 +22,12 @@ The decorators are fully integrated with SWC's native support - no need for `ref
 ### 1. Basic Service
 
 ```typescript
-import { Container } from 'di-framework/decorators';
+import { Container } from "di-framework/decorators";
 
 @Container()
 export class DatabaseService {
   connect(): void {
-    console.log('Connected to database');
+    console.log("Connected to database");
   }
 }
 ```
@@ -35,8 +35,8 @@ export class DatabaseService {
 ### 2. Service with Dependencies
 
 ```typescript
-import { Container, Component } from 'di-framework/decorators';
-import { DatabaseService } from './services/DatabaseService';
+import { Container, Component } from "di-framework/decorators";
+import { DatabaseService } from "./services/DatabaseService";
 
 @Container()
 export class UserService {
@@ -56,14 +56,14 @@ Note: Property injection is used for all dependencies. This works seamlessly wit
 ### 3. Resolve Services
 
 ```typescript
-import { useContainer } from 'di-framework/container';
-import { UserService } from './services/UserService';
+import { useContainer } from "di-framework/container";
+import { UserService } from "./services/UserService";
 
 const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
 
 // All dependencies are automatically injected!
-userService.getUser('123');
+userService.getUser("123");
 ```
 
 ## API Reference
@@ -73,11 +73,13 @@ userService.getUser('123');
 Marks a class as injectable and automatically registers it with the DI container.
 
 **Options:**
+
 - `singleton?: boolean` (default: `true`) - Create a new instance each time or reuse the same instance
 - `container?: DIContainer` - Specify a custom container (defaults to global container)
   - Note: Import as `import { Container as DIContainer } from 'di-framework/container'` to avoid name collision with the `@Container` decorator.
 
 **Example:**
+
 ```typescript
 @Container({ singleton: false })
 export class RequestScopedService {
@@ -90,9 +92,11 @@ export class RequestScopedService {
 Marks a constructor parameter or property for dependency injection.
 
 **Parameters:**
+
 - `target` - The class to inject or a string identifier for factory-registered services
 
 **Example - Constructor Parameter:**
+
 ```typescript
 @Container()
 export class OrderService {
@@ -101,6 +105,7 @@ export class OrderService {
 ```
 
 **Example - Property Injection:**
+
 ```typescript
 @Container()
 export class ReportService {
@@ -114,9 +119,11 @@ export class ReportService {
 Marks a method for telemetry tracking. When called, it emits a `telemetry` event on the container. Works with both synchronous and asynchronous methods.
 
 **Options:**
+
 - `logging?: boolean` (default: `false`) - If true, logs the method execution details (status and duration) to the console.
 
 **Example:**
+
 ```typescript
 @Container()
 export class ApiService {
@@ -132,12 +139,15 @@ export class ApiService {
 Marks a method as a listener for telemetry events. The method will be automatically registered to the container's `telemetry` event when the service is instantiated.
 
 **Example:**
+
 ```typescript
 @Container()
 export class MonitoringService {
   @TelemetryListener()
   onTelemetry(event: any) {
-    console.log(`Method ${event.className}.${event.methodName} took ${event.endTime - event.startTime}ms`);
+    console.log(
+      `Method ${event.className}.${event.methodName} took ${event.endTime - event.startTime}ms`,
+    );
   }
 }
 ```
@@ -147,7 +157,7 @@ export class MonitoringService {
 Returns the global DI container instance.
 
 ```typescript
-import { useContainer } from 'di-framework/container';
+import { useContainer } from "di-framework/container";
 
 const container = useContainer();
 ```
@@ -165,10 +175,14 @@ container.register(UserService, { singleton: true });
 Register a service using a factory function.
 
 ```typescript
-container.registerFactory('config', () => ({
-  apiKey: process.env.API_KEY,
-  dbUrl: process.env.DATABASE_URL
-}), { singleton: true });
+container.registerFactory(
+  "config",
+  () => ({
+    apiKey: process.env.API_KEY,
+    dbUrl: process.env.DATABASE_URL,
+  }),
+  { singleton: true },
+);
 ```
 
 ### `container.resolve(serviceClass)`
@@ -178,7 +192,7 @@ Resolve and get an instance of a service.
 ```typescript
 const userService = container.resolve<UserService>(UserService);
 // or by name
-const config = container.resolve('config');
+const config = container.resolve("config");
 ```
 
 ### `container.has(serviceClass)`
@@ -205,15 +219,19 @@ console.log(names); // ['DatabaseService', 'UserService', ...]
 Subscribe to DI container lifecycle events (observer pattern).
 
 **Events:**
+
 - `registered` - fired when a class or factory is registered
 - `resolved` - fired whenever a service is resolved (cached or fresh)
 - `constructed` - fired when `construct()` creates a new instance
 - `cleared` - fired when the container is cleared
 
 **Example:**
+
 ```typescript
-const unsubscribe = container.on('resolved', ({ key, fromCache }) => {
-  console.log(`Resolved ${typeof key === 'string' ? key : key.name} (fromCache=${fromCache})`);
+const unsubscribe = container.on("resolved", ({ key, fromCache }) => {
+  console.log(
+    `Resolved ${typeof key === "string" ? key : key.name} (fromCache=${fromCache})`,
+  );
 });
 
 unsubscribe(); // stop listening
@@ -224,14 +242,17 @@ unsubscribe(); // stop listening
 Create a fresh instance without registering it, while still honoring dependency injection. Useful for constructor-pattern scenarios where you need to supply specific primitives/config values.
 
 ```typescript
-import { Component } from 'di-framework/decorators';
-import { LoggerService } from 'di-framework/services/LoggerService';
+import { Component } from "di-framework/decorators";
+import { LoggerService } from "di-framework/services/LoggerService";
 
 class Greeter {
-  constructor(@Component(LoggerService) private logger: LoggerService, private greeting: string) {}
+  constructor(
+    @Component(LoggerService) private logger: LoggerService,
+    private greeting: string,
+  ) {}
 }
 
-const greeter = container.construct(Greeter, { 1: 'hello world' });
+const greeter = container.construct(Greeter, { 1: "hello world" });
 ```
 
 ### `container.fork(options?)`
@@ -252,11 +273,11 @@ export class ApplicationContext {
   constructor(
     @Component(DatabaseService) private db: DatabaseService,
     @Component(LoggerService) private logger: LoggerService,
-    @Component(AuthService) private auth: AuthService
+    @Component(AuthService) private auth: AuthService,
   ) {}
 
   async initialize() {
-    this.logger.log('Initializing application...');
+    this.logger.log("Initializing application...");
     await this.db.connect();
     this.auth.setup();
   }
@@ -291,12 +312,12 @@ export class DatabaseService {
 
   setEnv(env: Record<string, any>) {
     // Called to initialize environment-specific config
-    console.log('DB URL:', env.DATABASE_URL);
+    console.log("DB URL:", env.DATABASE_URL);
   }
 
   setCtx(context: any) {
     // Called to set execution context
-    console.log('Context:', context);
+    console.log("Context:", context);
   }
 
   connect() {
@@ -307,24 +328,28 @@ export class DatabaseService {
 // Calling lifecycle methods
 const db = container.resolve(DatabaseService);
 db.setEnv(process.env);
-db.setCtx({ userId: '123' });
+db.setCtx({ userId: "123" });
 db.connect();
 ```
 
 ### Factory Functions
 
 ```typescript
-container.registerFactory('apiClient', () => {
-  return new HttpClient({
-    baseUrl: process.env.API_URL,
-    timeout: 5000
-  });
-}, { singleton: true });
+container.registerFactory(
+  "apiClient",
+  () => {
+    return new HttpClient({
+      baseUrl: process.env.API_URL,
+      timeout: 5000,
+    });
+  },
+  { singleton: true },
+);
 
 // Use in services
 @Container()
 export class UserService {
-  constructor(@Component('apiClient') private api: any) {}
+  constructor(@Component("apiClient") private api: any) {}
 }
 ```
 
@@ -343,9 +368,10 @@ export class UserService {
 ## Comparison with SAMPLE.ts
 
 ### Before (Manual - SAMPLE.ts)
+
 ```typescript
 const createServerContext = (env, ctx) => {
-  if(!instanceState.member) {
+  if (!instanceState.member) {
     const contextInstance = Context.create({
       contactService: ContactService.create({}),
       assetService: AssetService.create({}),
@@ -363,20 +389,22 @@ const createServerContext = (env, ctx) => {
   instanceState.member.setCtx(ctx);
   // ... manual dependency wiring
   instanceState.member.knowledgeService.setAttachmentService(
-    instanceState.member.attachmentService
+    instanceState.member.attachmentService,
   );
   return instanceState.member;
 };
 ```
 
 ### After (DI Framework)
+
 ```typescript
 @Container()
 export class ApplicationContext {
   constructor(
     @Component(ContactService) private contactService: ContactService,
     @Component(AssetService) private assetService: AssetService,
-    @Component(TransactionService) private transactionService: TransactionService,
+    @Component(TransactionService)
+    private transactionService: TransactionService,
     // ... all services automatically injected
     @Component(ChatService) private chatService: ChatService,
   ) {}
@@ -399,6 +427,7 @@ appContext.setCtx(ctx);
 ```
 
 **Benefits:**
+
 - No manual service instantiation
 - No manual dependency wiring
 - Automatic singleton management
@@ -409,6 +438,7 @@ appContext.setCtx(ctx);
 ## Error Handling
 
 ### Circular Dependencies
+
 ```typescript
 // This will be detected and throw an error:
 @Container()
@@ -425,6 +455,7 @@ class ServiceB {
 ```
 
 ### Unregistered Services
+
 ```typescript
 @Container()
 class MyService {
@@ -448,13 +479,15 @@ class MyService {
 
 ```typescript
 // Create a test container
-import { Container as DIContainer } from 'di-framework/container';
+import { Container as DIContainer } from "di-framework/container";
 
 const testContainer = new DIContainer();
 
 // Register mock implementations
 class MockDatabaseService {
-  query() { return { mock: true }; }
+  query() {
+    return { mock: true };
+  }
 }
 
 testContainer.register(MockDatabaseService);
@@ -464,7 +497,7 @@ testContainer.register(UserService);
 
 // Test the service with mocked dependencies
 const userService = testContainer.resolve(UserService);
-expect(userService.getUser('1')).toEqual({ mock: true });
+expect(userService.getUser("1")).toEqual({ mock: true });
 ```
 
 ## License

@@ -4,8 +4,8 @@
  * Shows how to write tests with mocked dependencies
  */
 
-import { Container as DIContainer } from 'di-framework/container';
-import { Container, Component } from 'di-framework/decorators';
+import { Container as DIContainer } from "di-framework/container";
+import { Container, Component } from "di-framework/decorators";
 
 // ============================================================================
 // Service Definitions
@@ -27,20 +27,20 @@ class RealEmailService implements IEmailService {
 @Container()
 class UserService {
   constructor(
-    @Component(RealEmailService) private emailService: IEmailService
+    @Component(RealEmailService) private emailService: IEmailService,
   ) {}
 
   async registerUser(email: string, name: string): Promise<void> {
     console.log(`Registering user: ${name} (${email})`);
     await this.emailService.send(
       email,
-      'Welcome!',
-      `Hello ${name}, welcome to our service!`
+      "Welcome!",
+      `Hello ${name}, welcome to our service!`,
     );
   }
 
   async notifyUser(email: string, message: string): Promise<void> {
-    await this.emailService.send(email, 'Notification', message);
+    await this.emailService.send(email, "Notification", message);
   }
 }
 
@@ -95,14 +95,16 @@ class TestRunner {
 
   assertEqual<T>(actual: T, expected: T, message: string): void {
     if (actual !== expected) {
-      throw new Error(`Assertion failed: ${message}\n  Expected: ${expected}\n  Actual: ${actual}`);
+      throw new Error(
+        `Assertion failed: ${message}\n  Expected: ${expected}\n  Actual: ${actual}`,
+      );
     }
   }
 
   assertArrayLength(arr: any[], length: number, message: string): void {
     if (arr.length !== length) {
       throw new Error(
-        `Assertion failed: ${message}\n  Expected length: ${length}\n  Actual length: ${arr.length}`
+        `Assertion failed: ${message}\n  Expected length: ${length}\n  Actual length: ${arr.length}`,
       );
     }
   }
@@ -117,19 +119,19 @@ class TestRunner {
 
   printSummary(): void {
     const results = this.getResults();
-    console.log('\n' + '='.repeat(60));
-    console.log('Test Results');
-    console.log('='.repeat(60));
+    console.log("\n" + "=".repeat(60));
+    console.log("Test Results");
+    console.log("=".repeat(60));
     console.log(`Passed: ${results.passed}`);
     console.log(`Failed: ${results.failed}`);
     console.log(`Total: ${results.total}`);
     if (this.failed > 0) {
-      console.log('\nErrors:');
+      console.log("\nErrors:");
       this.errors.forEach((error) => {
         console.log(`  - ${error.message}`);
       });
     }
-    console.log('='.repeat(60));
+    console.log("=".repeat(60));
   }
 }
 
@@ -138,8 +140,8 @@ class TestRunner {
 // ============================================================================
 
 async function testUserServiceWithMocks(): Promise<void> {
-  console.log('\nTest Suite: UserService with Mocked Email Service');
-  console.log('-'.repeat(60));
+  console.log("\nTest Suite: UserService with Mocked Email Service");
+  console.log("-".repeat(60));
 
   const runner = new TestRunner();
 
@@ -148,7 +150,7 @@ async function testUserServiceWithMocks(): Promise<void> {
   const mockEmailService = new MockEmailService();
 
   // Register mock instead of real service
-  testContainer.registerFactory('RealEmailService', () => mockEmailService, {
+  testContainer.registerFactory("RealEmailService", () => mockEmailService, {
     singleton: true,
   });
   testContainer.register(UserService);
@@ -156,55 +158,59 @@ async function testUserServiceWithMocks(): Promise<void> {
   // Resolve service (will use mock email service)
   const userService = (testContainer.resolve as any)(UserService);
 
-  await runner.test('Should register user and send welcome email', async () => {
+  await runner.test("Should register user and send welcome email", async () => {
     mockEmailService.clearSentEmails();
-    await userService.registerUser('john@example.com', 'John Doe');
+    await userService.registerUser("john@example.com", "John Doe");
 
     runner.assertArrayLength(
       mockEmailService.getSentEmails(),
       1,
-      'Should send exactly 1 email'
+      "Should send exactly 1 email",
     );
 
     const email = mockEmailService.getSentEmails()[0]!;
-    runner.assertEqual(email.to, 'john@example.com', 'Email should go to user');
-    runner.assertEqual(email.subject, 'Welcome!', 'Subject should be Welcome!');
+    runner.assertEqual(email.to, "john@example.com", "Email should go to user");
+    runner.assertEqual(email.subject, "Welcome!", "Subject should be Welcome!");
     runner.assert(
-      email.body.includes('John Doe'),
-      'Body should include user name'
+      email.body.includes("John Doe"),
+      "Body should include user name",
     );
   });
 
-  await runner.test('Should notify user', async () => {
+  await runner.test("Should notify user", async () => {
     mockEmailService.clearSentEmails();
-    await userService.notifyUser('jane@example.com', 'Your order has shipped');
+    await userService.notifyUser("jane@example.com", "Your order has shipped");
 
     runner.assertArrayLength(
       mockEmailService.getSentEmails(),
       1,
-      'Should send exactly 1 email'
+      "Should send exactly 1 email",
     );
 
     const email = mockEmailService.getSentEmails()[0]!;
     runner.assertEqual(
       email.to,
-      'jane@example.com',
-      'Email should go to correct user'
+      "jane@example.com",
+      "Email should go to correct user",
     );
-    runner.assertEqual(email.subject, 'Notification', 'Subject should be Notification');
+    runner.assertEqual(
+      email.subject,
+      "Notification",
+      "Subject should be Notification",
+    );
   });
 
-  await runner.test('Should handle multiple notifications', async () => {
+  await runner.test("Should handle multiple notifications", async () => {
     mockEmailService.clearSentEmails();
 
-    await userService.notifyUser('user1@example.com', 'Message 1');
-    await userService.notifyUser('user2@example.com', 'Message 2');
-    await userService.notifyUser('user3@example.com', 'Message 3');
+    await userService.notifyUser("user1@example.com", "Message 1");
+    await userService.notifyUser("user2@example.com", "Message 2");
+    await userService.notifyUser("user3@example.com", "Message 3");
 
     runner.assertArrayLength(
       mockEmailService.getSentEmails(),
       3,
-      'Should send 3 emails'
+      "Should send 3 emails",
     );
   });
 
@@ -212,59 +218,73 @@ async function testUserServiceWithMocks(): Promise<void> {
 }
 
 async function testContainerIsolation(): Promise<void> {
-  console.log('\nTest Suite: Container Isolation');
-  console.log('-'.repeat(60));
+  console.log("\nTest Suite: Container Isolation");
+  console.log("-".repeat(60));
 
   const runner = new TestRunner();
 
   // Test 1: Each container has its own instance
-  await runner.test('Each container should have isolated instances', async () => {
-    const container1 = new (Container as any)();
-    const mockEmail1 = new MockEmailService();
-    container1.registerFactory('email', () => mockEmail1);
-    container1.register(UserService);
+  await runner.test(
+    "Each container should have isolated instances",
+    async () => {
+      const container1 = new (Container as any)();
+      const mockEmail1 = new MockEmailService();
+      container1.registerFactory("email", () => mockEmail1);
+      container1.register(UserService);
 
-    const container2 = new (Container as any)();
-    const mockEmail2 = new MockEmailService();
-    container2.registerFactory('email', () => mockEmail2);
-    container2.register(UserService);
+      const container2 = new (Container as any)();
+      const mockEmail2 = new MockEmailService();
+      container2.registerFactory("email", () => mockEmail2);
+      container2.register(UserService);
 
-    runner.assert(mockEmail1 !== mockEmail2, 'Mocks should be different instances');
-    console.log('Containers are properly isolated ✓');
-  });
+      runner.assert(
+        mockEmail1 !== mockEmail2,
+        "Mocks should be different instances",
+      );
+      console.log("Containers are properly isolated ✓");
+    },
+  );
 
   // Test 2: Singleton within container
-  await runner.test('Singleton services should return same instance', async () => {
-    const testContainer = new (Container as any)();
-    const mockEmail = new MockEmailService();
-    testContainer.registerFactory('email', () => mockEmail, { singleton: true });
-    testContainer.register(UserService);
+  await runner.test(
+    "Singleton services should return same instance",
+    async () => {
+      const testContainer = new (Container as any)();
+      const mockEmail = new MockEmailService();
+      testContainer.registerFactory("email", () => mockEmail, {
+        singleton: true,
+      });
+      testContainer.register(UserService);
 
-    const service1 = (testContainer.resolve as any)(UserService);
-    const service2 = (testContainer.resolve as any)(UserService);
+      const service1 = (testContainer.resolve as any)(UserService);
+      const service2 = (testContainer.resolve as any)(UserService);
 
-    runner.assert(service1 === service2, 'Should return same singleton instance');
-  });
+      runner.assert(
+        service1 === service2,
+        "Should return same singleton instance",
+      );
+    },
+  );
 
   runner.printSummary();
 }
 
 async function testErrorScenarios(): Promise<void> {
-  console.log('\nTest Suite: Error Scenarios');
-  console.log('-'.repeat(60));
+  console.log("\nTest Suite: Error Scenarios");
+  console.log("-".repeat(60));
 
   const runner = new TestRunner();
 
-  await runner.test('Should throw for unregistered service', async () => {
+  await runner.test("Should throw for unregistered service", async () => {
     const testContainer = new (Container as any)();
 
     try {
-      testContainer.resolve('NonExistentService');
-      throw new Error('Should have thrown ServiceNotFoundError');
+      testContainer.resolve("NonExistentService");
+      throw new Error("Should have thrown ServiceNotFoundError");
     } catch (error) {
       runner.assert(
-        (error as Error).message.includes('not registered'),
-        'Should have proper error message'
+        (error as Error).message.includes("not registered"),
+        "Should have proper error message",
       );
     }
   });
@@ -277,17 +297,17 @@ async function testErrorScenarios(): Promise<void> {
 // ============================================================================
 
 export async function runAllTests(): Promise<void> {
-  console.log('='.repeat(60));
-  console.log('DI Framework Test Suite');
-  console.log('='.repeat(60));
+  console.log("=".repeat(60));
+  console.log("DI Framework Test Suite");
+  console.log("=".repeat(60));
 
   await testUserServiceWithMocks();
   await testContainerIsolation();
   await testErrorScenarios();
 
-  console.log('\n' + '='.repeat(60));
-  console.log('All test suites completed!');
-  console.log('='.repeat(60));
+  console.log("\n" + "=".repeat(60));
+  console.log("All test suites completed!");
+  console.log("=".repeat(60));
 }
 
 // Run tests if executed directly

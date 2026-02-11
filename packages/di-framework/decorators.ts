@@ -8,10 +8,18 @@
  * No external dependencies required (no reflect-metadata needed).
  */
 
-import { useContainer, Container as DIContainer, defineMetadata, getOwnMetadata, getMetadata, TELEMETRY_METADATA_KEY, TELEMETRY_LISTENER_METADATA_KEY } from './container';
+import {
+  useContainer,
+  Container as DIContainer,
+  defineMetadata,
+  getOwnMetadata,
+  getMetadata,
+  TELEMETRY_METADATA_KEY,
+  TELEMETRY_LISTENER_METADATA_KEY,
+} from "./container";
 
-const INJECTABLE_METADATA_KEY = 'di:injectable';
-const INJECT_METADATA_KEY = 'di:inject';
+const INJECTABLE_METADATA_KEY = "di:injectable";
+const INJECT_METADATA_KEY = "di:inject";
 
 /**
  * Options for the @Telemetry decorator
@@ -35,7 +43,7 @@ export function Telemetry(options: TelemetryOptions = {}) {
   return function (
     target: any,
     propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const methods = getOwnMetadata(TELEMETRY_METADATA_KEY, target) || {};
     methods[propertyKey as string] = options;
@@ -51,9 +59,10 @@ export function TelemetryListener() {
   return function (
     target: any,
     propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
-    const listeners = getOwnMetadata(TELEMETRY_LISTENER_METADATA_KEY, target) || [];
+    const listeners =
+      getOwnMetadata(TELEMETRY_LISTENER_METADATA_KEY, target) || [];
     listeners.push(propertyKey);
     defineMetadata(TELEMETRY_LISTENER_METADATA_KEY, listeners, target);
   };
@@ -77,7 +86,7 @@ export function TelemetryListener() {
  * }
  */
 export function Container(
-  options: { singleton?: boolean; container?: DIContainer } = {}
+  options: { singleton?: boolean; container?: DIContainer } = {},
 ) {
   return function <T extends { new (...args: any[]): {} }>(constructor: T) {
     const container = options.container ?? useContainer();
@@ -125,7 +134,7 @@ export function Component(target: any) {
   return function (
     targetClass: Object | any,
     propertyKey?: string | symbol,
-    parameterIndex?: number
+    parameterIndex?: number,
   ) {
     // Property injection
     if (propertyKey && parameterIndex === undefined) {
@@ -136,9 +145,14 @@ export function Component(target: any) {
 
       // Also store on the constructor if we have it
       if (targetClass.constructor && targetClass.constructor !== Object) {
-        const constructorMetadata = getOwnMetadata(INJECT_METADATA_KEY, targetClass.constructor) || {};
+        const constructorMetadata =
+          getOwnMetadata(INJECT_METADATA_KEY, targetClass.constructor) || {};
         constructorMetadata[propertyKey as string] = target;
-        defineMetadata(INJECT_METADATA_KEY, constructorMetadata, targetClass.constructor);
+        defineMetadata(
+          INJECT_METADATA_KEY,
+          constructorMetadata,
+          targetClass.constructor,
+        );
       }
     }
     // Constructor parameter injection
