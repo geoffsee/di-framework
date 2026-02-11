@@ -71,13 +71,13 @@ The decorators are fully integrated with SWC's native support - **no need for `r
 Create a simple test file to verify the installation:
 
 ```typescript
-import { Container } from '@di-framework/di-framework/decorators';
-import { useContainer } from '@di-framework/di-framework/container';
+import { Container } from "@di-framework/di-framework/decorators";
+import { useContainer } from "@di-framework/di-framework/container";
 
 @Container()
 class TestService {
   getMessage() {
-    return 'DI Framework is working!';
+    return "DI Framework is working!";
   }
 }
 

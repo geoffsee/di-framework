@@ -9,6 +9,7 @@ Complete reference for all APIs provided by the DI framework.
 Marks a class as injectable and automatically registers it with the DI container.
 
 **Options:**
+
 - `singleton?: boolean` (default: `true`) - Create a new instance each time or reuse the same instance
 - `container?: DIContainer` - Specify a custom container (defaults to global container)
 
@@ -17,13 +18,13 @@ Marks a class as injectable and automatically registers it with the DI container
 **Example:**
 
 ```typescript
-import { Container } from '@di-framework/di-framework/decorators';
+import { Container } from "@di-framework/di-framework/decorators";
 
 // Singleton service (default)
 @Container()
 export class DatabaseService {
   connect() {
-    console.log('Connected');
+    console.log("Connected");
   }
 }
 
@@ -34,7 +35,7 @@ export class RequestScopedService {
 }
 
 // Custom container
-import { Container as DIContainer } from '@di-framework/di-framework/container';
+import { Container as DIContainer } from "@di-framework/di-framework/container";
 const customContainer = new DIContainer();
 
 @Container({ container: customContainer })
@@ -48,6 +49,7 @@ export class CustomService {
 Marks a constructor parameter or property for dependency injection.
 
 **Parameters:**
+
 - `target` - The class to inject or a string identifier for factory-registered services
 
 **Example - Constructor Parameter:**
@@ -74,7 +76,7 @@ export class ReportService {
 ```typescript
 @Container()
 export class UserService {
-  constructor(@Component('config') private config: any) {}
+  constructor(@Component("config") private config: any) {}
 }
 ```
 
@@ -83,6 +85,7 @@ export class UserService {
 Marks a method for telemetry tracking. When called, it emits a `telemetry` event on the container. Works with both synchronous and asynchronous methods.
 
 **Options:**
+
 - `logging?: boolean` (default: `false`) - If true, logs the method execution details (status and duration) to the console.
 
 **Example:**
@@ -108,7 +111,9 @@ Marks a method as a listener for telemetry events. The method will be automatica
 export class MonitoringService {
   @TelemetryListener()
   onTelemetry(event: any) {
-    console.log(`Method ${event.className}.${event.methodName} took ${event.endTime - event.startTime}ms`);
+    console.log(
+      `Method ${event.className}.${event.methodName} took ${event.endTime - event.startTime}ms`,
+    );
   }
 }
 ```
@@ -124,7 +129,7 @@ Returns the global DI container instance.
 **Example:**
 
 ```typescript
-import { useContainer } from '@di-framework/di-framework/container';
+import { useContainer } from "@di-framework/di-framework/container";
 
 const container = useContainer();
 ```
@@ -134,6 +139,7 @@ const container = useContainer();
 Manually register a service class.
 
 **Parameters:**
+
 - `serviceClass` - The class to register
 - `options?` - Registration options
   - `singleton?: boolean` (default: `true`)
@@ -149,6 +155,7 @@ container.register(UserService, { singleton: true });
 Register a service using a factory function.
 
 **Parameters:**
+
 - `name: string` - Identifier for the service
 - `factory: () => T` - Factory function that creates the service instance
 - `options?` - Registration options
@@ -157,15 +164,19 @@ Register a service using a factory function.
 **Example:**
 
 ```typescript
-container.registerFactory('config', () => ({
-  apiKey: process.env.API_KEY,
-  dbUrl: process.env.DATABASE_URL
-}), { singleton: true });
+container.registerFactory(
+  "config",
+  () => ({
+    apiKey: process.env.API_KEY,
+    dbUrl: process.env.DATABASE_URL,
+  }),
+  { singleton: true },
+);
 
 // Use in services
 @Container()
 export class UserService {
-  constructor(@Component('config') private config: any) {}
+  constructor(@Component("config") private config: any) {}
 }
 ```
 
@@ -174,6 +185,7 @@ export class UserService {
 Resolve and get an instance of a service.
 
 **Parameters:**
+
 - `serviceClass` - The class or string identifier to resolve
 
 **Returns:** Instance of the service with all dependencies injected
@@ -185,7 +197,7 @@ Resolve and get an instance of a service.
 const userService = container.resolve<UserService>(UserService);
 
 // By name (for factory-registered services)
-const config = container.resolve('config');
+const config = container.resolve("config");
 ```
 
 ### container.has(serviceClass)
@@ -193,6 +205,7 @@ const config = container.resolve('config');
 Check if a service is registered in the container.
 
 **Parameters:**
+
 - `serviceClass` - The class or string identifier to check
 
 **Returns:** `boolean`
@@ -223,6 +236,7 @@ console.log(names); // ['DatabaseService', 'UserService', ...]
 Subscribe to container lifecycle events (observer pattern). Returns an unsubscribe function from `on`.
 
 **Events:**
+
 - `registered` - `{ key, singleton, kind }`
 - `resolved` - `{ key, instance, singleton, fromCache }`
 - `constructed` - `{ key, instance, overrides }`
@@ -232,8 +246,8 @@ Subscribe to container lifecycle events (observer pattern). Returns an unsubscri
 **Example:**
 
 ```typescript
-const stop = container.on('resolved', ({ key, fromCache }) => {
-  const name = typeof key === 'string' ? key : key.name;
+const stop = container.on("resolved", ({ key, fromCache }) => {
+  const name = typeof key === "string" ? key : key.name;
   console.log(`Resolved ${name} (from cache: ${fromCache})`);
 });
 
@@ -248,15 +262,18 @@ Create a fresh instance without registering it, while still resolving dependenci
 **Example:**
 
 ```typescript
-import { Component } from '@di-framework/di-framework/decorators';
-import { container } from '@di-framework/di-framework/container';
-import { LoggerService } from '../../packages/examples/services/LoggerService';
+import { Component } from "@di-framework/di-framework/decorators";
+import { container } from "@di-framework/di-framework/container";
+import { LoggerService } from "../../packages/examples/services/LoggerService";
 
 class Greeter {
-  constructor(@Component(LoggerService) private logger: LoggerService, private greeting: string) {}
+  constructor(
+    @Component(LoggerService) private logger: LoggerService,
+    private greeting: string,
+  ) {}
 }
 
-const greeter = container.construct(Greeter, { 1: 'Hello from config' });
+const greeter = container.construct(Greeter, { 1: "Hello from config" });
 ```
 
 ### container.fork(options?)
@@ -284,7 +301,7 @@ Called to initialize environment-specific configuration.
 @Container()
 export class DatabaseService {
   setEnv(env: Record<string, any>) {
-    console.log('DB URL:', env.DATABASE_URL);
+    console.log("DB URL:", env.DATABASE_URL);
   }
 }
 
@@ -302,12 +319,12 @@ Called to set execution context (e.g., request context).
 @Container()
 export class RequestService {
   setCtx(context: any) {
-    console.log('Context:', context);
+    console.log("Context:", context);
   }
 }
 
 const service = container.resolve(RequestService);
-service.setCtx({ userId: '123', requestId: 'abc' });
+service.setCtx({ userId: "123", requestId: "abc" });
 ```
 
 ## Types
@@ -318,8 +335,15 @@ The DI container class.
 
 ```typescript
 class Container {
-  register<T>(serviceClass: new (...args: any[]) => T, options?: { singleton?: boolean }): void;
-  registerFactory<T>(name: string, factory: () => T, options?: { singleton?: boolean }): void;
+  register<T>(
+    serviceClass: new (...args: any[]) => T,
+    options?: { singleton?: boolean },
+  ): void;
+  registerFactory<T>(
+    name: string,
+    factory: () => T,
+    options?: { singleton?: boolean },
+  ): void;
   resolve<T>(serviceClass: new (...args: any[]) => T | string): T;
   has(serviceClass: any): boolean;
   getServiceNames(): string[];

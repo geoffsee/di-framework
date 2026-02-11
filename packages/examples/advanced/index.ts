@@ -4,8 +4,16 @@
  * This file demonstrates advanced usage patterns of the DI framework
  */
 
-import { Container as DIContainer, useContainer } from '../../di-framework/container';
-import { Container, Component, Telemetry, TelemetryListener } from '../../di-framework/decorators';
+import {
+  Container as DIContainer,
+  useContainer,
+} from "../../di-framework/container";
+import {
+  Container,
+  Component,
+  Telemetry,
+  TelemetryListener,
+} from "../../di-framework/decorators";
 
 // ============================================================================
 // Example 1: Multi-Level Dependency Chains
@@ -28,7 +36,7 @@ class NotificationService {
   constructor() {}
 
   notifyUser(userId: string, message: string): void {
-    this.email.send(`user${userId}@example.com`, 'Notification', message);
+    this.email.send(`user${userId}@example.com`, "Notification", message);
   }
 }
 
@@ -41,7 +49,7 @@ class UserRegistrationService {
 
   registerUser(name: string): void {
     console.log(`✅ User registered: ${name}`);
-    this.notifications.notifyUser('1', `Welcome ${name}!`);
+    this.notifications.notifyUser("1", `Welcome ${name}!`);
   }
 }
 
@@ -68,9 +76,9 @@ interface AppConfig {
 @Container()
 class ConfigService {
   private config: AppConfig = {
-    apiUrl: 'https://api.example.com',
-    apiKey: process.env.API_KEY || 'default-key',
-    environment: process.env.NODE_ENV || 'development'
+    apiUrl: "https://api.example.com",
+    apiKey: process.env.API_KEY || "default-key",
+    environment: process.env.NODE_ENV || "development",
   };
 
   get(key: keyof AppConfig): string {
@@ -84,7 +92,7 @@ class ConfigService {
 
 @Container()
 class ApiService {
-  private baseUrl: string = '';
+  private baseUrl: string = "";
 
   @Component(ConfigService)
   private config!: ConfigService;
@@ -95,12 +103,12 @@ class ApiService {
 
   setConfig(config: ConfigService): void {
     this.config = config;
-    this.baseUrl = config.get('apiUrl');
+    this.baseUrl = config.get("apiUrl");
   }
 
   call(endpoint: string): Promise<any> {
     if (!this.baseUrl) {
-      this.baseUrl = this.config.get('apiUrl');
+      this.baseUrl = this.config.get("apiUrl");
     }
     console.log(`🌐 API Call: ${this.baseUrl}${endpoint}`);
     return Promise.resolve({ success: true });
@@ -124,7 +132,9 @@ class RequestLogger {
   }
 
   onInit(): void {
-    console.log(`🔍 [Request ${this.requestId}] Created in ${this.config.get('environment')}`);
+    console.log(
+      `🔍 [Request ${this.requestId}] Created in ${this.config.get("environment")}`,
+    );
   }
 
   log(message: string): void {
@@ -145,7 +155,7 @@ class RequestHandler {
   constructor() {}
 
   async handle(endpoint: string, logger: RequestLogger): Promise<void> {
-    logger.log('Handling request...');
+    logger.log("Handling request...");
     const result = await this.api.call(endpoint);
     logger.log(`Response received: ${JSON.stringify(result)}`);
   }
@@ -167,11 +177,13 @@ class CacheService implements Lifecycle {
   private missCount = 0;
 
   onInit(): void {
-    console.log('🗄️ Cache service initialized');
+    console.log("🗄️ Cache service initialized");
   }
 
   onDestroy(): void {
-    console.log(`🗄️ Cache service destroyed (${this.hitCount} hits, ${this.missCount} misses)`);
+    console.log(
+      `🗄️ Cache service destroyed (${this.hitCount} hits, ${this.missCount} misses)`,
+    );
   }
 
   set(key: string, value: any): void {
@@ -189,7 +201,7 @@ class CacheService implements Lifecycle {
 
   clear(): void {
     this.cache.clear();
-    console.log('🗄️ Cache cleared');
+    console.log("🗄️ Cache cleared");
   }
 }
 
@@ -218,7 +230,7 @@ class CachedDataService {
 class AuthService {
   authenticate(username: string, password: string): boolean {
     console.log(`🔐 Authenticating user: ${username}`);
-    return username === 'admin' && password === 'password';
+    return username === "admin" && password === "password";
   }
 }
 
@@ -246,14 +258,14 @@ class SecureApiService {
   async secureCall(
     endpoint: string,
     username: string,
-    password: string
+    password: string,
   ): Promise<any> {
     if (!this.auth.authenticate(username, password)) {
-      throw new Error('Authentication failed');
+      throw new Error("Authentication failed");
     }
 
-    if (!this.permissions.hasPermission(username, 'api:call')) {
-      throw new Error('Permission denied');
+    if (!this.permissions.hasPermission(username, "api:call")) {
+      throw new Error("Permission denied");
     }
 
     return this.api.call(endpoint);
@@ -269,8 +281,10 @@ class AnalyticsService {
   @TelemetryListener()
   trackMethodCall(event: any): void {
     const { className, methodName, startTime, endTime, error } = event;
-    const duration = endTime ? (endTime - startTime).toFixed(2) : 'N/A';
-    console.log(`📊 [Analytics] ${className}.${methodName} - ${error ? 'FAILED' : 'SUCCESS'} (${duration}ms)`);
+    const duration = endTime ? (endTime - startTime).toFixed(2) : "N/A";
+    console.log(
+      `📊 [Analytics] ${className}.${methodName} - ${error ? "FAILED" : "SUCCESS"} (${duration}ms)`,
+    );
   }
 }
 
@@ -283,7 +297,7 @@ class PaymentProcessor {
   async processPayment(amount: number): Promise<boolean> {
     console.log(`💳 Processing payment of $${amount}...`);
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return true;
   }
 }
@@ -293,73 +307,75 @@ class PaymentProcessor {
 // ============================================================================
 
 export async function runAdvancedExamples(): Promise<void> {
-  console.log('\n' + '='.repeat(70));
-  console.log('Advanced di-framework Examples');
-  console.log('='.repeat(70) + '\n');
+  console.log("\n" + "=".repeat(70));
+  console.log("Advanced di-framework Examples");
+  console.log("=".repeat(70) + "\n");
 
   const container = useContainer();
 
   // Example 1: Multi-level dependency chains
-  console.log('--- Example 1: Multi-Level Dependency Chains ---\n');
+  console.log("--- Example 1: Multi-Level Dependency Chains ---\n");
   const registration = container.resolve(UserRegistrationService);
-  registration.registerUser('Alice');
+  registration.registerUser("Alice");
   console.log();
 
   // Example 2: Testing with custom container
-  console.log('--- Example 2: Custom Container for Testing ---\n');
+  console.log("--- Example 2: Custom Container for Testing ---\n");
   const testContainer = new DIContainer();
   testContainer.register(ConfigService);
   testContainer.register(TestEmailService);
   // In a real test, you'd also register NotificationService, etc.
-  console.log('✓ Test container created with mock services\n');
+  console.log("✓ Test container created with mock services\n");
 
   // Example 3: Configuration Service
-  console.log('--- Example 3: Configuration Service ---\n');
+  console.log("--- Example 3: Configuration Service ---\n");
   const config = container.resolve(ConfigService);
-  console.log('Config:', config.getAll());
+  console.log("Config:", config.getAll());
   const api = container.resolve(ApiService);
-  await api.call('/users');
+  await api.call("/users");
   console.log();
 
   // Example 4: Transient Services
-  console.log('--- Example 4: Transient Services for Requests ---\n');
+  console.log("--- Example 4: Transient Services for Requests ---\n");
   const handler = container.resolve(RequestHandler);
   const logger1 = container.resolve(RequestLogger);
   const logger2 = container.resolve(RequestLogger);
-  console.log(`Same instance? ${logger1.getRequestId() === logger2.getRequestId()}`); // false
-  await handler.handle('/data', logger1);
+  console.log(
+    `Same instance? ${logger1.getRequestId() === logger2.getRequestId()}`,
+  ); // false
+  await handler.handle("/data", logger1);
   console.log();
 
   // Example 5: Lifecycle Methods
-  console.log('--- Example 5: Service Lifecycle ---\n');
+  console.log("--- Example 5: Service Lifecycle ---\n");
   const cache = container.resolve(CacheService);
   (cache as any).onInit?.();
   const cachedData = container.resolve(CachedDataService);
-  console.log('First call:', cachedData.getData('user:1'));
-  console.log('Second call (cached):', cachedData.getData('user:1'));
-  console.log('New data:', cachedData.getData('user:2'));
+  console.log("First call:", cachedData.getData("user:1"));
+  console.log("Second call (cached):", cachedData.getData("user:1"));
+  console.log("New data:", cachedData.getData("user:2"));
   (cache as any).onDestroy?.();
   console.log();
 
   // Example 6: Composite Services
-  console.log('--- Example 6: Composite Services ---\n');
+  console.log("--- Example 6: Composite Services ---\n");
   const secureApi = container.resolve(SecureApiService);
   try {
-    await secureApi.secureCall('/protected', 'admin', 'password');
+    await secureApi.secureCall("/protected", "admin", "password");
   } catch (error) {
-    console.log('Error:', (error as Error).message);
+    console.log("Error:", (error as Error).message);
   }
   console.log();
 
   // Example 7: Telemetry
-  console.log('--- Example 7: Telemetry and Event Monitoring ---\n');
+  console.log("--- Example 7: Telemetry and Event Monitoring ---\n");
   const processor = container.resolve(PaymentProcessor);
   await processor.processPayment(49.99);
   console.log();
 
-  console.log('='.repeat(70));
-  console.log('All examples completed successfully!');
-  console.log('='.repeat(70));
+  console.log("=".repeat(70));
+  console.log("All examples completed successfully!");
+  console.log("=".repeat(70));
 }
 
 // Run examples if this file is executed directly

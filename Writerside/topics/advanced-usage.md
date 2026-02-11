@@ -23,8 +23,9 @@ console.log(ctx1.id !== ctx2.id); // true
 ```
 
 **When to use transient services:**
+
 - Request-scoped services
-- Session-scoped services  
+- Session-scoped services
 - Services with mutable state that shouldn't be shared
 - Services that need fresh data on each use
 
@@ -33,21 +34,25 @@ console.log(ctx1.id !== ctx2.id); // true
 Register services using factory functions for complex initialization logic:
 
 ```typescript
-container.registerFactory('apiClient', () => {
-  return new HttpClient({
-    baseUrl: process.env.API_URL,
-    timeout: 5000,
-    headers: {
-      'Authorization': `Bearer ${process.env.API_TOKEN}`
-    }
-  });
-}, { singleton: true });
+container.registerFactory(
+  "apiClient",
+  () => {
+    return new HttpClient({
+      baseUrl: process.env.API_URL,
+      timeout: 5000,
+      headers: {
+        Authorization: `Bearer ${process.env.API_TOKEN}`,
+      },
+    });
+  },
+  { singleton: true },
+);
 
 // Use in services
 @Container()
 export class UserService {
-  constructor(@Component('apiClient') private api: any) {}
-  
+  constructor(@Component("apiClient") private api: any) {}
+
   async getUser(id: string) {
     return this.api.get(`/users/${id}`);
   }
@@ -55,6 +60,7 @@ export class UserService {
 ```
 
 **Factory function benefits:**
+
 - Initialize services with environment variables
 - Create instances with complex configuration
 - Conditionally create different implementations
@@ -67,13 +73,16 @@ For larger applications, using the Repository pattern with `@di-framework/di-fra
 ### Standard Repository
 
 ```typescript
-import { Repository, InMemoryRepository } from '@di-framework/di-framework-repo';
+import {
+  Repository,
+  InMemoryRepository,
+} from "@di-framework/di-framework-repo";
 
 @Repository()
 export class UserRepository extends InMemoryRepository<User, number> {
   async findByEmail(email: string): Promise<User | null> {
     const all = await this.findAll();
-    return all.find(u => u.email === email) || null;
+    return all.find((u) => u.email === email) || null;
   }
 }
 ```
@@ -81,7 +90,10 @@ export class UserRepository extends InMemoryRepository<User, number> {
 ### Soft Delete Support
 
 ```typescript
-import { SoftDeleteRepository, SoftDeletable } from '@di-framework/di-framework-repo';
+import {
+  SoftDeleteRepository,
+  SoftDeletable,
+} from "@di-framework/di-framework-repo";
 
 interface Product extends SoftDeletable {
   id: string;
@@ -104,29 +116,29 @@ Services can implement lifecycle methods for initialization and context manageme
 @Container()
 export class DatabaseService {
   private connected = false;
-  private dbUrl: string = '';
+  private dbUrl: string = "";
 
   setEnv(env: Record<string, any>) {
     // Called to initialize environment-specific config
     this.dbUrl = env.DATABASE_URL;
-    console.log('DB URL configured:', this.dbUrl);
+    console.log("DB URL configured:", this.dbUrl);
   }
 
   setCtx(context: any) {
     // Called to set execution context
-    console.log('Context set:', context);
+    console.log("Context set:", context);
   }
 
   connect() {
     this.connected = true;
-    console.log('Connected to:', this.dbUrl);
+    console.log("Connected to:", this.dbUrl);
   }
 }
 
 // Usage
 const db = container.resolve(DatabaseService);
 db.setEnv(process.env);
-db.setCtx({ userId: '123' });
+db.setCtx({ userId: "123" });
 db.connect();
 ```
 
@@ -142,11 +154,11 @@ export class ApplicationContext {
     @Component(LoggerService) private logger: LoggerService,
     @Component(AuthService) private auth: AuthService,
     @Component(CacheService) private cache: CacheService,
-    @Component(EmailService) private email: EmailService
+    @Component(EmailService) private email: EmailService,
   ) {}
 
   async initialize() {
-    this.logger.log('Initializing application...');
+    this.logger.log("Initializing application...");
     await this.db.connect();
     this.auth.setup();
     this.cache.connect();
@@ -161,6 +173,7 @@ The framework provides built-in support for tracking method execution using the 
 ### Tracking Methods with @Telemetry
 
 Use `@Telemetry` to track execution of any method in an injectable service. It automatically captures:
+
 - Start and end times (duration)
 - Method arguments
 - Return value
@@ -188,13 +201,16 @@ export class MonitoringService {
   onTelemetry(event: any) {
     const { className, methodName, startTime, endTime, error } = event;
     const duration = endTime - startTime;
-    
+
     if (error) {
-      console.error(`Alert: ${className}.${methodName} failed after ${duration}ms:`, error);
+      console.error(
+        `Alert: ${className}.${methodName} failed after ${duration}ms:`,
+        error,
+      );
     } else {
       console.log(`Metric: ${className}.${methodName} took ${duration}ms`);
     }
-    
+
     // Send to external monitoring service (e.g., Datadog, Sentry)
     metricsService.timing(`${className}.${methodName}`, duration);
   }
@@ -206,7 +222,7 @@ export class MonitoringService {
 Create isolated containers for different parts of your application:
 
 ```typescript
-import { Container as DIContainer } from '@di-framework/di-framework/container';
+import { Container as DIContainer } from "@di-framework/di-framework/container";
 
 // Create custom containers
 const apiContainer = new DIContainer();
@@ -229,6 +245,7 @@ const workerService = workerContainer.resolve(WorkerService);
 ```
 
 **Use cases for custom containers:**
+
 - Multi-tenant applications
 - Plugin systems
 - Testing with isolated environments
@@ -246,7 +263,7 @@ const sharedDb = container.resolve(DatabaseService);
 
 // Create an isolated fork for a tenant/request
 const tenantContainer = container.fork({ carrySingletons: true });
-tenantContainer.registerFactory('config', () => loadTenantConfig());
+tenantContainer.registerFactory("config", () => loadTenantConfig());
 
 // Resolves share the DatabaseService instance but have their own registrations
 const tenantCtx = tenantContainer.resolve(ApplicationContext);
@@ -259,9 +276,9 @@ const tenantCtx = tenantContainer.resolve(ApplicationContext);
 Use the observer hooks to add diagnostics or metrics around registration and resolution:
 
 ```typescript
-const stop = container.on('resolved', ({ key, singleton, fromCache }) => {
-  const name = typeof key === 'string' ? key : key.name;
-  metrics.increment('di.resolve', { name, singleton, fromCache });
+const stop = container.on("resolved", ({ key, singleton, fromCache }) => {
+  const name = typeof key === "string" ? key : key.name;
+  metrics.increment("di.resolve", { name, singleton, fromCache });
 });
 
 // Later, if needed:
@@ -269,6 +286,7 @@ stop();
 ```
 
 **Use cases:**
+
 - Log or trace dependency graphs during debugging
 - Emit metrics for cache hit/miss on singletons
 - Enforce policies (e.g., warn on transient resolutions in hot paths)
@@ -278,14 +296,19 @@ stop();
 Create fresh instances without registering them, and override constructor arguments for primitives or config:
 
 ```typescript
-import { Component } from '@di-framework/di-framework/decorators';
-import { container } from '@di-framework/di-framework/container';
+import { Component } from "@di-framework/di-framework/decorators";
+import { container } from "@di-framework/di-framework/container";
 
 class EmailService {
-  constructor(@Component(LoggerService) private logger: LoggerService, private sender: string) {}
+  constructor(
+    @Component(LoggerService) private logger: LoggerService,
+    private sender: string,
+  ) {}
 }
 
-const emailer = container.construct(EmailService, { 1: 'no-reply@example.com' });
+const emailer = container.construct(EmailService, {
+  1: "no-reply@example.com",
+});
 ```
 
 **Why:** Useful for ad-hoc utilities, one-off jobs, or tests where you need DI-managed dependencies plus specific literal parameters.
@@ -296,27 +319,31 @@ Create configuration services using factory functions:
 
 ```typescript
 // Register configuration
-container.registerFactory('config', () => ({
-  database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    name: process.env.DB_NAME || 'myapp'
-  },
-  api: {
-    key: process.env.API_KEY,
-    secret: process.env.API_SECRET
-  },
-  features: {
-    enableNewUI: process.env.ENABLE_NEW_UI === 'true',
-    maxUploadSize: parseInt(process.env.MAX_UPLOAD_SIZE || '10485760')
-  }
-}), { singleton: true });
+container.registerFactory(
+  "config",
+  () => ({
+    database: {
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "5432"),
+      name: process.env.DB_NAME || "myapp",
+    },
+    api: {
+      key: process.env.API_KEY,
+      secret: process.env.API_SECRET,
+    },
+    features: {
+      enableNewUI: process.env.ENABLE_NEW_UI === "true",
+      maxUploadSize: parseInt(process.env.MAX_UPLOAD_SIZE || "10485760"),
+    },
+  }),
+  { singleton: true },
+);
 
 // Use in services
 @Container()
 export class DatabaseService {
-  constructor(@Component('config') private config: any) {
-    console.log('DB Config:', this.config.database);
+  constructor(@Component("config") private config: any) {
+    console.log("DB Config:", this.config.database);
   }
 }
 ```
@@ -327,17 +354,21 @@ Register different implementations based on environment:
 
 ```typescript
 // Register different implementations
-if (process.env.NODE_ENV === 'production') {
-  container.registerFactory('logger', () => new ProductionLogger(), { singleton: true });
+if (process.env.NODE_ENV === "production") {
+  container.registerFactory("logger", () => new ProductionLogger(), {
+    singleton: true,
+  });
 } else {
-  container.registerFactory('logger', () => new DevelopmentLogger(), { singleton: true });
+  container.registerFactory("logger", () => new DevelopmentLogger(), {
+    singleton: true,
+  });
 }
 
 // Services get the right implementation
 @Container()
 export class UserService {
-  constructor(@Component('logger') private logger: any) {
-    this.logger.log('UserService initialized');
+  constructor(@Component("logger") private logger: any) {
+    this.logger.log("UserService initialized");
   }
 }
 ```
@@ -351,7 +382,7 @@ Compose complex services from simpler ones:
 export class DataAccessLayer {
   constructor(
     @Component(DatabaseService) private db: DatabaseService,
-    @Component(CacheService) private cache: CacheService
+    @Component(CacheService) private cache: CacheService,
   ) {}
 
   async get(key: string) {
@@ -370,7 +401,7 @@ export class DataAccessLayer {
 export class BusinessLogicLayer {
   constructor(
     @Component(DataAccessLayer) private dal: DataAccessLayer,
-    @Component(ValidationService) private validator: ValidationService
+    @Component(ValidationService) private validator: ValidationService,
   ) {}
 
   async processRequest(request: any) {

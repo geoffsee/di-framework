@@ -2,14 +2,14 @@ name: Deploy Documentation
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 env:
-  INSTANCE: 'Writerside/d'
-  DOCKER_VERSION: '2.1.1479-p3869'
+  INSTANCE: "Writerside/d"
+  DOCKER_VERSION: "2.1.1479-p3869"
 
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
         with:
           instance: ${{ env.INSTANCE }}
           docker-version: ${{ env.DOCKER_VERSION }}
-          artifact: 'webHelpD2-all.zip'
+          artifact: "webHelpD2-all.zip"
 
       - name: Unzip artifact
         run: unzip -O UTF-8 -qq artifacts/webHelpD2-all.zip -d dir

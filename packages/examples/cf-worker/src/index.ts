@@ -6,11 +6,9 @@ import { handleRequest } from "./router";
 // Wire up a couple of tokens via factory to demonstrate string-token injection
 const container = useContainer();
 if (!container.has("APP_NAME")) {
-  container.registerFactory(
-    "APP_NAME",
-    () => "DI Worker Example",
-    { singleton: true }
-  );
+  container.registerFactory("APP_NAME", () => "DI Worker Example", {
+    singleton: true,
+  });
 }
 
 // Ensure core services are registered (decorators register on import, but
@@ -33,56 +31,56 @@ const _ensureLogger = LoggerService;
 
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class MyDurableObject extends DurableObject<Env> {
-	/**
-	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
-	 * 	`DurableObjectStub::get` for a given identifier (no-op constructors can be omitted)
-	 *
-	 * @param ctx - The interface for interacting with Durable Object state
-	 * @param env - The interface to reference bindings declared in wrangler.jsonc
-	 */
-	constructor(ctx: DurableObjectState, env: Env) {
-		super(ctx, env);
-	}
+  /**
+   * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
+   * 	`DurableObjectStub::get` for a given identifier (no-op constructors can be omitted)
+   *
+   * @param ctx - The interface for interacting with Durable Object state
+   * @param env - The interface to reference bindings declared in wrangler.jsonc
+   */
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+  }
 
-	/**
-	 * The Durable Object exposes an RPC method sayHello which will be invoked when when a Durable
-	 *  Object instance receives a request from a Worker via the same method invocation on the stub
-	 *
-	 * @param name - The name provided to a Durable Object instance from a Worker
-	 * @returns The greeting to be sent back to the Worker
-	 */
-	async sayHello(name: string): Promise<string> {
-		return `Hello, ${name}!`;
-	}
+  /**
+   * The Durable Object exposes an RPC method sayHello which will be invoked when when a Durable
+   *  Object instance receives a request from a Worker via the same method invocation on the stub
+   *
+   * @param name - The name provided to a Durable Object instance from a Worker
+   * @returns The greeting to be sent back to the Worker
+   */
+  async sayHello(name: string): Promise<string> {
+    return `Hello, ${name}!`;
+  }
 
-	// Simple stateful counter using Durable Object storage
-	async increment(delta: number = 1): Promise<number> {
-		const current = (await this.ctx.storage.get<number>("count")) ?? 0;
-		const next = current + (Number.isFinite(delta) ? delta : 1);
-		await this.ctx.storage.put("count", next);
-		return next;
-	}
+  // Simple stateful counter using Durable Object storage
+  async increment(delta: number = 1): Promise<number> {
+    const current = (await this.ctx.storage.get<number>("count")) ?? 0;
+    const next = current + (Number.isFinite(delta) ? delta : 1);
+    await this.ctx.storage.put("count", next);
+    return next;
+  }
 
-	async getCount(): Promise<number> {
-		return (await this.ctx.storage.get<number>("count")) ?? 0;
-	}
+  async getCount(): Promise<number> {
+    return (await this.ctx.storage.get<number>("count")) ?? 0;
+  }
 
-	async reset(): Promise<number> {
-		await this.ctx.storage.put("count", 0);
-		return 0;
-	}
+  async reset(): Promise<number> {
+    await this.ctx.storage.put("count", 0);
+    return 0;
+  }
 }
 
 export default {
-	/**
-	 * This is the standard fetch handler for a Cloudflare Worker
-	 *
-	 * @param request - The request submitted to the Worker from the client
-	 * @param env - The interface to reference bindings declared in wrangler.jsonc
-	 * @param ctx - The execution context of the Worker
-	 * @returns The response to be sent back to the client
-	 */
-	async fetch(request, env, ctx): Promise<Response> {
-		return handleRequest(request, env, ctx);
-	},
+  /**
+   * This is the standard fetch handler for a Cloudflare Worker
+   *
+   * @param request - The request submitted to the Worker from the client
+   * @param env - The interface to reference bindings declared in wrangler.jsonc
+   * @param ctx - The execution context of the Worker
+   * @returns The response to be sent back to the client
+   */
+  async fetch(request, env, ctx): Promise<Response> {
+    return handleRequest(request, env, ctx);
+  },
 } satisfies ExportedHandler<Env>;

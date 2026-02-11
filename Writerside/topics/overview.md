@@ -19,9 +19,10 @@ A lightweight, type-safe Dependency Injection framework for TypeScript using dec
 Traditional dependency injection requires manual service instantiation and wiring, which becomes error-prone and difficult to maintain as your application grows. This framework eliminates that complexity:
 
 **Without DI Framework:**
+
 ```typescript
 const createServerContext = (env, ctx) => {
-  if(!instanceState.member) {
+  if (!instanceState.member) {
     const contextInstance = Context.create({
       contactService: ContactService.create({}),
       assetService: AssetService.create({}),
@@ -30,7 +31,7 @@ const createServerContext = (env, ctx) => {
     });
     instanceState.member = contextInstance;
   }
-  
+
   instanceState.member.setEnv(env);
   instanceState.member.setCtx(ctx);
   // ... manual dependency wiring
@@ -39,13 +40,15 @@ const createServerContext = (env, ctx) => {
 ```
 
 **With DI Framework:**
+
 ```typescript
 @Container()
 export class ApplicationContext {
   constructor(
     @Component(ContactService) private contactService: ContactService,
     @Component(AssetService) private assetService: AssetService,
-    @Component(TransactionService) private transactionService: TransactionService,
+    @Component(TransactionService)
+    private transactionService: TransactionService,
     // ... all services automatically injected
   ) {}
 }
@@ -56,6 +59,7 @@ const appContext = container.resolve(ApplicationContext);
 ```
 
 **Benefits:**
+
 - No manual service instantiation
 - No manual dependency wiring
 - Automatic singleton management
@@ -66,14 +70,14 @@ const appContext = container.resolve(ApplicationContext);
 ## Quick Example
 
 ```typescript
-import { Container, Component } from '@di-framework/di-framework/decorators';
-import { useContainer } from '@di-framework/di-framework/container';
+import { Container, Component } from "@di-framework/di-framework/decorators";
+import { useContainer } from "@di-framework/di-framework/container";
 
 // Define a service
 @Container()
 export class DatabaseService {
   connect(): void {
-    console.log('Connected to database');
+    console.log("Connected to database");
   }
 }
 
@@ -91,7 +95,7 @@ export class UserService {
 // Resolve and use
 const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
-userService.getUser('123');
+userService.getUser("123");
 ```
 
 ## Next Steps

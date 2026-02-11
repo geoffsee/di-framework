@@ -16,9 +16,9 @@ async function publish() {
   for (const pkgDir of PACKAGES) {
     const fullPath = join(process.cwd(), pkgDir);
     const pkgJson = await import(join(fullPath, "package.json"));
-    
+
     console.log(`\n🚢 Publishing ${pkgJson.name}@${pkgJson.version}...`);
-    
+
     // Using --access public for scoped packages
     // We use npm publish or bun publish. Bun publish is fine.
     try {

@@ -5,20 +5,22 @@
 ## Key Concepts
 
 ### Storage Adapter
+
 A `StorageAdapter` is a minimal protocol that every storage backend must implement. It keeps the repository layer agnostic to whether you are using SQL, NoSQL, In-Memory, or an external API.
 
 ```typescript
 export interface StorageAdapter<E, ID = string | number> {
-    findById(id: ID): Promise<E | null>;
-    findAll(): Promise<E[]>;
-    save(entity: E): Promise<E>;
-    delete(id: ID): Promise<boolean>;
-    findPaginated(params: PaginationParams): Promise<PaginatedResult<E>>;
-    // ...
+  findById(id: ID): Promise<E | null>;
+  findAll(): Promise<E[]>;
+  save(entity: E): Promise<E>;
+  delete(id: ID): Promise<boolean>;
+  findPaginated(params: PaginationParams): Promise<PaginatedResult<E>>;
+  // ...
 }
 ```
 
 ### Repository
+
 The `Repository` layer uses a `StorageAdapter` to perform data operations. It can add business logic, caching, validation, or event dispatching.
 
 - `BaseRepository<E, ID>`: The foundational repository class.
@@ -36,7 +38,10 @@ bun add @di-framework/di-framework-repo
 The `@Repository` decorator automatically registers your repository with the `@di-framework/di-framework` container.
 
 ```typescript
-import { Repository, InMemoryRepository } from '@di-framework/di-framework-repo';
+import {
+  Repository,
+  InMemoryRepository,
+} from "@di-framework/di-framework-repo";
 
 interface User {
   id: number;
@@ -52,12 +57,12 @@ class UserRepository extends InMemoryRepository<User, number> {}
 Once registered, you can inject your repository into any other container-managed class:
 
 ```typescript
-import { Container, Component } from '@di-framework/di-framework/decorators';
+import { Container, Component } from "@di-framework/di-framework/decorators";
 
 @Container()
 class UserService {
   constructor(
-    @Component(UserRepository) private userRepository: UserRepository
+    @Component(UserRepository) private userRepository: UserRepository,
   ) {}
 
   async getUser(id: number) {
@@ -72,7 +77,7 @@ For prototyping, testing, or simple local state, use `InMemoryRepository`:
 
 ```typescript
 const repo = new InMemoryRepository<MyEntity, string>();
-await repo.save({ id: '1', name: 'Test' });
+await repo.save({ id: "1", name: "Test" });
 const items = await repo.findPaginated({ page: 1, size: 10 });
 ```
 
@@ -81,7 +86,10 @@ const items = await repo.findPaginated({ page: 1, size: 10 });
 You can implement your own adapter to connect to any data source:
 
 ```typescript
-import { StorageAdapter, EntityRepository } from '@di-framework/di-framework-repo';
+import {
+  StorageAdapter,
+  EntityRepository,
+} from "@di-framework/di-framework-repo";
 
 class PostgresAdapter<E, ID> implements StorageAdapter<E, ID> {
   // Implementation details...

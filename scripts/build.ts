@@ -9,10 +9,10 @@ async function build() {
   for (const pkgDir of PACKAGES) {
     console.log(`\n📦 Building ${pkgDir}...`);
     const fullPath = join(process.cwd(), pkgDir);
-    
+
     // 1. Clean dist
     await $`rm -rf ${join(fullPath, "dist")}`;
-    
+
     // 2. Run tsc
     console.log("  Running tsc...");
     await $`cd ${fullPath} && bun x tsc -p tsconfig.build.json`;

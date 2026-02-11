@@ -8,12 +8,6 @@
     "rootDir": ".",
     "allowImportingTsExtensions": false
   },
-  "include": [
-    "container.ts",
-    "decorators.ts",
-    "types.ts"
-  ],
-  "exclude": [
-    "tests/**"
-  ]
+  "include": ["container.ts", "decorators.ts", "types.ts"],
+  "exclude": ["tests/**"]
 }

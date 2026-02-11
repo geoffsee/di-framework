@@ -14,12 +14,17 @@ type ServiceDefinition<T = any> = {
   instance?: T;
 };
 
-type ContainerEventName = 'registered' | 'resolved' | 'cleared' | 'constructed' | 'telemetry';
+type ContainerEventName =
+  | "registered"
+  | "resolved"
+  | "cleared"
+  | "constructed"
+  | "telemetry";
 type ContainerEventPayloads = {
   registered: {
     key: string | Constructor;
     singleton: boolean;
-    kind: 'class' | 'factory';
+    kind: "class" | "factory";
   };
   resolved: {
     key: string | Constructor;
@@ -47,11 +52,11 @@ type ContainerEventPayloads = {
 };
 type Listener<T> = (payload: T) => void;
 
-const INJECTABLE_METADATA_KEY = 'di:injectable';
-const INJECT_METADATA_KEY = 'di:inject';
-const DESIGN_PARAM_TYPES_KEY = 'design:paramtypes';
-export const TELEMETRY_METADATA_KEY = 'di:telemetry';
-export const TELEMETRY_LISTENER_METADATA_KEY = 'di:telemetry-listener';
+const INJECTABLE_METADATA_KEY = "di:injectable";
+const INJECT_METADATA_KEY = "di:inject";
+const DESIGN_PARAM_TYPES_KEY = "design:paramtypes";
+export const TELEMETRY_METADATA_KEY = "di:telemetry";
+export const TELEMETRY_LISTENER_METADATA_KEY = "di:telemetry-listener";
 
 /**
  * Simple metadata storage that doesn't require reflect-metadata
@@ -59,35 +64,22 @@ export const TELEMETRY_LISTENER_METADATA_KEY = 'di:telemetry-listener';
  */
 const metadataStore = new Map<any, Map<string | symbol, any>>();
 
-function defineMetadata(
-  key: string | symbol,
-  value: any,
-  target: any
-): void {
+function defineMetadata(key: string | symbol, value: any, target: any): void {
   if (!metadataStore.has(target)) {
     metadataStore.set(target, new Map());
   }
   metadataStore.get(target)!.set(key, value);
 }
 
-function getMetadata(
-  key: string | symbol,
-  target: any
-): any {
+function getMetadata(key: string | symbol, target: any): any {
   return metadataStore.get(target)?.get(key);
 }
 
-function hasMetadata(
-  key: string | symbol,
-  target: any
-): boolean {
+function hasMetadata(key: string | symbol, target: any): boolean {
   return metadataStore.has(target) && metadataStore.get(target)!.has(key);
 }
 
-function getOwnMetadata(
-  key: string | symbol,
-  target: any
-): any {
+function getOwnMetadata(key: string | symbol, target: any): any {
   return getMetadata(key, target);
 }
 
@@ -101,7 +93,7 @@ export class Container {
    */
   public register<T>(
     serviceClass: Constructor<T>,
-    options: { singleton?: boolean } = { singleton: true }
+    options: { singleton?: boolean } = { singleton: true },
   ): this {
     const name = serviceClass.name;
     this.services.set(name, {
@@ -113,10 +105,10 @@ export class Container {
       singleton: options.singleton ?? true,
     });
 
-    this.emit('registered', {
+    this.emit("registered", {
       key: serviceClass,
       singleton: options.singleton ?? true,
-      kind: 'class',
+      kind: "class",
     });
     return this;
   }
@@ -127,16 +119,16 @@ export class Container {
   public registerFactory<T>(
     name: string,
     factory: ServiceFactory<T>,
-    options: { singleton?: boolean } = { singleton: true }
+    options: { singleton?: boolean } = { singleton: true },
   ): this {
     this.services.set(name, {
       type: factory,
       singleton: options.singleton ?? true,
     });
-    this.emit('registered', {
+    this.emit("registered", {
       key: name,
       singleton: options.singleton ?? true,
-      kind: 'factory',
+      kind: "factory",
     });
     return this;
   }
@@ -145,26 +137,29 @@ export class Container {
    * Get or create a service instance
    */
   public resolve<T>(serviceClass: Constructor<T> | string): T {
-    const key = typeof serviceClass === 'string' ? serviceClass : serviceClass;
-    const keyStr = typeof serviceClass === 'string' ? serviceClass : serviceClass.name;
+    const key = typeof serviceClass === "string" ? serviceClass : serviceClass;
+    const keyStr =
+      typeof serviceClass === "string" ? serviceClass : serviceClass.name;
 
     // Check for circular dependencies
     if (this.resolutionStack.has(key)) {
       throw new Error(
-        `Circular dependency detected while resolving ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(' -> ')} -> ${keyStr}`
+        `Circular dependency detected while resolving ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(" -> ")} -> ${keyStr}`,
       );
     }
 
     const definition = this.services.get(key);
     if (!definition) {
-      throw new Error(`Service '${keyStr}' is not registered in the DI container`);
+      throw new Error(
+        `Service '${keyStr}' is not registered in the DI container`,
+      );
     }
 
     const wasCached = definition.singleton && !!definition.instance;
 
     // Return cached singleton
     if (definition.singleton && definition.instance) {
-      this.emit('resolved', {
+      this.emit("resolved", {
         key,
         instance: definition.instance,
         singleton: true,
@@ -183,7 +178,7 @@ export class Container {
         definition.instance = instance;
       }
 
-      this.emit('resolved', {
+      this.emit("resolved", {
         key,
         instance,
         singleton: definition.singleton,
@@ -203,19 +198,19 @@ export class Container {
    */
   public construct<T>(
     serviceClass: Constructor<T>,
-    overrides: Record<number, any> = {}
+    overrides: Record<number, any> = {},
   ): T {
     const keyStr = serviceClass.name;
     if (this.resolutionStack.has(serviceClass)) {
       throw new Error(
-        `Circular dependency detected while constructing ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(' -> ')} -> ${keyStr}`
+        `Circular dependency detected while constructing ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(" -> ")} -> ${keyStr}`,
       );
     }
 
     this.resolutionStack.add(serviceClass);
     try {
       const instance = this.instantiate<T>(serviceClass, overrides);
-      this.emit('constructed', { key: serviceClass, instance, overrides });
+      this.emit("constructed", { key: serviceClass, instance, overrides });
       return instance;
     } finally {
       this.resolutionStack.delete(serviceClass);
@@ -235,7 +230,7 @@ export class Container {
   public clear(): void {
     const count = this.services.size;
     this.services.clear();
-    this.emit('cleared', { count });
+    this.emit("cleared", { count });
   }
 
   /**
@@ -244,7 +239,7 @@ export class Container {
   public getServiceNames(): string[] {
     const names = new Set<string>();
     this.services.forEach((_, key) => {
-      if (typeof key === 'string') {
+      if (typeof key === "string") {
         names.add(key);
       }
     });
@@ -274,7 +269,7 @@ export class Container {
    */
   public on<K extends keyof ContainerEventPayloads>(
     event: K,
-    listener: Listener<ContainerEventPayloads[K]>
+    listener: Listener<ContainerEventPayloads[K]>,
   ): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
@@ -289,14 +284,14 @@ export class Container {
    */
   public off<K extends keyof ContainerEventPayloads>(
     event: K,
-    listener: Listener<ContainerEventPayloads[K]>
+    listener: Listener<ContainerEventPayloads[K]>,
   ): void {
     this.listeners.get(event)?.delete(listener as Listener<any>);
   }
 
   private emit<K extends keyof ContainerEventPayloads>(
     event: K,
-    payload: ContainerEventPayloads[K]
+    payload: ContainerEventPayloads[K],
   ): void {
     const listeners = this.listeners.get(event);
     if (!listeners || listeners.size === 0) return;
@@ -315,10 +310,10 @@ export class Container {
    */
   private instantiate<T>(
     type: Constructor<T> | ServiceFactory<T>,
-    overrides: Record<number, any> = {}
+    overrides: Record<number, any> = {},
   ): T {
-    if (typeof type !== 'function') {
-      throw new Error('Service type must be a constructor or factory function');
+    if (typeof type !== "function") {
+      throw new Error("Service type must be a constructor or factory function");
     }
 
     // If it's a factory function (not a class), just call it
@@ -357,7 +352,7 @@ export class Container {
           dependencies.push(this.resolve(paramType.name));
         } else {
           throw new Error(
-            `Cannot resolve dependency of type ${paramType.name} for parameter '${paramName}' in ${type.name}`
+            `Cannot resolve dependency of type ${paramType.name} for parameter '${paramName}' in ${type.name}`,
           );
         }
       } else {
@@ -374,19 +369,29 @@ export class Container {
     // Call @Component() decorators on properties
     // Check both the instance and the constructor prototype for metadata
     const injectProperties = getMetadata(INJECT_METADATA_KEY, type) || {};
-    const protoInjectProperties = getMetadata(INJECT_METADATA_KEY, (type as Constructor<T>).prototype) || {};
+    const protoInjectProperties =
+      getMetadata(INJECT_METADATA_KEY, (type as Constructor<T>).prototype) ||
+      {};
 
-    const allInjectProperties = { ...injectProperties, ...protoInjectProperties };
+    const allInjectProperties = {
+      ...injectProperties,
+      ...protoInjectProperties,
+    };
 
-    Object.entries(allInjectProperties).forEach(([propName, targetType]: [string, any]) => {
-      if (!propName.startsWith('param_') && targetType) {
-        try {
-          (instance as any)[propName] = this.resolve(targetType);
-        } catch (error) {
-          console.warn(`Failed to inject property '${propName}' on ${type.name}:`, error);
+    Object.entries(allInjectProperties).forEach(
+      ([propName, targetType]: [string, any]) => {
+        if (!propName.startsWith("param_") && targetType) {
+          try {
+            (instance as any)[propName] = this.resolve(targetType);
+          } catch (error) {
+            console.warn(
+              `Failed to inject property '${propName}' on ${type.name}:`,
+              error,
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
     return instance;
   }
@@ -398,25 +403,30 @@ export class Container {
     const className = constructor.name;
 
     // Handle @TelemetryListener
-    const listenerMethods: string[] = getMetadata(TELEMETRY_LISTENER_METADATA_KEY, constructor.prototype) || [];
+    const listenerMethods: string[] =
+      getMetadata(TELEMETRY_LISTENER_METADATA_KEY, constructor.prototype) || [];
     listenerMethods.forEach((methodName) => {
       const method = (instance as any)[methodName];
-      if (typeof method === 'function') {
-        this.on('telemetry', (payload) => {
+      if (typeof method === "function") {
+        this.on("telemetry", (payload) => {
           try {
             method.call(instance, payload);
           } catch (err) {
-            console.error(`[Container] TelemetryListener '${className}.${methodName}' threw`, err);
+            console.error(
+              `[Container] TelemetryListener '${className}.${methodName}' threw`,
+              err,
+            );
           }
         });
       }
     });
 
     // Handle @Telemetry
-    const telemetryMethods: Record<string, any> = getMetadata(TELEMETRY_METADATA_KEY, constructor.prototype) || {};
+    const telemetryMethods: Record<string, any> =
+      getMetadata(TELEMETRY_METADATA_KEY, constructor.prototype) || {};
     Object.entries(telemetryMethods).forEach(([methodName, options]) => {
       const originalMethod = (instance as any)[methodName];
-      if (typeof originalMethod === 'function') {
+      if (typeof originalMethod === "function") {
         const self = this;
         (instance as any)[methodName] = function (...args: any[]) {
           const startTime = Date.now();
@@ -433,11 +443,15 @@ export class Container {
 
             if (options.logging) {
               const duration = payload.endTime - payload.startTime;
-              const status = error ? `ERROR: ${error.message || error}` : 'SUCCESS';
-              console.log(`[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`);
+              const status = error
+                ? `ERROR: ${error.message || error}`
+                : "SUCCESS";
+              console.log(
+                `[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`,
+              );
             }
 
-            self.emit('telemetry', payload);
+            self.emit("telemetry", payload);
           };
 
           try {
@@ -471,7 +485,7 @@ export class Container {
    */
   private isClass(func: Function): boolean {
     return (
-      typeof func === 'function' &&
+      typeof func === "function" &&
       func.prototype &&
       func.prototype.constructor === func
     );
@@ -487,11 +501,11 @@ export class Container {
 
     const paramsStr = match[1];
     return paramsStr
-      .split(',')
+      .split(",")
       .map((param) => {
         const trimmed = param.trim();
-        const withoutDefault = trimmed.split('=')[0] || '';
-        const withoutType = withoutDefault.split(':')[0] || '';
+        const withoutDefault = trimmed.split("=")[0] || "";
+        const withoutType = withoutDefault.split(":")[0] || "";
         return withoutType.trim();
       })
       .filter((param) => param);
@@ -506,7 +520,9 @@ export class Container {
 
     // Try to extract types from decorated constructor
     // In compiled TypeScript with emitDecoratorMetadata, types appear in decorator calls
-    const decoratorMatch = funcStr.match(/__decorate\(\[\s*(?:\w+\s*\([^)]*\),?\s*)*__param\((\d+),\s*(\w+)\([^)]*\)\)/g);
+    const decoratorMatch = funcStr.match(
+      /__decorate\(\[\s*(?:\w+\s*\([^)]*\),?\s*)*__param\((\d+),\s*(\w+)\([^)]*\)\)/g,
+    );
 
     if (decoratorMatch) {
       // Found decorator-based metadata

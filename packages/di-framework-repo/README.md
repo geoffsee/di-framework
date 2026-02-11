@@ -39,12 +39,12 @@ interface User {
 You can extend `InMemoryRepository` for quick prototyping:
 
 ```typescript
-import { InMemoryRepository } from '@geoffsee/df-repo';
+import { InMemoryRepository } from "@geoffsee/df-repo";
 
 class UserRepository extends InMemoryRepository<User, number> {
   async findByEmail(email: string): Promise<User | null> {
     const all = await this.findAll();
-    return all.find(u => u.email === email) || null;
+    return all.find((u) => u.email === email) || null;
   }
 }
 ```
@@ -54,7 +54,7 @@ class UserRepository extends InMemoryRepository<User, number> {
 Use the `@Repository` decorator to automatically register your repository with the `di-framework` container.
 
 ```typescript
-import { Repository } from '@geoffsee/df-repo';
+import { Repository } from "@geoffsee/df-repo";
 
 @Repository()
 class UserRepository extends InMemoryRepository<User, number> {
@@ -65,7 +65,7 @@ class UserRepository extends InMemoryRepository<User, number> {
 @Container()
 class UserService {
   constructor(@Component(UserRepository) private users: UserRepository) {}
-  
+
   async listUsers() {
     return this.users.findAll();
   }
@@ -77,7 +77,7 @@ class UserService {
 The `StorageAdapter` interface allows you to implement custom backends.
 
 ```typescript
-import { StorageAdapter, BaseRepository } from '@geoffsee/df-repo';
+import { StorageAdapter, BaseRepository } from "@geoffsee/df-repo";
 
 class MyCustomAdapter<E, ID> implements StorageAdapter<E, ID> {
   // Implement findById, save, delete, findPaginated, etc.
@@ -93,15 +93,18 @@ class MyRepository extends BaseRepository<User, number> {
 ## API Overview
 
 ### Repository Classes
+
 - `BaseRepository<E, ID>`: The foundational repository class.
 - `EntityRepository<E, ID>`: Standard entity-aware repository.
 - `SoftDeleteRepository<E, ID>`: Repository with soft-delete capabilities.
 - `InMemoryRepository<E, ID>`: Ready-to-use in-memory implementation.
 
 ### Decorators
+
 - `@Repository(options)`: Registers the class as a singleton in `di-framework`.
 
 ### Types
+
 - `StorageAdapter<E, ID>`: Interface for storage implementations.
 - `Page<T>` / `PaginatedResult<T>`: Standardized pagination metadata.
 - `EntityId`: Type alias for `string | number`.

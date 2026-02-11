@@ -1,95 +1,105 @@
-import type { StorageAdapter } from './adapter';
-import type { EntityId, PaginatedResult } from './types';
+import type { StorageAdapter } from "./adapter";
+import type { EntityId, PaginatedResult } from "./types";
 
 export abstract class BaseRepository<E, ID = EntityId> {
-    protected constructor(protected readonly adapter: StorageAdapter<E, ID>) {}
+  protected constructor(protected readonly adapter: StorageAdapter<E, ID>) {}
 
-    protected normalizeId(id: ID): ID {
-        // Default normalization (stringify) – can be overridden by subclasses if needed
-        return typeof id === 'string' ? (id as any) : (String(id) as any);
-    }
+  protected normalizeId(id: ID): ID {
+    // Default normalization (stringify) – can be overridden by subclasses if needed
+    return typeof id === "string" ? (id as any) : (String(id) as any);
+  }
 
-    // Forward most calls directly (you can add caching, validation, events here)
-    async findById(id: ID): Promise<E | null> {
-        return this.adapter.findById(this.normalizeId(id));
-    }
+  // Forward most calls directly (you can add caching, validation, events here)
+  async findById(id: ID): Promise<E | null> {
+    return this.adapter.findById(this.normalizeId(id));
+  }
 
-    async findAll(): Promise<E[]> {
-        return this.adapter.findAll();
-    }
+  async findAll(): Promise<E[]> {
+    return this.adapter.findAll();
+  }
 
-    async findMany(ids: ID[]): Promise<E[]> {
-        return this.adapter.findMany(ids.map(id => this.normalizeId(id)));
-    }
+  async findMany(ids: ID[]): Promise<E[]> {
+    return this.adapter.findMany(ids.map((id) => this.normalizeId(id)));
+  }
 
-    async save(entity: E): Promise<E> {
-        return this.adapter.save(entity);
-    }
+  async save(entity: E): Promise<E> {
+    return this.adapter.save(entity);
+  }
 
-    async delete(id: ID): Promise<boolean> {
-        return this.adapter.delete(this.normalizeId(id));
-    }
+  async delete(id: ID): Promise<boolean> {
+    return this.adapter.delete(this.normalizeId(id));
+  }
 
-    async findPaginated(
-        params: { page?: number; size?: number; [key: string]: unknown }
-    ): Promise<PaginatedResult<E>> {
-        return this.adapter.findPaginated(params as any);
-    }
+  async findPaginated(params: {
+    page?: number;
+    size?: number;
+    [key: string]: unknown;
+  }): Promise<PaginatedResult<E>> {
+    return this.adapter.findPaginated(params as any);
+  }
 
-    // Transaction support (if adapter provides it)
-    protected async inTransaction<T>(fn: () => Promise<T>): Promise<T> {
-        if (typeof this.adapter.transaction === 'function') {
-            return this.adapter.transaction(() => fn());
-        }
-        return fn(); // fallback
+  // Transaction support (if adapter provides it)
+  protected async inTransaction<T>(fn: () => Promise<T>): Promise<T> {
+    if (typeof this.adapter.transaction === "function") {
+      return this.adapter.transaction(() => fn());
     }
+    return fn(); // fallback
+  }
 
-    async dispose(): Promise<void> {
-        if (typeof this.adapter.dispose === 'function') {
-            await this.adapter.dispose();
-        }
+  async dispose(): Promise<void> {
+    if (typeof this.adapter.dispose === "function") {
+      await this.adapter.dispose();
     }
+  }
 }
 
 export type Database<T extends Record<string, typeof BaseRepository>> = {
-    [K in keyof T]: T[K] extends new (...args: any[]) => infer R
-        ? R
-        : T[K] extends { prototype: infer P }
-            ? P
-            : never;
+  [K in keyof T]: T[K] extends new (...args: any[]) => infer R
+    ? R
+    : T[K] extends { prototype: infer P }
+      ? P
+      : never;
 };
 
 export type RepositoryMap<T> = {
-    [K in keyof T]: T[K] extends BaseRepository<infer E> ? BaseRepository<E> : never;
+  [K in keyof T]: T[K] extends BaseRepository<infer E>
+    ? BaseRepository<E>
+    : never;
 };
 
-export abstract class EntityRepository<E, ID = EntityId> extends BaseRepository<E, ID> {}
+export abstract class EntityRepository<E, ID = EntityId> extends BaseRepository<
+  E,
+  ID
+> {}
 
 export type EntityOf<R> = R extends BaseRepository<infer E> ? E : never;
 export type IdOf<R> = R extends BaseRepository<any, infer ID> ? ID : never;
 
 export interface SoftDeletable {
-    deletedAt: Date | null;
+  deletedAt: Date | null;
 }
 
 export abstract class SoftDeleteRepository<
-    E extends SoftDeletable & { id: ID },
-    ID = EntityId,
+  E extends SoftDeletable & { id: ID },
+  ID = EntityId,
 > extends EntityRepository<E, ID> {
-    abstract softDelete(id: ID): Promise<boolean>;
-    abstract restore(id: ID): Promise<boolean>;
-    abstract findActive(): Promise<E[]>;
-    abstract findDeleted(): Promise<E[]>;
+  abstract softDelete(id: ID): Promise<boolean>;
+  abstract restore(id: ID): Promise<boolean>;
+  abstract findActive(): Promise<E[]>;
+  abstract findDeleted(): Promise<E[]>;
 
-    protected abstract afterNotifyDelete(id: ID): void;
+  protected abstract afterNotifyDelete(id: ID): void;
 
-    async softDeleteAndNotify(id: ID): Promise<boolean> {
-        const ok = await this.softDelete(id);
-        if (ok) this.afterNotifyDelete(id);
-        return ok;
-    }
+  async softDeleteAndNotify(id: ID): Promise<boolean> {
+    const ok = await this.softDelete(id);
+    if (ok) this.afterNotifyDelete(id);
+    return ok;
+  }
 }
 
 export interface SearchableRepository<E, ID = EntityId> {
-    search(query: string, params?: { page?: number; size?: number }): Promise<PaginatedResult<E>>;
+  search(
+    query: string,
+    params?: { page?: number; size?: number },
+  ): Promise<PaginatedResult<E>>;
 }
