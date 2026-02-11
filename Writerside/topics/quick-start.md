@@ -7,7 +7,7 @@ This guide will walk you through the basic concepts of the DI framework with sim
 The simplest way to use the framework is to mark a class with the `@Container()` decorator:
 
 ```typescript
-import { Container } from 'di-framework/decorators';
+import { Container } from '@di-framework/di-framework/decorators';
 
 @Container()
 export class DatabaseService {
@@ -31,7 +31,7 @@ You can inject dependencies into your services using the `@Component()` decorato
 ### Property Injection
 
 ```typescript
-import { Container, Component } from 'di-framework/decorators';
+import { Container, Component } from '@di-framework/di-framework/decorators';
 import { DatabaseService } from './DatabaseService';
 
 @Container()
@@ -69,7 +69,7 @@ export class UserService {
 To use your services, resolve them from the container:
 
 ```typescript
-import { useContainer } from 'di-framework/container';
+import { useContainer } from '@di-framework/di-framework/container';
 import { UserService } from './UserService';
 
 const container = useContainer();
@@ -118,7 +118,7 @@ Here's a complete example showing how everything works together:
 
 ```typescript
 // DatabaseService.ts
-import { Container } from 'di-framework/decorators';
+import { Container } from '@di-framework/di-framework/decorators';
 
 @Container()
 export class DatabaseService {
@@ -132,7 +132,7 @@ export class DatabaseService {
 }
 
 // UserService.ts
-import { Container, Component } from 'di-framework/decorators';
+import { Container, Component } from '@di-framework/di-framework/decorators';
 import { DatabaseService } from './DatabaseService';
 
 @Container()
@@ -146,7 +146,7 @@ export class UserService {
 }
 
 // main.ts
-import { useContainer } from 'di-framework/container';
+import { useContainer } from '@di-framework/di-framework/container';
 import { UserService } from './UserService';
 
 const container = useContainer();

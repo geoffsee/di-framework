@@ -12,6 +12,6 @@
 	"devDependencies": {
 		"typescript": "^5.5.2",
 		"wrangler": "^4.46.0",
-		"di-framework": "workspace:*"
+		"@di-framework/di-framework": "workspace:*"
 	}
 }

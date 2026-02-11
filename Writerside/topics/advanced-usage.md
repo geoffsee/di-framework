@@ -60,6 +60,42 @@ export class UserService {
 - Conditionally create different implementations
 - Integrate third-party libraries
 
+## Repository Pattern (df-repo)
+
+For larger applications, using the Repository pattern with `@di-framework/di-framework-repo` helps maintain a clean separation between business logic and data access.
+
+### Standard Repository
+
+```typescript
+import { Repository, InMemoryRepository } from '@di-framework/di-framework-repo';
+
+@Repository()
+export class UserRepository extends InMemoryRepository<User, number> {
+  async findByEmail(email: string): Promise<User | null> {
+    const all = await this.findAll();
+    return all.find(u => u.email === email) || null;
+  }
+}
+```
+
+### Soft Delete Support
+
+```typescript
+import { SoftDeleteRepository, SoftDeletable } from '@di-framework/di-framework-repo';
+
+interface Product extends SoftDeletable {
+  id: string;
+  name: string;
+}
+
+@Repository()
+export class ProductRepository extends SoftDeleteRepository<Product, string> {
+  // Implement required abstract methods for your adapter
+}
+```
+
+See the [Repositories documentation](repositories.md) for more details.
+
 ## Lifecycle Methods
 
 Services can implement lifecycle methods for initialization and context management:
@@ -170,7 +206,7 @@ export class MonitoringService {
 Create isolated containers for different parts of your application:
 
 ```typescript
-import { Container as DIContainer } from 'di-framework/container';
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 
 // Create custom containers
 const apiContainer = new DIContainer();
@@ -242,8 +278,8 @@ stop();
 Create fresh instances without registering them, and override constructor arguments for primitives or config:
 
 ```typescript
-import { Component } from 'di-framework/decorators';
-import { container } from 'di-framework/container';
+import { Component } from '@di-framework/di-framework/decorators';
+import { container } from '@di-framework/di-framework/container';
 
 class EmailService {
   constructor(@Component(LoggerService) private logger: LoggerService, private sender: string) {}

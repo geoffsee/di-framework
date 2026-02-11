@@ -12,12 +12,12 @@ Marks a class as injectable and automatically registers it with the DI container
 - `singleton?: boolean` (default: `true`) - Create a new instance each time or reuse the same instance
 - `container?: DIContainer` - Specify a custom container (defaults to global container)
 
-> **Note:** Import as `import { Container as DIContainer } from 'di-framework/container'` to avoid name collision with the `@Container` decorator.
+> **Note:** Import as `import { Container as DIContainer } from '@di-framework/di-framework/container'` to avoid name collision with the `@Container` decorator.
 
 **Example:**
 
 ```typescript
-import { Container } from 'di-framework/decorators';
+import { Container } from '@di-framework/di-framework/decorators';
 
 // Singleton service (default)
 @Container()
@@ -34,7 +34,7 @@ export class RequestScopedService {
 }
 
 // Custom container
-import { Container as DIContainer } from 'di-framework/container';
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 const customContainer = new DIContainer();
 
 @Container({ container: customContainer })
@@ -124,7 +124,7 @@ Returns the global DI container instance.
 **Example:**
 
 ```typescript
-import { useContainer } from 'di-framework/container';
+import { useContainer } from '@di-framework/di-framework/container';
 
 const container = useContainer();
 ```
@@ -248,8 +248,8 @@ Create a fresh instance without registering it, while still resolving dependenci
 **Example:**
 
 ```typescript
-import { Component } from 'di-framework/decorators';
-import { container } from 'di-framework/container';
+import { Component } from '@di-framework/di-framework/decorators';
+import { container } from '@di-framework/di-framework/container';
 import { LoggerService } from '../../packages/examples/services/LoggerService';
 
 class Greeter {

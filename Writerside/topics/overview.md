@@ -1,4 +1,4 @@
-# geoffsee/di-framework
+# @di-framework/di-framework
 
 A lightweight, type-safe Dependency Injection framework for TypeScript using decorators. This framework automatically manages service instantiation, dependency resolution, and lifecycle management.
 
@@ -12,6 +12,7 @@ A lightweight, type-safe Dependency Injection framework for TypeScript using dec
 - **Telemetry**: Built-in support for method tracking and monitoring with `@Telemetry` and `@TelemetryListener`.
 - **Error Detection**: Detects circular dependencies and unregistered services at runtime.
 - **Testing Support**: Easy to test with mock service registration.
+- **Repository Abstraction**: Includes `@di-framework/di-framework-repo` for standardized data access and storage-agnostic repositories.
 
 ## Why Use This Framework?
 
@@ -65,8 +66,8 @@ const appContext = container.resolve(ApplicationContext);
 ## Quick Example
 
 ```typescript
-import { Container, Component } from 'di-framework/decorators';
-import { useContainer } from 'di-framework/container';
+import { Container, Component } from '@di-framework/di-framework/decorators';
+import { useContainer } from '@di-framework/di-framework/container';
 
 // Define a service
 @Container()
@@ -97,5 +98,6 @@ userService.getUser('123');
 
 - [Installation](installation.md) - Set up the framework in your project
 - [Quick Start](quick-start.md) - Learn the basics with simple examples
+- [Repositories](repositories.md) - Standardized data access with df-repo
 - [API Reference](api-reference.md) - Complete API documentation
 - [Advanced Usage](advanced-usage.md) - Learn advanced patterns and techniques

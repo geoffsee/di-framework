@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "di-framework": "workspace:*"
+    "@di-framework/di-framework": "workspace:*"
   },
   "peerDependencies": {
     "typescript": "^5"

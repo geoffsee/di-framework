@@ -1,11 +1,12 @@
 {
-  "name": "@geoffsee/di-framework",
+  "name": "di-framework",
   "module": "build.ts",
   "type": "module",
   "private": true,
   "workspaces": [
     "packages/di-framework",
-    "packages/examples"
+    "packages/examples",
+    "packages/di-framework-repo"
   ],
   "devDependencies": {
     "@types/bun": "latest",

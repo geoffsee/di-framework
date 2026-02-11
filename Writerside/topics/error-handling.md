@@ -238,7 +238,7 @@ try {
 Test error handling in your services:
 
 ```typescript
-import { Container as DIContainer } from 'di-framework/container';
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 
 describe('ServiceA', () => {
   it('should handle missing dependencies gracefully', () => {

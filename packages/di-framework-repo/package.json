@@ -1,0 +1,29 @@
+{
+  "name": "@di-framework/di-framework-repo",
+  "version": "0.1.0",
+  "description": "A coherent abstraction of repositories and storage adapters for di-framework.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "module": "src/index.ts",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "peerDependencies": {
+    "@di-framework/di-framework": "workspace:*",
+    "typescript": "^5"
+  },
+  "peerDependenciesMeta": {
+    "@di-framework/di-framework": {
+      "optional": true
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ]
+}
