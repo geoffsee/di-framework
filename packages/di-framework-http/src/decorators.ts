@@ -1,9 +1,16 @@
 import registry from "./registry.ts";
+import { Container as ContainerDecorator } from "@di-framework/di-framework/decorators";
 
-export function Controller() {
+export function Controller(options: { singleton?: boolean; container?: any } = {}) {
+  // Compose DI registration with OpenAPI registry marking
+  const container = ContainerDecorator(options);
   return function (target: any) {
+    // Mark for HTTP/OpenAPI purposes
     target.isController = true;
     registry.addTarget(target);
+
+    // Also register with the DI container (same instance as core framework)
+    container(target);
   };
 }
 

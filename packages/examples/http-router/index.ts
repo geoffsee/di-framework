@@ -7,6 +7,9 @@ import {
   Controller,
   Endpoint,
 } from "@di-framework/di-framework-http";
+import { Component } from "@di-framework/di-framework/decorators";
+import { useContainer } from "@di-framework/di-framework/container";
+import { LoggerService } from "../services/LoggerService";
 
 const router = TypedRouter();
 
@@ -15,6 +18,16 @@ type EchoResponse = { echoed: string; timestamp: string };
 
 @Controller()
 export class EchoController {
+  // Because @Controller composes the core @Container decorator, this class is
+  // automatically registered with the DI container. We can inject services.
+  @Component(LoggerService)
+  private logger!: LoggerService;
+
+  echoMessage(message: string): EchoResponse {
+    this.logger.log(`Echoing: ${message}`);
+    return { echoed: message, timestamp: new Date().toISOString() };
+  }
+
   @Endpoint({
     summary: "Echo a message",
     description: "Returns the provided message with a server timestamp.",
@@ -26,10 +39,10 @@ export class EchoController {
     RequestSpec<Json<EchoPayload>>,
     ResponseSpec<EchoResponse>
   >("/echo", (req) => {
-    return json({
-      echoed: req.content.message,
-      timestamp: new Date().toISOString(),
-    });
+    // Demonstrate auto DI registration: resolve the controller instance from
+    // the global container without any manual registration.
+    const controller = useContainer().resolve(EchoController);
+    return json(controller.echoMessage(req.content.message));
   });
 }
 

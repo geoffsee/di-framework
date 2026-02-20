@@ -37,6 +37,7 @@
     "typescript": "^5"
   },
   "peerDependencies": {
+    "@di-framework/di-framework": "workspace:*",
     "typescript": "^5"
   }
 }
