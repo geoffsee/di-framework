@@ -8,22 +8,24 @@ Lightweight TypeScript decorators and a type-safe router for [itty-router](https
 - **Auto JSON Enforcement**: Automatically validates `Content-Type: application/json` for mutation methods (POST, PUT, PATCH).
 - **Multipart Support**: Opt into `multipart/form-data` handling with `Multipart<T>` and `{ multipart: true }`.
 - **Declarative Metadata**: Use `@Controller` and `@Endpoint` decorators to document your API logic directly in code.
+- **DI Integration**: `@Controller` composes the core DI `@Container` decorator, so controllers are auto-registered and can use `@Component` injection and `useContainer().resolve(...)`.
 - **OpenAPI 3.1 Support**: Generate a complete OpenAPI specification from your code at build time.
 - **Minimal Footprint**: Built on top of the ultra-light `itty-router`.
 
 ## Installation
 
 ```bash
-bun add @di-framework/di-framework-http
+# Install the HTTP package and the core DI framework (peer dependency)
+bun add @di-framework/di-framework-http @di-framework/di-framework
 # or
-npm install @di-framework/di-framework-http
+npm install @di-framework/di-framework-http @di-framework/di-framework
 ```
 
 ## Quick Start
 
-### 1. Create a Controller
+### 1. Create a Controller (DI-aware)
 
-Annotate your API logic using decorators and the `TypedRouter`.
+Annotate your API logic using decorators and the `TypedRouter`. Controllers are automatically registered with the DI container, so you can inject services and resolve the controller instance.
 
 ```typescript
 import {
@@ -35,14 +37,34 @@ import {
   Controller,
   Endpoint,
 } from "@di-framework/di-framework-http";
+import { Component, Container } from "@di-framework/di-framework/decorators";
+import { useContainer } from "@di-framework/di-framework/container";
 
 const router = TypedRouter();
 
 type EchoPayload = { message: string };
 type EchoResponse = { echoed: string; timestamp: string };
 
+// Example DI-managed service
+@Container()
+export class LoggerService {
+  log(msg: string) {
+    console.log(msg);
+  }
+}
+
 @Controller()
 export class EchoController {
+  // Because @Controller composes the core @Container decorator, this class is
+  // automatically registered with the DI container. We can inject services.
+  @Component(LoggerService)
+  private logger!: LoggerService;
+
+  echoMessage(message: string): EchoResponse {
+    this.logger.log(`Echoing: ${message}`);
+    return { echoed: message, timestamp: new Date().toISOString() };
+  }
+
   @Endpoint({
     summary: "Echo a message",
     description: "Returns the provided message with a server timestamp.",
@@ -54,11 +76,10 @@ export class EchoController {
     RequestSpec<Json<EchoPayload>>,
     ResponseSpec<EchoResponse>
   >("/echo", (req) => {
-    // req.content is typed as EchoPayload
-    return json({
-      echoed: req.content.message,
-      timestamp: new Date().toISOString(),
-    });
+    // Demonstrate auto DI registration: resolve the controller instance from
+    // the global container without any manual registration.
+    const controller = useContainer().resolve(EchoController);
+    return json(controller.echoMessage(req.content.message));
   });
 }
 
@@ -165,9 +186,13 @@ A typed wrapper around itty-router's `json` helper.
 
 Body spec markers used with `RequestSpec<>` to declare the expected content type. `Json<T>` types `req.content` as `T`; `Multipart<T>` types it as `FormData`. Multipart routes require passing `{ multipart: true }` as the third argument to the route method.
 
-### `@Controller()`
+### `@Controller(options?)`
 
-Class decorator that marks a class for inclusion in the OpenAPI registry.
+Composed decorator that:
+- Marks a class for inclusion in the OpenAPI registry; and
+- Registers the class with the core DI container (same instance as `@di-framework/di-framework`).
+
+**Options:** `{ singleton?: boolean; container?: DIContainer }`
 
 ### `@Endpoint(metadata)`
 
