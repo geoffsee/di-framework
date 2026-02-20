@@ -5,6 +5,7 @@
   "private": true,
   "workspaces": [
     "packages/di-framework",
+    "packages/di-framework-http",
     "packages/examples",
     "packages/di-framework-repo"
   ],

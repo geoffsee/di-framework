@@ -13,14 +13,31 @@
     },
     "packages/di-framework": {
       "name": "@di-framework/di-framework",
-      "version": "2.0.4",
+      "version": "0.0.0-prerelease-0",
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/di-framework-http": {
+      "name": "@di-framework/di-framework-http",
+      "version": "0.0.0-prerelease.4",
+      "bin": {
+        "di-framework-http": "./dist/src/cli.js",
+      },
+      "dependencies": {
+        "itty-router": "^5.0.22",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5",
+      },
       "peerDependencies": {
         "typescript": "^5",
       },
     },
     "packages/di-framework-repo": {
       "name": "@di-framework/di-framework-repo",
-      "version": "0.1.0",
+      "version": "0.0.0-prerelease-0",
       "peerDependencies": {
         "@di-framework/di-framework": "workspace:*",
         "typescript": "^5",
@@ -33,6 +50,7 @@
       "name": "examples",
       "devDependencies": {
         "@di-framework/di-framework": "workspace:*",
+        "@di-framework/di-framework-http": "workspace:*",
         "@types/bun": "latest",
       },
       "peerDependencies": {
@@ -42,6 +60,8 @@
   },
   "packages": {
     "@di-framework/di-framework": ["@di-framework/di-framework@workspace:packages/di-framework"],
+
+    "@di-framework/di-framework-http": ["@di-framework/di-framework-http@workspace:packages/di-framework-http"],
 
     "@di-framework/di-framework-repo": ["@di-framework/di-framework-repo@workspace:packages/di-framework-repo"],
 
@@ -60,6 +80,8 @@
     "examples": ["examples@workspace:packages/examples"],
 
     "happy-dom": ["happy-dom@20.6.1", "", { "dependencies": { "@types/node": ">=20.0.0", "@types/whatwg-mimetype": "^3.0.2", "@types/ws": "^8.18.1", "entities": "^6.0.1", "whatwg-mimetype": "^3.0.0", "ws": "^8.18.3" } }, "sha512-+0vhESXXhFwkdjZnJ5DlmJIfUYGgIEEjzIjB+aKJbFuqlvvKyOi+XkI1fYbgYR9QCxG5T08koxsQ6HrQfa5gCQ=="],
+
+    "itty-router": ["itty-router@5.0.22", "", {}, "sha512-9hmdGErWdYDOurGYxSbqLhy4EFReIwk71hMZTJ5b+zfa2zjMNV1ftFno2b8VjAQvX615gNB8Qxbl9JMRqHnIVA=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
