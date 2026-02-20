@@ -10,8 +10,8 @@
     "build": ""
   },
   "devDependencies": {
-    "typescript": "^5.5.2",
-    "wrangler": "^4.46.0",
+    "typescript": "latest",
+    "wrangler": "latest",
     "@di-framework/di-framework": "workspace:*"
   }
 }
