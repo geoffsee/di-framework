@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@di-framework/di-framework": ["../di-framework/dist/index.d.ts"],
+      "@di-framework/di-framework/*": ["../di-framework/dist/*"]
+    }
   },
   "include": ["src/**/*"]
 }

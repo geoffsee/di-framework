@@ -17,11 +17,6 @@
     "@di-framework/di-framework": "workspace:*",
     "typescript": "^5"
   },
-  "peerDependenciesMeta": {
-    "@di-framework/di-framework": {
-      "optional": true
-    }
-  },
   "files": [
     "dist",
     "README.md"

@@ -66,6 +66,24 @@ If you're using SWC, ensure your `.swcrc` has decorator support enabled:
 
 The decorators are fully integrated with SWC's native support - **no need for `reflect-metadata` or any other polyfill**. This keeps your bundle size small and your dependencies minimal.
 
+## Import paths and container singleton
+
+Always import from the scoped package `@di-framework/di-framework/*` to ensure a single global container instance. Mixing different import IDs (e.g., `di-framework/*` or relative paths to sources) can load a second copy of the library and create a second global container instance.
+
+Correct:
+
+```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+import { Container, Component } from "@di-framework/di-framework/decorators";
+```
+
+Avoid:
+
+```typescript
+import { useContainer } from "di-framework/container"; // Wrong: unscoped id
+import { Container } from "../../di-framework/decorators"; // Wrong: relative id
+```
+
 ## Verify Installation
 
 Create a simple test file to verify the installation:

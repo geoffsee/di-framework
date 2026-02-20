@@ -6,7 +6,8 @@
     "emitDeclarationOnly": false,
     "outDir": "dist",
     "rootDir": ".",
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["container.ts", "decorators.ts", "types.ts"],
   "exclude": ["tests/**"]

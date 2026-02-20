@@ -7,6 +7,9 @@ Learn advanced patterns and techniques for using the DI framework effectively.
 By default, all services are singletons - the same instance is reused. For services that need a new instance each time, use `singleton: false`:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 @Container({ singleton: false })
 export class RequestContext {
   id = Math.random().toString();
@@ -34,6 +37,9 @@ console.log(ctx1.id !== ctx2.id); // true
 Register services using factory functions for complex initialization logic:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 container.registerFactory(
   "apiClient",
   () => {
@@ -113,6 +119,9 @@ See the [Repositories documentation](repositories.md) for more details.
 Services can implement lifecycle methods for initialization and context management:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 @Container()
 export class DatabaseService {
   private connected = false;
@@ -256,6 +265,9 @@ const workerService = workerContainer.resolve(WorkerService);
 Clone an existing container and optionally carry over singleton instances:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 // Seed the base container
 container.register(DatabaseService);
 container.register(LoggerService);
@@ -276,6 +288,9 @@ const tenantCtx = tenantContainer.resolve(ApplicationContext);
 Use the observer hooks to add diagnostics or metrics around registration and resolution:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 const stop = container.on("resolved", ({ key, singleton, fromCache }) => {
   const name = typeof key === "string" ? key : key.name;
   metrics.increment("di.resolve", { name, singleton, fromCache });
@@ -318,6 +333,9 @@ const emailer = container.construct(EmailService, {
 Create configuration services using factory functions:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 // Register configuration
 container.registerFactory(
   "config",
@@ -353,6 +371,9 @@ export class DatabaseService {
 Register different implementations based on environment:
 
 ```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+
 // Register different implementations
 if (process.env.NODE_ENV === "production") {
   container.registerFactory("logger", () => new ProductionLogger(), {

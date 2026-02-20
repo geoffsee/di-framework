@@ -1,19 +1,16 @@
-import { Container } from "@di-framework/di-framework/decorators";
+import { Container as ContainerDecorator } from "@di-framework/di-framework/decorators";
 
 /**
- * Optional decorator to register a repository with di-framework.
- * If di-framework is not present, it will do nothing (but typically it will be present if this is used).
+ * Repository decorator.
  *
- * @param options Registration options
+ * This package requires `@di-framework/di-framework` as a peer dependency and
+ * delegates to its `@Container` decorator to register repositories with the
+ * same singleton/global container instance. Ensure you always import the DI
+ * framework using the scoped package name (`@di-framework/di-framework/*`) to
+ * avoid loading multiple copies and accidentally creating multiple containers.
  */
 export function Repository(
   options: { singleton?: boolean; container?: any } = {},
 ) {
-  try {
-    // We try to use di-framework's @Container decorator if it's available
-    return Container(options);
-  } catch (e) {
-    // If di-framework is not available or fails to load, we return a no-op decorator
-    return (target: any) => target;
-  }
+  return ContainerDecorator(options);
 }

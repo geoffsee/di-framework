@@ -120,6 +120,25 @@ export class MonitoringService {
 
 ## Container API
 
+### Getting a container instance
+
+To interact with the container, you can either obtain the shared global instance via a function, or import the shared instance directly.
+
+Option A — using a function:
+
+```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+const container = useContainer();
+```
+
+Option B — using a named import:
+
+```typescript
+import { container } from "@di-framework/di-framework/container";
+```
+
+Note: Prefer Option A when you want to make the acquisition explicit in your code examples; both options reference the same singleton instance by default.
+
 ### useContainer()
 
 Returns the global DI container instance.

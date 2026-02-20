@@ -16,10 +16,28 @@ A coherent abstraction of repositories and storage adapters for TypeScript, with
 bun add @geoffsee/df-repo
 ```
 
-Optional: If you want to use the `@Repository` decorator for dependency injection, ensure you have `di-framework` installed.
+Required for DI integration: If you want to use the `@Repository` decorator for dependency injection, install the DI framework peer dependency.
 
 ```bash
-bun add di-framework
+bun add @di-framework/di-framework
+```
+
+Important: Always import from the scoped package name `@di-framework/di-framework/*`.
+
+Mixing different import IDs (e.g., `di-framework/*` or relative paths to sources) can load a second copy of the library and create a second global container instance.
+
+Correct:
+
+```ts
+import { useContainer } from "@di-framework/di-framework/container";
+import { Container, Component } from "@di-framework/di-framework/decorators";
+```
+
+Avoid:
+
+```ts
+import { useContainer } from "di-framework/container"; // Wrong: unscoped id
+import { Container } from "../../di-framework/decorators"; // Wrong: relative id
 ```
 
 ## Basic Usage

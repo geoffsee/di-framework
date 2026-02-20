@@ -33,6 +33,24 @@ The `Repository` layer uses a `StorageAdapter` to perform data operations. It ca
 bun add @di-framework/di-framework-repo
 ```
 
+## Important: Scoped imports
+
+Always import from the scoped package `@di-framework/di-framework/*` to ensure a single global container instance. Mixing different import IDs (e.g., `di-framework/*` or relative paths to sources) can load a second copy of the library and create a second global container instance.
+
+Correct:
+
+```typescript
+import { useContainer } from "@di-framework/di-framework/container";
+import { Container, Component } from "@di-framework/di-framework/decorators";
+```
+
+Avoid:
+
+```typescript
+import { useContainer } from "di-framework/container"; // Wrong: unscoped id
+import { Container } from "../../di-framework/decorators"; // Wrong: relative id
+```
+
 ## Usage with @di-framework/di-framework
 
 The `@Repository` decorator automatically registers your repository with the `@di-framework/di-framework` container.

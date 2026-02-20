@@ -7,13 +7,13 @@
 import {
   Container as DIContainer,
   useContainer,
-} from "../../di-framework/container";
+} from "@di-framework/di-framework/container";
 import {
   Container,
   Component,
   Telemetry,
   TelemetryListener,
-} from "../../di-framework/decorators";
+} from "@di-framework/di-framework/decorators";
 
 // ============================================================================
 // Example 1: Multi-Level Dependency Chains

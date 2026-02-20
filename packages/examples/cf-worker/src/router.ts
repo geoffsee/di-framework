@@ -1,4 +1,4 @@
-import { useContainer } from "di-framework/container";
+import { useContainer } from "@di-framework/di-framework/container";
 import { ConfigService } from "./services/ConfigService";
 import { CounterService } from "./services/CounterService";
 import { LoggerService } from "../../services/LoggerService";
