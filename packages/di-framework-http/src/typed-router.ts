@@ -7,7 +7,10 @@ import {
 
 /** Marker for body "shape + content-type" */
 export type Json<T> = { readonly __kind: "json"; readonly __type?: T };
-export type Multipart<T> = { readonly __kind: "multipart"; readonly __type?: T };
+export type Multipart<T> = {
+  readonly __kind: "multipart";
+  readonly __type?: T;
+};
 
 /** Spec types you’ll use in generics */
 export type RequestSpec<BodySpec = unknown> = { readonly __req?: BodySpec };
@@ -15,9 +18,11 @@ export type ResponseSpec<Body = unknown> = { readonly __res?: Body };
 
 /** Map a BodySpec to the actual req.content type */
 type ContentOf<BodySpec> =
-  BodySpec extends Json<infer T> ? T :
-  BodySpec extends Multipart<infer _T> ? FormData :
-  unknown;
+  BodySpec extends Json<infer T>
+    ? T
+    : BodySpec extends Multipart<infer _T>
+      ? FormData
+      : unknown;
 
 /** The actual request type your handlers receive */
 export type TypedRequest<ReqSpec> = IRequest & {

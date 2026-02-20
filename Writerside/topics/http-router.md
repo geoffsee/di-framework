@@ -189,6 +189,7 @@ Body spec markers used with `RequestSpec<>` to declare the expected content type
 ### `@Controller(options?)`
 
 Composed decorator that:
+
 - Marks a class for inclusion in the OpenAPI registry; and
 - Registers the class with the core DI container (same instance as `@di-framework/di-framework`).
 

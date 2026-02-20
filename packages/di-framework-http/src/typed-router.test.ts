@@ -1,5 +1,11 @@
 import { describe, it, expect } from "bun:test";
-import { TypedRouter, json, type Multipart, type RequestSpec, type ResponseSpec } from "./typed-router.ts";
+import {
+  TypedRouter,
+  json,
+  type Multipart,
+  type RequestSpec,
+  type ResponseSpec,
+} from "./typed-router.ts";
 
 describe("TypedRouter", () => {
   it("should handle GET requests", async () => {
@@ -107,7 +113,10 @@ describe("TypedRouter", () => {
 
   it("should handle multipart POST requests with { multipart: true }", async () => {
     const router = TypedRouter();
-    router.post<RequestSpec<Multipart<{ file: File }>>, ResponseSpec<{ ok: boolean }>>(
+    router.post<
+      RequestSpec<Multipart<{ file: File }>>,
+      ResponseSpec<{ ok: boolean }>
+    >(
       "/upload",
       (req) => {
         return json({ ok: req.content instanceof FormData });
@@ -155,11 +164,7 @@ describe("TypedRouter", () => {
 
   it("should not enforce JSON content-type on multipart routes", async () => {
     const router = TypedRouter();
-    router.post(
-      "/upload",
-      () => json({ ok: true }),
-      { multipart: true },
-    );
+    router.post("/upload", () => json({ ok: true }), { multipart: true });
 
     const formData = new FormData();
     formData.append("field", "value");

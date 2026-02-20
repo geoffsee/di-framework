@@ -1,7 +1,9 @@
 import registry from "./registry.ts";
 import { Container as ContainerDecorator } from "@di-framework/di-framework/decorators";
 
-export function Controller(options: { singleton?: boolean; container?: any } = {}) {
+export function Controller(
+  options: { singleton?: boolean; container?: any } = {},
+) {
   // Compose DI registration with OpenAPI registry marking
   const container = ContainerDecorator(options);
   return function (target: any) {
