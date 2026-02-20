@@ -1,0 +1,43 @@
+{
+  "name": "@di-framework/di-framework-http",
+  "version": "0.0.0-prerelease.4",
+  "description": "Extends di-framework with HTTP features",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "bun": "./index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "author": "github.com/geoffsee",
+  "license": "MIT",
+  "repository": "https://github.com/geoffsee/di-framework",
+  "bin": {
+    "di-framework-http": "./dist/src/cli.js"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && bun build ./index.ts ./src/cli.ts --outdir ./dist --target node --external itty-router && tsc --emitDeclarationOnly --declaration --outDir dist",
+    "prepublishOnly": "npm run build",
+    "dev": "bun ../examples/http-router/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "itty-router": "^5.0.22"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "@di-framework/di-framework": "workspace:*",
+    "typescript": "^5"
+  }
+}
