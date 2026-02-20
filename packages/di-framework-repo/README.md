@@ -1,4 +1,4 @@
-# @geoffsee/df-repo
+# @di-framework/di-framework-repo
 
 A coherent abstraction of repositories and storage adapters for TypeScript, with optional integration for `di-framework`.
 
@@ -13,7 +13,7 @@ A coherent abstraction of repositories and storage adapters for TypeScript, with
 ## Installation
 
 ```bash
-bun add @geoffsee/df-repo
+bun add @di-framework/di-framework-repo
 ```
 
 Required for DI integration: If you want to use the `@Repository` decorator for dependency injection, install the DI framework peer dependency.
@@ -57,7 +57,7 @@ interface User {
 You can extend `InMemoryRepository` for quick prototyping:
 
 ```typescript
-import { InMemoryRepository } from "@geoffsee/df-repo";
+import { InMemoryRepository } from "@di-framework/di-framework-repo";
 
 class UserRepository extends InMemoryRepository<User, number> {
   async findByEmail(email: string): Promise<User | null> {
@@ -72,7 +72,7 @@ class UserRepository extends InMemoryRepository<User, number> {
 Use the `@Repository` decorator to automatically register your repository with the `di-framework` container.
 
 ```typescript
-import { Repository } from "@geoffsee/df-repo";
+import { Repository } from "@di-framework/di-framework-repo";
 
 @Repository()
 class UserRepository extends InMemoryRepository<User, number> {
@@ -95,7 +95,7 @@ class UserService {
 The `StorageAdapter` interface allows you to implement custom backends.
 
 ```typescript
-import { StorageAdapter, BaseRepository } from "@geoffsee/df-repo";
+import { StorageAdapter, BaseRepository } from "@di-framework/di-framework-repo";
 
 class MyCustomAdapter<E, ID> implements StorageAdapter<E, ID> {
   // Implement findById, save, delete, findPaginated, etc.

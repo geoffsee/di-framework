@@ -6,6 +6,7 @@
 npm i @di-framework/di-framework
 ```
 
-- `packages/di-framework` - source code for the `@di-framework/di-framework` package
-- `packages/di-framework-repo` - standardized repository abstraction for `@di-framework/di-framework`
-- `packages/examples` - usage examples of `@di-framework/di-framework`
+- `packages/di-framework` - core container
+- `packages/di-framework-repo` - data access
+- `packages/di-framework-http` - http handling
+- `packages/examples` - usage examples
