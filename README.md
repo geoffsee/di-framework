@@ -13,7 +13,7 @@ npm i @di-framework/di-framework
 - `packages/examples` - usage examples
 
 ## CLI
-`bun x @di-framework/bin`
+`bun x @di-framework/cli`
 ```
 di-framework <command>
 ```
