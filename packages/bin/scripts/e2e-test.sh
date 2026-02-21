@@ -73,11 +73,11 @@ fi
 echo ""
 
 # 4. Run framework tests
-print_test "Running DI framework unit tests..."
-if (cd packages/di-framework && bun test); then
-  print_success "Framework unit tests passed"
+print_test "Running tests..."
+if (bun test:all); then
+  print_success "Tests passed"
 else
-  print_error "Framework unit tests failed"
+  print_error "Tests failed"
   exit 1
 fi
 
