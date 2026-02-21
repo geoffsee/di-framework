@@ -1,6 +1,6 @@
 {
   "name": "@di-framework/di-framework-http",
-  "version": "0.0.0-prerelease.304",
+  "version": "0.0.0-prerelease.305",
   "description": "Extends di-framework with HTTP features",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -40,7 +40,7 @@
     "typescript": "^5"
   },
   "peerDependencies": {
-    "@di-framework/di-framework": "workspace:*",
+    "@di-framework/di-framework": "workspace:^",
     "typescript": "^5"
   }
 }
