@@ -38,6 +38,7 @@ if (command === "generate") {
           // Try to import from @di-framework/di-framework-http if it exists in node_modules
           // @ts-ignore - this may not exist in development but will in a user project
           const dfHttp = await import("@di-framework/di-framework-http");
+          // @ts-ignore - dfHttp shape depends on runtime context
           registryToUse = dfHttp.default || dfHttp.registry;
         } catch {
           // Fallback to local import if running from source/bundle

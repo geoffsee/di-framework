@@ -27,7 +27,8 @@
     "experimentalDecorators": true,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "rootDir": "."
   },
   "include": ["src/**/*", "index.ts"],
   "exclude": [
