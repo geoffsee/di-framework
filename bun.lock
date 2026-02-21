@@ -13,7 +13,7 @@
     },
     "packages/bin": {
       "name": "@di-framework/cli",
-      "version": "0.0.0-prerelease.301",
+      "version": "0.0.0-prerelease.303",
       "bin": {
         "di-framework": "dist/di-framework",
       },
@@ -26,14 +26,14 @@
     },
     "packages/di-framework": {
       "name": "@di-framework/di-framework",
-      "version": "0.0.0-prerelease.301",
+      "version": "0.0.0-prerelease.303",
       "peerDependencies": {
         "typescript": "^5",
       },
     },
     "packages/di-framework-http": {
       "name": "@di-framework/di-framework-http",
-      "version": "0.0.0-prerelease.301",
+      "version": "0.0.0-prerelease.303",
       "bin": {
         "di-framework-http": "./dist/src/cli.js",
       },
@@ -51,7 +51,7 @@
     },
     "packages/di-framework-repo": {
       "name": "@di-framework/di-framework-repo",
-      "version": "0.0.0-prerelease.301",
+      "version": "0.0.0-prerelease.303",
       "peerDependencies": {
         "@di-framework/di-framework": "workspace:*",
         "typescript": "^5",
@@ -63,8 +63,8 @@
     "packages/examples": {
       "name": "examples",
       "devDependencies": {
-        "@di-framework/di-framework": "workspace:*",
-        "@di-framework/di-framework-http": "workspace:*",
+        "@di-framework/di-framework": "file:../di-framework",
+        "@di-framework/di-framework-http": "file:../di-framework-http",
         "@types/bun": "latest",
       },
       "peerDependencies": {
@@ -106,5 +106,11 @@
     "whatwg-mimetype": ["whatwg-mimetype@3.0.0", "", {}, "sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q=="],
 
     "ws": ["ws@8.19.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg=="],
+
+    "examples/@di-framework/di-framework": ["@di-framework/di-framework@file:packages/di-framework", { "peerDependencies": { "typescript": "^5" } }],
+
+    "examples/@di-framework/di-framework-http": ["@di-framework/di-framework-http@file:packages/di-framework-http", { "dependencies": { "itty-router": "^5.0.22" }, "devDependencies": { "@types/bun": "latest", "typescript": "^5" }, "peerDependencies": { "@di-framework/di-framework": "workspace:*", "typescript": "^5" }, "bin": { "di-framework-http": "./dist/src/cli.js" } }],
+
+    "examples/@di-framework/di-framework-http/@di-framework/di-framework": ["@di-framework/di-framework@file:packages/di-framework", { "peerDependencies": { "typescript": "^5" } }],
   }
 }

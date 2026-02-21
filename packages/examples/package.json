@@ -8,8 +8,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@di-framework/di-framework": "workspace:*",
-    "@di-framework/di-framework-http": "workspace:*"
+    "@di-framework/di-framework": "file:../di-framework",
+    "@di-framework/di-framework-http": "file:../di-framework-http"
   },
   "peerDependencies": {
     "typescript": "^5"
