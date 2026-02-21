@@ -1,7 +1,7 @@
 import { $ } from "bun";
 import { join } from "path";
 
-const PACKAGES = ["packages/di-framework", "packages/di-framework-repo"];
+const PACKAGES = ["packages/di-framework", "packages/di-framework-repo",  "packages/di-framework-http"];
 
 async function publish() {
   // 1. Run tests first
