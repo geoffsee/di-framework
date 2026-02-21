@@ -1,31 +1,31 @@
 #!/usr/bin/env tsx
 
-import ts from "typescript";
-import path from "node:path";
-import process from "node:process";
+import ts from 'typescript';
+import path from 'node:path';
+import process from 'node:process';
 
 type Args = {
   tsconfigPath?: string;
   pretty: boolean;
-  from: "cwd" | "script";
+  from: 'cwd' | 'script';
 };
 
 export function parseArgs(argv: string[]): Args {
   let tsconfigPath: string | undefined;
   let pretty = process.stdout.isTTY;
-  let from: Args["from"] = "cwd";
+  let from: Args['from'] = 'cwd';
 
   for (const arg of argv.slice(2)) {
-    if (arg.startsWith("--pretty=")) {
-      pretty = arg.split("=")[1] !== "0";
+    if (arg.startsWith('--pretty=')) {
+      pretty = arg.split('=')[1] !== '0';
       continue;
     }
-    if (arg.startsWith("--from=")) {
-      const v = arg.split("=")[1];
-      if (v === "cwd" || v === "script") from = v;
+    if (arg.startsWith('--from=')) {
+      const v = arg.split('=')[1];
+      if (v === 'cwd' || v === 'script') from = v;
       continue;
     }
-    if (!arg.startsWith("-") && !tsconfigPath) {
+    if (!arg.startsWith('-') && !tsconfigPath) {
       tsconfigPath = arg;
     }
   }
@@ -43,7 +43,7 @@ export function findTopmostTsconfig(startDir: string): string | undefined {
   let lastFound: string | undefined;
 
   while (true) {
-    const candidate = path.join(dir, "tsconfig.json");
+    const candidate = path.join(dir, 'tsconfig.json');
     if (ts.sys.fileExists(candidate)) lastFound = candidate;
 
     const parent = path.dirname(dir);
@@ -59,7 +59,7 @@ function formatDiagnostic(d: ts.Diagnostic, host: ts.FormatDiagnosticsHost): str
 }
 
 function stripAnsi(s: string) {
-  return s.replace(/\u001b\[[0-9;]*m/g, "");
+  return s.replace(/\u001b\[[0-9;]*m/g, '');
 }
 
 export async function typecheck() {
@@ -67,17 +67,17 @@ export async function typecheck() {
 
   // Start search either from where you run it, or from where the script lives.
   const startDir =
-      args.from === "script"
-          ? path.dirname(path.resolve(process.argv[1] ?? process.cwd()))
-          : process.cwd();
+    args.from === 'script'
+      ? path.dirname(path.resolve(process.argv[1] ?? process.cwd()))
+      : process.cwd();
 
   const tsconfigPath = args.tsconfigPath
-      ? path.resolve(process.cwd(), args.tsconfigPath)
-      : findTopmostTsconfig(startDir);
+    ? path.resolve(process.cwd(), args.tsconfigPath)
+    : findTopmostTsconfig(startDir);
 
   if (!tsconfigPath) {
     console.error(
-        "❌ Could not find tsconfig.json. Pass a path as the first argument, or run with --from=script.",
+      '❌ Could not find tsconfig.json. Pass a path as the first argument, or run with --from=script.',
     );
     process.exit(2);
   }
@@ -92,7 +92,7 @@ export async function typecheck() {
 
   const configJson = ts.parseConfigFileTextToJson(tsconfigPath, configFileText);
   if (configJson.error) {
-    console.error("❌ Failed to parse tsconfig.json:");
+    console.error('❌ Failed to parse tsconfig.json:');
     const msg = ts.formatDiagnosticsWithColorAndContext([configJson.error], {
       getCanonicalFileName: (f) => f,
       getCurrentDirectory: () => cwd,
@@ -103,15 +103,15 @@ export async function typecheck() {
   }
 
   const parsed = ts.parseJsonConfigFileContent(
-      configJson.config,
-      ts.sys,
-      path.dirname(tsconfigPath),
-      undefined,
-      tsconfigPath,
+    configJson.config,
+    ts.sys,
+    path.dirname(tsconfigPath),
+    undefined,
+    tsconfigPath,
   );
 
   if (parsed.errors.length) {
-    console.error("❌ tsconfig parsing produced diagnostics:");
+    console.error('❌ tsconfig parsing produced diagnostics:');
     const host: ts.FormatDiagnosticsHost = {
       getCanonicalFileName: (f) => f,
       getCurrentDirectory: () => cwd,
@@ -185,9 +185,9 @@ export async function typecheck() {
       ...errors,
       ...warnings,
       ...all.filter(
-          (d) =>
-              d.category !== ts.DiagnosticCategory.Error &&
-              d.category !== ts.DiagnosticCategory.Warning,
+        (d) =>
+          d.category !== ts.DiagnosticCategory.Error &&
+          d.category !== ts.DiagnosticCategory.Warning,
       ),
     ];
     for (const d of sorted) {
@@ -201,13 +201,15 @@ export async function typecheck() {
     process.exit(1);
   }
 
-  console.log(`✅ Typecheck passed (${warnings.length ? `${warnings.length} warning(s)` : "no warnings"}).`);
+  console.log(
+    `✅ Typecheck passed (${warnings.length ? `${warnings.length} warning(s)` : 'no warnings'}).`,
+  );
   process.exit(0);
 }
 
 if (import.meta.main) {
   typecheck().catch((err) => {
-    console.error("❌ Fatal error while running typecheck:", err);
+    console.error('❌ Fatal error while running typecheck:', err);
     process.exit(2);
   });
 }

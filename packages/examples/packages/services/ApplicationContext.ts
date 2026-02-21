@@ -5,10 +5,10 @@
  * Similar to the SAMPLE.ts ApplicationContext but using DI framework
  */
 
-import { Container, Component } from "@di-framework/di-framework/decorators";
-import { DatabaseService } from "./DatabaseService";
-import { UserService } from "./UserService";
-import { LoggerService } from "./LoggerService";
+import { Container, Component } from '@di-framework/di-framework/decorators';
+import { DatabaseService } from './DatabaseService';
+import { UserService } from './UserService';
+import { LoggerService } from './LoggerService';
 
 @Container()
 export class ApplicationContext {
@@ -20,7 +20,7 @@ export class ApplicationContext {
     @Component(UserService) public readonly users: UserService,
     @Component(LoggerService) public readonly logger: LoggerService,
   ) {
-    console.log("[ApplicationContext] Created with all dependencies");
+    console.log('[ApplicationContext] Created with all dependencies');
   }
 
   /**
@@ -29,15 +29,13 @@ export class ApplicationContext {
    */
   setEnv(env: Record<string, any>): void {
     this.env = env;
-    this.logger.log(
-      `Environment initialized: ${JSON.stringify(Object.keys(env))}`,
-    );
+    this.logger.log(`Environment initialized: ${JSON.stringify(Object.keys(env))}`);
 
     // Initialize services with environment
-    if (typeof (this.db as any).setEnv === "function") {
+    if (typeof (this.db as any).setEnv === 'function') {
       (this.db as any).setEnv(env);
     }
-    if (typeof (this.users as any).setEnv === "function") {
+    if (typeof (this.users as any).setEnv === 'function') {
       (this.users as any).setEnv(env);
     }
   }
@@ -48,13 +46,13 @@ export class ApplicationContext {
    */
   setCtx(ctx: any): void {
     this.executionContext = ctx;
-    this.logger.log("Execution context set");
+    this.logger.log('Execution context set');
 
     // Pass context to services
-    if (typeof (this.db as any).setCtx === "function") {
+    if (typeof (this.db as any).setCtx === 'function') {
       (this.db as any).setCtx(ctx);
     }
-    if (typeof (this.users as any).setCtx === "function") {
+    if (typeof (this.users as any).setCtx === 'function') {
       (this.users as any).setCtx(ctx);
     }
   }

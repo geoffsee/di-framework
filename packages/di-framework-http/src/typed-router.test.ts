@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from 'bun:test';
 import {
   TypedRouter,
   json,
@@ -7,119 +7,114 @@ import {
   type ResponseSpec,
   type PathParams,
   type QueryParams,
-} from "./typed-router.ts";
+} from './typed-router.ts';
 
-describe("TypedRouter", () => {
-  it("should handle GET requests", async () => {
+describe('TypedRouter', () => {
+  it('should handle GET requests', async () => {
     const router = TypedRouter();
-    router.get("/test", () => json({ ok: true }));
+    router.get('/test', () => json({ ok: true }));
 
-    const req = new Request("http://localhost/test");
+    const req = new Request('http://localhost/test');
     const res = await router.fetch(req);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual({ ok: true });
   });
 
-  it("should handle POST requests with JSON content-type", async () => {
+  it('should handle POST requests with JSON content-type', async () => {
     const router = TypedRouter();
-    router.post("/test", (req) => json({ received: req.content }));
+    router.post('/test', (req) => json({ received: req.content }));
 
-    const req = new Request("http://localhost/test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hello: "world" }),
+    const req = new Request('http://localhost/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hello: 'world' }),
     });
     const res = await router.fetch(req);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ received: { hello: "world" } });
+    expect(body).toEqual({ received: { hello: 'world' } });
   });
 
-  it("should reject POST requests without application/json", async () => {
+  it('should reject POST requests without application/json', async () => {
     const router = TypedRouter();
-    router.post("/test", () => json({ ok: true }));
+    router.post('/test', () => json({ ok: true }));
 
-    const req = new Request("http://localhost/test", {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: "hello",
+    const req = new Request('http://localhost/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: 'hello',
     });
     const res = await router.fetch(req);
     expect(res.status).toBe(415);
     const body = (await res.json()) as any;
-    expect(body.error).toBe("Content-Type must be application/json");
+    expect(body.error).toBe('Content-Type must be application/json');
   });
 
-  it("should attach path and method to the handler", () => {
+  it('should attach path and method to the handler', () => {
     const router = TypedRouter();
-    const handler = router.get("/metadata", () => json({}));
+    const handler = router.get('/metadata', () => json({}));
 
-    expect(handler.path).toBe("/metadata");
-    expect(handler.method).toBe("get");
+    expect(handler.path).toBe('/metadata');
+    expect(handler.method).toBe('get');
   });
 
-  it("should support extra arguments in fetch", async () => {
+  it('should support extra arguments in fetch', async () => {
     type Env = { BINDING: string };
     const router = TypedRouter<[Env]>();
-    router.get("/env", (req, env) => json({ binding: env.BINDING }));
+    router.get('/env', (req, env) => json({ binding: env.BINDING }));
 
-    const req = new Request("http://localhost/env");
-    const res = await router.fetch(req, { BINDING: "value" });
+    const req = new Request('http://localhost/env');
+    const res = await router.fetch(req, { BINDING: 'value' });
     const body = await res.json();
-    expect(body).toEqual({ binding: "value" });
+    expect(body).toEqual({ binding: 'value' });
   });
 
-  it("should support other HTTP methods", async () => {
+  it('should support other HTTP methods', async () => {
     const router = TypedRouter();
-    router.put("/put", () => json({ method: "PUT" }));
-    router.delete("/delete", () => json({ method: "DELETE" }));
-    router.patch("/patch", () => json({ method: "PATCH" }));
+    router.put('/put', () => json({ method: 'PUT' }));
+    router.delete('/delete', () => json({ method: 'DELETE' }));
+    router.patch('/patch', () => json({ method: 'PATCH' }));
 
     expect(
       (
         (await (
           await router.fetch(
-            new Request("http://localhost/put", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: "{}",
+            new Request('http://localhost/put', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: '{}',
             }),
           )
         ).json()) as any
       ).method,
-    ).toBe("PUT");
+    ).toBe('PUT');
     expect(
       (
         (await (
-          await router.fetch(
-            new Request("http://localhost/delete", { method: "DELETE" }),
-          )
+          await router.fetch(new Request('http://localhost/delete', { method: 'DELETE' }))
         ).json()) as any
       ).method,
-    ).toBe("DELETE");
+    ).toBe('DELETE');
     expect(
       (
         (await (
           await router.fetch(
-            new Request("http://localhost/patch", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: "{}",
+            new Request('http://localhost/patch', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: '{}',
             }),
           )
         ).json()) as any
       ).method,
-    ).toBe("PATCH");
+    ).toBe('PATCH');
   });
 
-  it("should handle multipart POST requests with { multipart: true }", async () => {
+  it('should handle multipart POST requests with { multipart: true }', async () => {
     const router = TypedRouter();
-    router.post<
-      RequestSpec<Multipart<{ file: File }>>,
-      ResponseSpec<{ ok: boolean }>
-    >(
-      "/upload",
+    router.post<RequestSpec<Multipart<{ file: File }>>, ResponseSpec<{ ok: boolean }>>(
+      '/upload',
       (req) => {
         return json({ ok: req.content instanceof FormData });
       },
@@ -127,10 +122,10 @@ describe("TypedRouter", () => {
     );
 
     const formData = new FormData();
-    formData.append("file", new Blob(["hello"]), "test.txt");
+    formData.append('file', new Blob(['hello']), 'test.txt');
 
-    const req = new Request("http://localhost/upload", {
-      method: "POST",
+    const req = new Request('http://localhost/upload', {
+      method: 'POST',
       body: formData,
     });
     const res = await router.fetch(req);
@@ -139,40 +134,40 @@ describe("TypedRouter", () => {
     expect(body.ok).toBe(true);
   });
 
-  it("should parse FormData as req.content in multipart handlers", async () => {
+  it('should parse FormData as req.content in multipart handlers', async () => {
     const router = TypedRouter();
     router.post(
-      "/upload",
+      '/upload',
       (req) => {
         const content = req.content as FormData;
-        const name = content.get("name");
+        const name = content.get('name');
         return json({ name });
       },
       { multipart: true },
     );
 
     const formData = new FormData();
-    formData.append("name", "test-file");
+    formData.append('name', 'test-file');
 
-    const req = new Request("http://localhost/upload", {
-      method: "POST",
+    const req = new Request('http://localhost/upload', {
+      method: 'POST',
       body: formData,
     });
     const res = await router.fetch(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as any;
-    expect(body.name).toBe("test-file");
+    expect(body.name).toBe('test-file');
   });
 
-  it("should not enforce JSON content-type on multipart routes", async () => {
+  it('should not enforce JSON content-type on multipart routes', async () => {
     const router = TypedRouter();
-    router.post("/upload", () => json({ ok: true }), { multipart: true });
+    router.post('/upload', () => json({ ok: true }), { multipart: true });
 
     const formData = new FormData();
-    formData.append("field", "value");
+    formData.append('field', 'value');
 
-    const req = new Request("http://localhost/upload", {
-      method: "POST",
+    const req = new Request('http://localhost/upload', {
+      method: 'POST',
       body: formData,
     });
     const res = await router.fetch(req);
@@ -180,37 +175,37 @@ describe("TypedRouter", () => {
     expect(res.status).toBe(200);
   });
 
-  it("should still reject non-JSON on non-multipart POST routes (backward compat)", async () => {
+  it('should still reject non-JSON on non-multipart POST routes (backward compat)', async () => {
     const router = TypedRouter();
-    router.post("/json-only", () => json({ ok: true }));
+    router.post('/json-only', () => json({ ok: true }));
 
     const formData = new FormData();
-    formData.append("field", "value");
+    formData.append('field', 'value');
 
-    const req = new Request("http://localhost/json-only", {
-      method: "POST",
+    const req = new Request('http://localhost/json-only', {
+      method: 'POST',
       body: formData,
     });
     const res = await router.fetch(req);
     expect(res.status).toBe(415);
   });
 
-  it("should type params and query from RequestSpec", async () => {
+  it('should type params and query from RequestSpec', async () => {
     const router = TypedRouter();
     router.get<
       RequestSpec<PathParams<{ id: string }> & QueryParams<{ search?: string }>>,
       ResponseSpec<{ id: string; search?: string }>
-    >("/item/:id", (req) => {
+    >('/item/:id', (req) => {
       // Type testing:
       const id: string = req.params.id;
       const search: string | undefined = req.query.search;
       return json({ id, search });
     });
 
-    const req = new Request("http://localhost/item/123?search=test");
+    const req = new Request('http://localhost/item/123?search=test');
     const res = await router.fetch(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as any;
-    expect(body).toEqual({ id: "123", search: "test" });
+    expect(body).toEqual({ id: '123', search: 'test' });
   });
 });

@@ -1,9 +1,9 @@
-import { $ } from "bun";
-import { join } from "path";
-import { writeFileSync, unlinkSync } from "fs";
-import { tmpdir } from "os";
+import { $ } from 'bun';
+import { join } from 'path';
+import { writeFileSync, unlinkSync } from 'fs';
+import { tmpdir } from 'os';
 // @ts-ignore — static import embeds the file at compile time
-import E2E_SCRIPT from "../scripts/e2e-test.sh" with { type: "text" };
+import E2E_SCRIPT from '../scripts/e2e-test.sh' with { type: 'text' };
 
 export async function test() {
   const tmp = join(tmpdir(), `di-framework-e2e-${process.pid}.sh`);
@@ -17,7 +17,7 @@ export async function test() {
 
 if (import.meta.main) {
   test().catch((err) => {
-    console.error("Tests failed:", err);
+    console.error('Tests failed:', err);
     process.exit(1);
   });
 }

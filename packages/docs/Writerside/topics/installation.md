@@ -73,15 +73,15 @@ Always import from the scoped package `@di-framework/di-framework/*` to ensure a
 Correct:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
-import { Container, Component } from "@di-framework/di-framework/decorators";
+import { useContainer } from '@di-framework/di-framework/container';
+import { Container, Component } from '@di-framework/di-framework/decorators';
 ```
 
 Avoid:
 
 ```typescript
-import { useContainer } from "di-framework/container"; // Wrong: unscoped id
-import { Container } from "../../di-framework/decorators"; // Wrong: relative id
+import { useContainer } from 'di-framework/container'; // Wrong: unscoped id
+import { Container } from '../../di-framework/decorators'; // Wrong: relative id
 ```
 
 ## Verify Installation
@@ -89,13 +89,13 @@ import { Container } from "../../di-framework/decorators"; // Wrong: relative id
 Create a simple test file to verify the installation:
 
 ```typescript
-import { Container } from "@di-framework/di-framework/decorators";
-import { useContainer } from "@di-framework/di-framework/container";
+import { Container } from '@di-framework/di-framework/decorators';
+import { useContainer } from '@di-framework/di-framework/container';
 
 @Container()
 class TestService {
   getMessage() {
-    return "DI Framework is working!";
+    return 'DI Framework is working!';
   }
 }
 

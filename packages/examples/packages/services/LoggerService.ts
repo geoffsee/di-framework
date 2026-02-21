@@ -4,27 +4,22 @@
  * Demonstrates a simple injectable service with lifecycle methods
  */
 
-import {
-  Container,
-  TelemetryListener,
-} from "@di-framework/di-framework/decorators";
+import { Container, TelemetryListener } from '@di-framework/di-framework/decorators';
 
 @Container()
 export class LoggerService {
   private logs: string[] = [];
 
   constructor() {
-    console.log("[LoggerService] Created");
+    console.log('[LoggerService] Created');
   }
 
   @TelemetryListener()
   onTelemetry(event: any): void {
     const { className, methodName, startTime, endTime, error } = event;
-    const duration = endTime ? (endTime - startTime).toFixed(2) : "N/A";
-    const status = error ? `FAILED (${error.message})` : "SUCCESS";
-    this.log(
-      `[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`,
-    );
+    const duration = endTime ? (endTime - startTime).toFixed(2) : 'N/A';
+    const status = error ? `FAILED (${error.message})` : 'SUCCESS';
+    this.log(`[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`);
   }
 
   log(message: string): void {
@@ -47,6 +42,6 @@ export class LoggerService {
 
   clearLogs(): void {
     this.logs = [];
-    console.log("[LoggerService] Logs cleared");
+    console.log('[LoggerService] Logs cleared');
   }
 }

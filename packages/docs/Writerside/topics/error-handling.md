@@ -93,7 +93,7 @@ export class UnregisteredService {
 container.register(UnregisteredService);
 
 // Or register as factory
-container.registerFactory("serviceName", () => new UnregisteredService());
+container.registerFactory('serviceName', () => new UnregisteredService());
 ```
 
 ### Missing Decorator Metadata
@@ -149,7 +149,7 @@ Use `container.has()` to check if a service is registered:
 if (container.has(UserService)) {
   const service = container.resolve(UserService);
 } else {
-  console.warn("UserService not registered");
+  console.warn('UserService not registered');
 }
 ```
 
@@ -161,21 +161,12 @@ Create a startup validation routine:
 @Container()
 export class StartupValidator {
   validateServices() {
-    const requiredServices = [
-      DatabaseService,
-      AuthService,
-      CacheService,
-      LoggerService,
-    ];
+    const requiredServices = [DatabaseService, AuthService, CacheService, LoggerService];
 
-    const missing = requiredServices.filter(
-      (service) => !container.has(service),
-    );
+    const missing = requiredServices.filter((service) => !container.has(service));
 
     if (missing.length > 0) {
-      throw new Error(
-        `Missing required services: ${missing.map((s) => s.name).join(", ")}`,
-      );
+      throw new Error(`Missing required services: ${missing.map((s) => s.name).join(', ')}`);
     }
   }
 }
@@ -191,7 +182,7 @@ List all registered services for debugging:
 
 ```typescript
 const serviceNames = container.getServiceNames();
-console.log("Registered services:", serviceNames);
+console.log('Registered services:', serviceNames);
 ```
 
 ## Runtime Errors
@@ -209,7 +200,7 @@ export class DatabaseService {
   }
 
   private connect() {
-    throw new Error("Connection failed");
+    throw new Error('Connection failed');
   }
 }
 
@@ -217,7 +208,7 @@ export class DatabaseService {
 try {
   const db = container.resolve(DatabaseService);
 } catch (error) {
-  console.error("Failed to initialize DatabaseService:", error);
+  console.error('Failed to initialize DatabaseService:', error);
   // Handle error appropriately
 }
 ```
@@ -232,7 +223,7 @@ let logger;
 try {
   logger = container.resolve(ProductionLogger);
 } catch (error) {
-  console.warn("Production logger unavailable, using console");
+  console.warn('Production logger unavailable, using console');
   logger = container.resolve(ConsoleLogger);
 }
 ```
@@ -242,10 +233,10 @@ try {
 Test error handling in your services:
 
 ```typescript
-import { Container as DIContainer } from "@di-framework/di-framework/container";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 
-describe("ServiceA", () => {
-  it("should handle missing dependencies gracefully", () => {
+describe('ServiceA', () => {
+  it('should handle missing dependencies gracefully', () => {
     const testContainer = new DIContainer();
 
     // Don't register required dependency
@@ -256,7 +247,7 @@ describe("ServiceA", () => {
     }).toThrow("Service 'ServiceB' is not registered");
   });
 
-  it("should detect circular dependencies", () => {
+  it('should detect circular dependencies', () => {
     const testContainer = new DIContainer();
 
     testContainer.register(ServiceA);
@@ -264,7 +255,7 @@ describe("ServiceA", () => {
 
     expect(() => {
       testContainer.resolve(ServiceA);
-    }).toThrow("Circular dependency detected");
+    }).toThrow('Circular dependency detected');
   });
 });
 ```

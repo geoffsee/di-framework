@@ -1,34 +1,31 @@
 #!/usr/bin/env bun
-import fs from "fs";
-import path from "path";
-import { generateOpenAPI } from "./openapi.ts";
-import registry from "./registry.ts";
+import fs from 'fs';
+import path from 'path';
+import { generateOpenAPI } from './openapi.ts';
+import registry from './registry.ts';
 
 const args = process.argv.slice(2);
 const command = args[0];
 
-if (command === "generate") {
-  const outputArg = args.indexOf("--output");
-  const outputPath = outputArg !== -1 ? args[outputArg + 1] : "openapi.json";
+if (command === 'generate') {
+  const outputArg = args.indexOf('--output');
+  const outputPath = outputArg !== -1 ? args[outputArg + 1] : 'openapi.json';
 
-  const controllersArg = args.indexOf("--controllers");
+  const controllersArg = args.indexOf('--controllers');
   if (controllersArg === -1) {
-    console.error("Error: --controllers path is required");
+    console.error('Error: --controllers path is required');
     process.exit(1);
   }
 
   async function run() {
     try {
       // Import the user's controllers to trigger decorator registration
-      const controllersPathResolved = path.resolve(
-        process.cwd(),
-        args[controllersArg + 1]!,
-      );
+      const controllersPathResolved = path.resolve(process.cwd(), args[controllersArg + 1]!);
       await import(controllersPathResolved);
 
       const spec = generateOpenAPI(
         {
-          title: "API Documentation",
+          title: 'API Documentation',
         },
         registry,
       );

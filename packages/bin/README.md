@@ -31,17 +31,19 @@ bun run packages/bin/main.ts <command> [args...]
 
 ### Available Commands
 
-* **`build`**: Builds the packages in the monorepo (`di-framework`, `di-framework-repo`, `di-framework-http`). It cleans the `dist` directories and runs `tsc`.
+- **`build`**: Builds the packages in the monorepo (`di-framework`, `di-framework-repo`, `di-framework-http`). It cleans the `dist` directories and runs `tsc`.
+
   ```bash
   bun run packages/bin/main.ts build
   ```
 
-* **`typecheck`**: Runs TypeScript type checking across the packages to ensure type safety without emitting compiled files.
+- **`typecheck`**: Runs TypeScript type checking across the packages to ensure type safety without emitting compiled files.
+
   ```bash
   bun run packages/bin/main.ts typecheck
   ```
 
-* **`publish`**: Publishes the built packages to the npm registry.
+- **`publish`**: Publishes the built packages to the npm registry.
   ```bash
   bun run packages/bin/main.ts publish
   ```

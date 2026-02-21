@@ -1,12 +1,12 @@
-import type { StorageAdapter } from "./adapter";
-import type { EntityId, PaginatedResult } from "./types";
+import type { StorageAdapter } from './adapter';
+import type { EntityId, PaginatedResult } from './types';
 
 export abstract class BaseRepository<E, ID = EntityId> {
   protected constructor(protected readonly adapter: StorageAdapter<E, ID>) {}
 
   protected normalizeId(id: ID): ID {
     // Default normalization (stringify) – can be overridden by subclasses if needed
-    return typeof id === "string" ? (id as any) : (String(id) as any);
+    return typeof id === 'string' ? (id as any) : (String(id) as any);
   }
 
   // Forward most calls directly (you can add caching, validation, events here)
@@ -40,14 +40,14 @@ export abstract class BaseRepository<E, ID = EntityId> {
 
   // Transaction support (if adapter provides it)
   protected async inTransaction<T>(fn: () => Promise<T>): Promise<T> {
-    if (typeof this.adapter.transaction === "function") {
+    if (typeof this.adapter.transaction === 'function') {
       return this.adapter.transaction(() => fn());
     }
     return fn(); // fallback
   }
 
   async dispose(): Promise<void> {
-    if (typeof this.adapter.dispose === "function") {
+    if (typeof this.adapter.dispose === 'function') {
       await this.adapter.dispose();
     }
   }
@@ -62,15 +62,10 @@ export type Database<T extends Record<string, typeof BaseRepository>> = {
 };
 
 export type RepositoryMap<T> = {
-  [K in keyof T]: T[K] extends BaseRepository<infer E>
-    ? BaseRepository<E>
-    : never;
+  [K in keyof T]: T[K] extends BaseRepository<infer E> ? BaseRepository<E> : never;
 };
 
-export abstract class EntityRepository<E, ID = EntityId> extends BaseRepository<
-  E,
-  ID
-> {}
+export abstract class EntityRepository<E, ID = EntityId> extends BaseRepository<E, ID> {}
 
 export type EntityOf<R> = R extends BaseRepository<infer E> ? E : never;
 export type IdOf<R> = R extends BaseRepository<any, infer ID> ? ID : never;
@@ -98,8 +93,5 @@ export abstract class SoftDeleteRepository<
 }
 
 export interface SearchableRepository<E, ID = EntityId> {
-  search(
-    query: string,
-    params?: { page?: number; size?: number },
-  ): Promise<PaginatedResult<E>>;
+  search(query: string, params?: { page?: number; size?: number }): Promise<PaginatedResult<E>>;
 }

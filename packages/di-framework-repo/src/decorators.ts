@@ -1,4 +1,4 @@
-import { Container as ContainerDecorator } from "@di-framework/di-framework/decorators";
+import { Container as ContainerDecorator } from '@di-framework/di-framework/decorators';
 
 /**
  * Repository decorator.
@@ -9,8 +9,6 @@ import { Container as ContainerDecorator } from "@di-framework/di-framework/deco
  * framework using the scoped package name (`@di-framework/di-framework/*`) to
  * avoid loading multiple copies and accidentally creating multiple containers.
  */
-export function Repository(
-  options: { singleton?: boolean; container?: any } = {},
-) {
+export function Repository(options: { singleton?: boolean; container?: any } = {}) {
   return ContainerDecorator(options);
 }

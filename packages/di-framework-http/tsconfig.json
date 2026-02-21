@@ -31,10 +31,5 @@
     "rootDir": "."
   },
   "include": ["src/**/*", "index.ts"],
-  "exclude": [
-    "example/**/*",
-    "**/*.test.ts",
-    "node_modules",
-    "dist"
-  ]
+  "exclude": ["example/**/*", "**/*.test.ts", "node_modules", "dist"]
 }

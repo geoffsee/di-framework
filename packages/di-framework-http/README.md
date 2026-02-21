@@ -36,9 +36,9 @@ import {
   type Json,
   Controller,
   Endpoint,
-} from "@di-framework/di-framework-http";
-import { Component, Container } from "@di-framework/di-framework/decorators";
-import { useContainer } from "@di-framework/di-framework/container";
+} from '@di-framework/di-framework-http';
+import { Component, Container } from '@di-framework/di-framework/decorators';
+import { useContainer } from '@di-framework/di-framework/container';
 
 const router = TypedRouter();
 
@@ -66,29 +66,28 @@ export class EchoController {
   }
 
   @Endpoint({
-    summary: "Echo a message",
-    description: "Returns the provided message with a server timestamp.",
+    summary: 'Echo a message',
+    description: 'Returns the provided message with a server timestamp.',
     responses: {
-      "200": { description: "Successful echo" },
+      '200': { description: 'Successful echo' },
     },
   })
-  static post = router.post<
-    RequestSpec<Json<EchoPayload>>,
-    ResponseSpec<EchoResponse>
-  >("/echo", (req) => {
-    // Demonstrate auto DI registration: resolve the controller instance from
-    // the global container without any manual registration.
-    const controller = useContainer().resolve(EchoController);
-    return json(controller.echoMessage(req.content.message));
-  });
+  static post = router.post<RequestSpec<Json<EchoPayload>>, ResponseSpec<EchoResponse>>(
+    '/echo',
+    (req) => {
+      // Demonstrate auto DI registration: resolve the controller instance from
+      // the global container without any manual registration.
+      const controller = useContainer().resolve(EchoController);
+      return json(controller.echoMessage(req.content.message));
+    },
+  );
 }
 
 // Add a simple GET route
-router.get("/", () => json({ message: "API is healthy" }));
+router.get('/', () => json({ message: 'API is healthy' }));
 
 export default {
-  fetch: (request: Request, env: any, ctx: any) =>
-    router.fetch(request, env, ctx),
+  fetch: (request: Request, env: any, ctx: any) => router.fetch(request, env, ctx),
 };
 ```
 
@@ -103,7 +102,7 @@ import {
   type RequestSpec,
   type ResponseSpec,
   type Multipart,
-} from "@di-framework/di-framework-http";
+} from '@di-framework/di-framework-http';
 
 const router = TypedRouter();
 
@@ -111,10 +110,10 @@ type UploadPayload = { files: File[] };
 type UploadResult = { filenames: string[] };
 
 router.post<RequestSpec<Multipart<UploadPayload>>, ResponseSpec<UploadResult>>(
-  "/upload",
+  '/upload',
   (req) => {
     // req.content is typed as FormData
-    const files = req.content.getAll("files") as File[];
+    const files = req.content.getAll('files') as File[];
     return json({ filenames: files.map((f) => f.name) });
   },
   { multipart: true },
@@ -144,13 +143,13 @@ bun x di-framework-http generate --controllers ./src/index.ts
 You can also generate the spec programmatically using the `generateOpenAPI` function and the default `registry`:
 
 ```typescript
-import registry, { generateOpenAPI } from "@di-framework/di-framework-http";
-import "./controllers/MyController"; // Import to trigger registration
+import registry, { generateOpenAPI } from '@di-framework/di-framework-http';
+import './controllers/MyController'; // Import to trigger registration
 
 const spec = generateOpenAPI(
   {
-    title: "My API",
-    version: "1.0.0",
+    title: 'My API',
+    version: '1.0.0',
   },
   registry,
 );
@@ -161,7 +160,7 @@ console.log(JSON.stringify(spec, null, 2));
 If you need full control, you can iterate the `registry` manually:
 
 ```typescript
-import registry from "@di-framework/di-framework-http";
+import registry from '@di-framework/di-framework-http';
 
 for (const target of registry.getTargets()) {
   // target is the decorated class

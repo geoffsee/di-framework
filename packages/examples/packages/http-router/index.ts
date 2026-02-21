@@ -6,10 +6,10 @@ import {
   type Json,
   Controller,
   Endpoint,
-} from "@di-framework/di-framework-http";
-import { Component } from "@di-framework/di-framework/decorators";
-import { useContainer } from "@di-framework/di-framework/container";
-import { LoggerService } from "../services/LoggerService";
+} from '@di-framework/di-framework-http';
+import { Component } from '@di-framework/di-framework/decorators';
+import { useContainer } from '@di-framework/di-framework/container';
+import { LoggerService } from '../services/LoggerService';
 
 const router = TypedRouter();
 
@@ -29,27 +29,26 @@ export class EchoController {
   }
 
   @Endpoint({
-    summary: "Echo a message",
-    description: "Returns the provided message with a server timestamp.",
+    summary: 'Echo a message',
+    description: 'Returns the provided message with a server timestamp.',
     responses: {
-      "200": { description: "Successful echo" },
+      '200': { description: 'Successful echo' },
     },
   })
-  static post = router.post<
-    RequestSpec<Json<EchoPayload>>,
-    ResponseSpec<EchoResponse>
-  >("/echo", (req) => {
-    // Demonstrate auto DI registration: resolve the controller instance from
-    // the global container without any manual registration.
-    const controller = useContainer().resolve(EchoController);
-    return json(controller.echoMessage(req.content.message));
-  });
+  static post = router.post<RequestSpec<Json<EchoPayload>>, ResponseSpec<EchoResponse>>(
+    '/echo',
+    (req) => {
+      // Demonstrate auto DI registration: resolve the controller instance from
+      // the global container without any manual registration.
+      const controller = useContainer().resolve(EchoController);
+      return json(controller.echoMessage(req.content.message));
+    },
+  );
 }
 
-router.get("/", () => json({ message: "API is healthy" }));
+router.get('/', () => json({ message: 'API is healthy' }));
 
 export default {
-  fetch: (request: Request, env: any, ctx: any) =>
-    router.fetch(request, env, ctx),
+  fetch: (request: Request, env: any, ctx: any) => router.fetch(request, env, ctx),
 };
 export { router };

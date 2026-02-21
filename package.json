@@ -16,9 +16,13 @@
     "publish": "bun run packages/bin/cmd/publish.ts",
     "link-cli": "(cd packages/bin && bun link >/dev/null 2>&1)",
     "postinstall": "bun link-cli && echo 'di-framework <command> [args...]'",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bun": "latest",
     "eslint": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",

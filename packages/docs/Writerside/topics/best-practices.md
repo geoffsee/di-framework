@@ -76,7 +76,7 @@ This framework uses a lightweight metadata store - you don't need reflect-metada
 
 ```typescript
 // Good - No reflect-metadata import needed
-import { Container, Component } from "@di-framework/di-framework/decorators";
+import { Container, Component } from '@di-framework/di-framework/decorators';
 
 @Container()
 export class MyService {
@@ -84,7 +84,7 @@ export class MyService {
 }
 
 // Avoid - Unnecessary import
-import "reflect-metadata";
+import 'reflect-metadata';
 ```
 
 **Why:** The framework is designed to work without reflect-metadata, keeping your bundle size small.
@@ -184,7 +184,7 @@ export class Application {
     await this.db.connect();
     await this.cache.connect();
     this.auth.setup();
-    console.log("Application initialized successfully");
+    console.log('Application initialized successfully');
   }
 }
 
@@ -203,11 +203,11 @@ Register configuration as factory services:
 ```typescript
 // Good - Configuration as factory
 container.registerFactory(
-  "config",
+  'config',
   () => ({
     database: {
-      host: process.env.DB_HOST || "localhost",
-      port: parseInt(process.env.DB_PORT || "5432"),
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
     },
     api: {
       key: process.env.API_KEY,
@@ -218,8 +218,8 @@ container.registerFactory(
 
 @Container()
 export class DatabaseService {
-  constructor(@Component("config") private config: any) {
-    console.log("Connecting to:", this.config.database.host);
+  constructor(@Component('config') private config: any) {
+    console.log('Connecting to:', this.config.database.host);
   }
 }
 ```
@@ -339,9 +339,9 @@ Use separate containers for testing:
 
 ```typescript
 // Good - Test isolation
-import { Container as DIContainer } from "@di-framework/di-framework/container";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 
-describe("UserService", () => {
+describe('UserService', () => {
   let testContainer: DIContainer;
 
   beforeEach(() => {
@@ -350,7 +350,7 @@ describe("UserService", () => {
     testContainer.register(UserService);
   });
 
-  it("should create user", () => {
+  it('should create user', () => {
     const service = testContainer.resolve(UserService);
     // Test implementation
   });
@@ -364,8 +364,8 @@ describe("UserService", () => {
 Hook into container events to log or measure dependency resolution:
 
 ```typescript
-const stop = container.on("resolved", ({ key, fromCache }) => {
-  const name = typeof key === "string" ? key : key.name;
+const stop = container.on('resolved', ({ key, fromCache }) => {
+  const name = typeof key === 'string' ? key : key.name;
   logger.debug(`Resolved ${name} (cached=${fromCache})`);
 });
 

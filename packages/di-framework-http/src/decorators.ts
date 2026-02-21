@@ -1,23 +1,21 @@
-import registry from "./registry.ts";
-import { Container as ContainerDecorator } from "@di-framework/di-framework/decorators";
-import { getOwnMetadata, useContainer } from "@di-framework/di-framework/container";
+import registry from './registry.ts';
+import { Container as ContainerDecorator } from '@di-framework/di-framework/decorators';
+import { getOwnMetadata, useContainer } from '@di-framework/di-framework/container';
 
-const INJECT_METADATA_KEY = "di:inject";
-export const SCHEMAS = Symbol.for("proseva:component-schemas");
+const INJECT_METADATA_KEY = 'di:inject';
+export const SCHEMAS = Symbol.for('proseva:component-schemas');
 
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 interface ContainerLike {
   resolve(token: unknown): unknown;
 }
 
-export function Controller(
-  options: { singleton?: boolean; container?: any } = {},
-) {
+export function Controller(options: { singleton?: boolean; container?: any } = {}) {
   // Compose DI registration with OpenAPI registry marking
   const containerDecorator = ContainerDecorator(options);
   return function (target: any) {
@@ -34,7 +32,7 @@ export function Controller(
     const injectMetadata: UnknownRecord = isRecord(rawMetadata) ? rawMetadata : {};
 
     for (const [propName, targetType] of Object.entries(injectMetadata)) {
-      if (!propName.startsWith("param_") && targetType) {
+      if (!propName.startsWith('param_') && targetType) {
         (target as UnknownRecord)[propName] = container.resolve(targetType);
       }
     }
@@ -43,7 +41,7 @@ export function Controller(
 
 /** Extract all `#/components/schemas/<Name>` references from a metadata tree. */
 function extractSchemaRefs(obj: unknown, out: Set<string>): void {
-  if (typeof obj !== "object" || obj === null) return;
+  if (typeof obj !== 'object' || obj === null) return;
 
   if (Array.isArray(obj)) {
     for (const item of obj) extractSchemaRefs(item, out);
@@ -51,7 +49,7 @@ function extractSchemaRefs(obj: unknown, out: Set<string>): void {
   }
 
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-    if (key === "$ref" && typeof value === "string") {
+    if (key === '$ref' && typeof value === 'string') {
       const match = /^#\/components\/schemas\/(.+)$/.exec(value);
       if (match?.[1]) out.add(match[1]);
     } else {
@@ -73,8 +71,7 @@ export function Endpoint(metadata?: {
 
       // For static methods on a class, target is the constructor.
       // If it's a static method, target itself is the constructor.
-      const constructor =
-        typeof target === "function" ? target : target.constructor;
+      const constructor = typeof target === 'function' ? target : target.constructor;
       registry.addTarget(constructor);
 
       // We'll let the generator discover the details from the property for now,

@@ -7,7 +7,7 @@ Learn advanced patterns and techniques for using the DI framework effectively.
 By default, all services are singletons - the same instance is reused. For services that need a new instance each time, use `singleton: false`:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
 @Container({ singleton: false })
@@ -37,11 +37,11 @@ console.log(ctx1.id !== ctx2.id); // true
 Register services using factory functions for complex initialization logic:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
 container.registerFactory(
-  "apiClient",
+  'apiClient',
   () => {
     return new HttpClient({
       baseUrl: process.env.API_URL,
@@ -57,7 +57,7 @@ container.registerFactory(
 // Use in services
 @Container()
 export class UserService {
-  constructor(@Component("apiClient") private api: any) {}
+  constructor(@Component('apiClient') private api: any) {}
 
   async getUser(id: string) {
     return this.api.get(`/users/${id}`);
@@ -79,10 +79,7 @@ For larger applications, using the Repository pattern with `@di-framework/di-fra
 ### Standard Repository
 
 ```typescript
-import {
-  Repository,
-  InMemoryRepository,
-} from "@di-framework/di-framework-repo";
+import { Repository, InMemoryRepository } from '@di-framework/di-framework-repo';
 
 @Repository()
 export class UserRepository extends InMemoryRepository<User, number> {
@@ -96,10 +93,7 @@ export class UserRepository extends InMemoryRepository<User, number> {
 ### Soft Delete Support
 
 ```typescript
-import {
-  SoftDeleteRepository,
-  SoftDeletable,
-} from "@di-framework/di-framework-repo";
+import { SoftDeleteRepository, SoftDeletable } from '@di-framework/di-framework-repo';
 
 interface Product extends SoftDeletable {
   id: string;
@@ -119,35 +113,35 @@ See the [Repositories documentation](repositories.md) for more details.
 Services can implement lifecycle methods for initialization and context management:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
 @Container()
 export class DatabaseService {
   private connected = false;
-  private dbUrl: string = "";
+  private dbUrl: string = '';
 
   setEnv(env: Record<string, any>) {
     // Called to initialize environment-specific config
     this.dbUrl = env.DATABASE_URL;
-    console.log("DB URL configured:", this.dbUrl);
+    console.log('DB URL configured:', this.dbUrl);
   }
 
   setCtx(context: any) {
     // Called to set execution context
-    console.log("Context set:", context);
+    console.log('Context set:', context);
   }
 
   connect() {
     this.connected = true;
-    console.log("Connected to:", this.dbUrl);
+    console.log('Connected to:', this.dbUrl);
   }
 }
 
 // Usage
 const db = container.resolve(DatabaseService);
 db.setEnv(process.env);
-db.setCtx({ userId: "123" });
+db.setCtx({ userId: '123' });
 db.connect();
 ```
 
@@ -167,7 +161,7 @@ export class ApplicationContext {
   ) {}
 
   async initialize() {
-    this.logger.log("Initializing application...");
+    this.logger.log('Initializing application...');
     await this.db.connect();
     this.auth.setup();
     this.cache.connect();
@@ -186,7 +180,7 @@ Use `@Publisher` to emit a custom event when a method is called. By default, it 
 ```typescript
 @Container()
 export class UserService {
-  @Publisher({ event: "user.created", phase: "after", logging: true })
+  @Publisher({ event: 'user.created', phase: 'after', logging: true })
   async createUser(dto: any) {
     // ...
     return { id: 1, ...dto };
@@ -201,7 +195,7 @@ Use `@Subscriber` to automatically listen for custom events. Subscribed methods 
 ```typescript
 @Container()
 export class NotificationService {
-  @Subscriber("user.created")
+  @Subscriber('user.created')
   onUserCreated(event: any) {
     if (event.result) {
       console.log(`Sending welcome email to ${event.result.name}`);
@@ -247,10 +241,7 @@ export class MonitoringService {
     const duration = endTime - startTime;
 
     if (error) {
-      console.error(
-        `Alert: ${className}.${methodName} failed after ${duration}ms:`,
-        error,
-      );
+      console.error(`Alert: ${className}.${methodName} failed after ${duration}ms:`, error);
     } else {
       console.log(`Metric: ${className}.${methodName} took ${duration}ms`);
     }
@@ -266,7 +257,7 @@ export class MonitoringService {
 Create isolated containers for different parts of your application:
 
 ```typescript
-import { Container as DIContainer } from "@di-framework/di-framework/container";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 
 // Create custom containers
 const apiContainer = new DIContainer();
@@ -300,7 +291,7 @@ const workerService = workerContainer.resolve(WorkerService);
 Clone an existing container and optionally carry over singleton instances:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
 // Seed the base container
@@ -310,7 +301,7 @@ const sharedDb = container.resolve(DatabaseService);
 
 // Create an isolated fork for a tenant/request
 const tenantContainer = container.fork({ carrySingletons: true });
-tenantContainer.registerFactory("config", () => loadTenantConfig());
+tenantContainer.registerFactory('config', () => loadTenantConfig());
 
 // Resolves share the DatabaseService instance but have their own registrations
 const tenantCtx = tenantContainer.resolve(ApplicationContext);
@@ -323,12 +314,12 @@ const tenantCtx = tenantContainer.resolve(ApplicationContext);
 Use the observer hooks to add diagnostics or metrics around registration and resolution:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
-const stop = container.on("resolved", ({ key, singleton, fromCache }) => {
-  const name = typeof key === "string" ? key : key.name;
-  metrics.increment("di.resolve", { name, singleton, fromCache });
+const stop = container.on('resolved', ({ key, singleton, fromCache }) => {
+  const name = typeof key === 'string' ? key : key.name;
+  metrics.increment('di.resolve', { name, singleton, fromCache });
 });
 
 // Later, if needed:
@@ -346,8 +337,8 @@ stop();
 Create fresh instances without registering them, and override constructor arguments for primitives or config:
 
 ```typescript
-import { Component } from "@di-framework/di-framework/decorators";
-import { container } from "@di-framework/di-framework/container";
+import { Component } from '@di-framework/di-framework/decorators';
+import { container } from '@di-framework/di-framework/container';
 
 class EmailService {
   constructor(
@@ -357,7 +348,7 @@ class EmailService {
 }
 
 const emailer = container.construct(EmailService, {
-  1: "no-reply@example.com",
+  1: 'no-reply@example.com',
 });
 ```
 
@@ -368,25 +359,25 @@ const emailer = container.construct(EmailService, {
 Create configuration services using factory functions:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
 // Register configuration
 container.registerFactory(
-  "config",
+  'config',
   () => ({
     database: {
-      host: process.env.DB_HOST || "localhost",
-      port: parseInt(process.env.DB_PORT || "5432"),
-      name: process.env.DB_NAME || "myapp",
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      name: process.env.DB_NAME || 'myapp',
     },
     api: {
       key: process.env.API_KEY,
       secret: process.env.API_SECRET,
     },
     features: {
-      enableNewUI: process.env.ENABLE_NEW_UI === "true",
-      maxUploadSize: parseInt(process.env.MAX_UPLOAD_SIZE || "10485760"),
+      enableNewUI: process.env.ENABLE_NEW_UI === 'true',
+      maxUploadSize: parseInt(process.env.MAX_UPLOAD_SIZE || '10485760'),
     },
   }),
   { singleton: true },
@@ -395,8 +386,8 @@ container.registerFactory(
 // Use in services
 @Container()
 export class DatabaseService {
-  constructor(@Component("config") private config: any) {
-    console.log("DB Config:", this.config.database);
+  constructor(@Component('config') private config: any) {
+    console.log('DB Config:', this.config.database);
   }
 }
 ```
@@ -406,16 +397,16 @@ export class DatabaseService {
 Register different implementations based on environment:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 
 // Register different implementations
-if (process.env.NODE_ENV === "production") {
-  container.registerFactory("logger", () => new ProductionLogger(), {
+if (process.env.NODE_ENV === 'production') {
+  container.registerFactory('logger', () => new ProductionLogger(), {
     singleton: true,
   });
 } else {
-  container.registerFactory("logger", () => new DevelopmentLogger(), {
+  container.registerFactory('logger', () => new DevelopmentLogger(), {
     singleton: true,
   });
 }
@@ -423,8 +414,8 @@ if (process.env.NODE_ENV === "production") {
 // Services get the right implementation
 @Container()
 export class UserService {
-  constructor(@Component("logger") private logger: any) {
-    this.logger.log("UserService initialized");
+  constructor(@Component('logger') private logger: any) {
+    this.logger.log('UserService initialized');
   }
 }
 ```

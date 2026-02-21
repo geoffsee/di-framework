@@ -1,31 +1,31 @@
-import { useContainer } from "@di-framework/di-framework/container";
-import { ConfigService } from "./services/ConfigService";
-import { CounterService } from "./services/CounterService";
-import { LoggerService } from "../../services/LoggerService";
-import { DatabaseService } from "../../services/DatabaseService";
-import { UserService } from "../../services/UserService";
+import { useContainer } from '@di-framework/di-framework/container';
+import { ConfigService } from './services/ConfigService';
+import { CounterService } from './services/CounterService';
+import { LoggerService } from '../../services/LoggerService';
+import { DatabaseService } from '../../services/DatabaseService';
+import { UserService } from '../../services/UserService';
 
 const container = useContainer();
 
 function json(data: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(data, null, 2), {
     status: 200,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: { 'content-type': 'application/json; charset=utf-8' },
     ...init,
   });
 }
 
-function notFound(message = "Not found") {
+function notFound(message = 'Not found') {
   return json({ error: message }, { status: 404 });
 }
 
-function badRequest(message = "Bad request") {
+function badRequest(message = 'Bad request') {
   return json({ error: message }, { status: 400 });
 }
 
 function html(body: string, init: ResponseInit = {}) {
   return new Response(body, {
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: { 'content-type': 'text/html; charset=utf-8' },
     ...init,
   });
 }
@@ -46,10 +46,10 @@ export async function handleRequest(request: Request, env: any, ctx: any) {
   const counter = container.resolve<CounterService>(CounterService);
 
   // Simple HTML index
-  if (path === "/") {
+  if (path === '/') {
     const services = container.getServiceNames().sort();
     const body = `
-      ${header("DI Worker Example")}
+      ${header('DI Worker Example')}
       <main>
         <p>Try these routes:</p>
         <ul>
@@ -61,34 +61,34 @@ export async function handleRequest(request: Request, env: any, ctx: any) {
         </ul>
         <pre style="background:#111;color:#eee;padding:0.75rem;border-radius:6px;">Registered services:\n${services
           .map((s: any) => `- ${s}`)
-          .join("\n")}</pre>
+          .join('\n')}</pre>
       </main>
     `;
     return html(body);
   }
 
   // Info: shows token-based injection + container insight
-  if (path === "/api/info" && request.method === "GET") {
-    logger.log("/api/info called");
+  if (path === '/api/info' && request.method === 'GET') {
+    logger.log('/api/info called');
     const info = config.info(env);
     return json({
       info,
       services: container.getServiceNames().sort(),
-      durableObjectName: "MY_DURABLE_OBJECT",
+      durableObjectName: 'MY_DURABLE_OBJECT',
     });
   }
 
-  if (path === "/api/logs" && request.method === "GET") {
+  if (path === '/api/logs' && request.method === 'GET') {
     return json({ logs: logger.getLogs() });
   }
 
-  if (path.startsWith("/api/users") && request.method === "GET") {
+  if (path.startsWith('/api/users') && request.method === 'GET') {
     // Ensure our fake DB is connected once
     if (!db.isConnected()) db.connect();
 
-    const id = url.searchParams.get("id");
-    const name = url.searchParams.get("name");
-    const email = url.searchParams.get("email");
+    const id = url.searchParams.get('id');
+    const name = url.searchParams.get('name');
+    const email = url.searchParams.get('email');
 
     if (id && name && email) {
       const user = users.createUser(id, name, email);
@@ -97,23 +97,23 @@ export async function handleRequest(request: Request, env: any, ctx: any) {
 
     if (id) {
       const user = users.getUser(id);
-      if (!user) return notFound("User not found");
+      if (!user) return notFound('User not found');
       return json({ user });
     }
 
     return json({ users: users.listUsers() });
   }
 
-  if (path === "/api/count" && request.method === "GET") {
+  if (path === '/api/count' && request.method === 'GET') {
     const value = await counter.get(env);
     return json({ value });
   }
 
-  if (path === "/api/count" && request.method === "POST") {
+  if (path === '/api/count' && request.method === 'POST') {
     let delta = 1;
     try {
       const body = (await request.json().catch(() => ({}))) as any;
-      if (typeof body?.delta === "number") delta = body.delta;
+      if (typeof body?.delta === 'number') delta = body.delta;
     } catch {
       // ignore
     }
@@ -121,14 +121,14 @@ export async function handleRequest(request: Request, env: any, ctx: any) {
     return json({ value });
   }
 
-  if (path === "/api/count/reset" && request.method === "POST") {
+  if (path === '/api/count/reset' && request.method === 'POST') {
     const value = await counter.reset(env);
     return json({ value });
   }
 
-  if (path === "/api/hello" && request.method === "GET") {
-    const stub = (env as any).MY_DURABLE_OBJECT.getByName("counter");
-    const greeting = await stub.sayHello("world");
+  if (path === '/api/hello' && request.method === 'GET') {
+    const stub = (env as any).MY_DURABLE_OBJECT.getByName('counter');
+    const greeting = await stub.sayHello('world');
     return json({ greeting });
   }
 

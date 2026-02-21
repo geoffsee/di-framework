@@ -1,14 +1,9 @@
-import {
-  Router,
-  withContent,
-  json as ittyJson,
-  type IRequest,
-} from "itty-router";
+import { Router, withContent, json as ittyJson, type IRequest } from 'itty-router';
 
 /** Marker for body "shape + content-type" */
-export type Json<T> = { readonly __kind: "json"; readonly __type?: T };
+export type Json<T> = { readonly __kind: 'json'; readonly __type?: T };
 export type Multipart<T> = {
-  readonly __kind: "multipart";
+  readonly __kind: 'multipart';
   readonly __type?: T;
 };
 export type PathParams<T> = { readonly __pathParams?: T };
@@ -20,22 +15,15 @@ export type ResponseSpec<Body = unknown> = { readonly __res?: Body };
 
 /** Map a BodySpec to the actual req.content type */
 type ContentOf<BodySpec> =
-  BodySpec extends Json<infer T>
-    ? T
-    : BodySpec extends Multipart<infer _T>
-      ? FormData
-      : unknown;
+  BodySpec extends Json<infer T> ? T : BodySpec extends Multipart<infer _T> ? FormData : unknown;
 
-type PathParamsOf<BodySpec> = BodySpec extends PathParams<infer T>
-  ? T
-  : Record<string, string>;
+type PathParamsOf<BodySpec> = BodySpec extends PathParams<infer T> ? T : Record<string, string>;
 
-type QueryParamsOf<BodySpec> = BodySpec extends QueryParams<infer T>
-  ? T
-  : Record<string, string | string[] | undefined>;
+type QueryParamsOf<BodySpec> =
+  BodySpec extends QueryParams<infer T> ? T : Record<string, string | string[] | undefined>;
 
 /** The actual request type your handlers receive */
-export type TypedRequest<ReqSpec> = Omit<IRequest, "params" | "query"> & {
+export type TypedRequest<ReqSpec> = Omit<IRequest, 'params' | 'query'> & {
   content: ContentOf<ReqSpec extends RequestSpec<infer B> ? B : never>;
   params: PathParamsOf<ReqSpec extends RequestSpec<infer B> ? B : never>;
   query: QueryParamsOf<ReqSpec extends RequestSpec<infer B> ? B : never>;
@@ -53,10 +41,7 @@ export type HandlerController<ReqSpec, ResSpec, Args extends any[] = any[]> = (
 ) => TypedResponse<ResSpec> | Promise<TypedResponse<ResSpec>>;
 
 /** A typed json() that returns a Response annotated with Response<T> */
-export function json<T>(
-  data: T,
-  init?: ResponseInit,
-): TypedResponse<ResponseSpec<T>> {
+export function json<T>(data: T, init?: ResponseInit): TypedResponse<ResponseSpec<T>> {
   return ittyJson(data as any, init) as any;
 }
 
@@ -95,12 +80,9 @@ export function TypedRouter<Args extends any[] = any[]>(
   const r = Router(opts);
 
   function enforceJson(req: globalThis.Request) {
-    const ct = (req.headers.get("content-type") ?? "").toLowerCase();
-    if (!ct.includes("application/json") && !ct.includes("+json")) {
-      return ittyJson(
-        { error: "Content-Type must be application/json" },
-        { status: 415 },
-      );
+    const ct = (req.headers.get('content-type') ?? '').toLowerCase();
+    if (!ct.includes('application/json') && !ct.includes('+json')) {
+      return ittyJson({ error: 'Content-Type must be application/json' }, { status: 415 });
     }
     return null;
   }
@@ -113,19 +95,11 @@ export function TypedRouter<Args extends any[] = any[]>(
     }
   }
 
-  const methodsToProxy = [
-    "get",
-    "post",
-    "put",
-    "delete",
-    "patch",
-    "head",
-    "options",
-  ];
+  const methodsToProxy = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'];
 
   const wrapper: any = new Proxy(r, {
     get(target, prop, receiver) {
-      if (typeof prop === "string" && methodsToProxy.includes(prop)) {
+      if (typeof prop === 'string' && methodsToProxy.includes(prop)) {
         return (
           path: string,
           controller: HandlerController<any, any, Args>,
@@ -134,7 +108,7 @@ export function TypedRouter<Args extends any[] = any[]>(
           const handler = (...args: any[]) => {
             const req = args[0] as IRequest & { content?: unknown };
             const extraArgs = args.slice(1) as Args;
-            if (prop === "post" || prop === "put" || prop === "patch") {
+            if (prop === 'post' || prop === 'put' || prop === 'patch') {
               if (!options?.multipart) {
                 const ctErr = enforceJson(req);
                 if (ctErr) return ctErr;
@@ -160,7 +134,7 @@ export function TypedRouter<Args extends any[] = any[]>(
         };
       }
       const value = Reflect.get(target, prop, receiver);
-      if (typeof value === "function") {
+      if (typeof value === 'function') {
         return (...args: any[]) => {
           const result = value.apply(target, args);
           return result === target ? wrapper : result;

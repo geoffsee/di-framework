@@ -40,15 +40,15 @@ Always import from the scoped package `@di-framework/di-framework/*` to ensure a
 Correct:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
-import { Container, Component } from "@di-framework/di-framework/decorators";
+import { useContainer } from '@di-framework/di-framework/container';
+import { Container, Component } from '@di-framework/di-framework/decorators';
 ```
 
 Avoid:
 
 ```typescript
-import { useContainer } from "di-framework/container"; // Wrong: unscoped id
-import { Container } from "../../di-framework/decorators"; // Wrong: relative id
+import { useContainer } from 'di-framework/container'; // Wrong: unscoped id
+import { Container } from '../../di-framework/decorators'; // Wrong: relative id
 ```
 
 ## Usage with @di-framework/di-framework
@@ -56,10 +56,7 @@ import { Container } from "../../di-framework/decorators"; // Wrong: relative id
 The `@Repository` decorator automatically registers your repository with the `@di-framework/di-framework` container.
 
 ```typescript
-import {
-  Repository,
-  InMemoryRepository,
-} from "@di-framework/di-framework-repo";
+import { Repository, InMemoryRepository } from '@di-framework/di-framework-repo';
 
 interface User {
   id: number;
@@ -75,13 +72,11 @@ class UserRepository extends InMemoryRepository<User, number> {}
 Once registered, you can inject your repository into any other container-managed class:
 
 ```typescript
-import { Container, Component } from "@di-framework/di-framework/decorators";
+import { Container, Component } from '@di-framework/di-framework/decorators';
 
 @Container()
 class UserService {
-  constructor(
-    @Component(UserRepository) private userRepository: UserRepository,
-  ) {}
+  constructor(@Component(UserRepository) private userRepository: UserRepository) {}
 
   async getUser(id: number) {
     return this.userRepository.findById(id);
@@ -95,7 +90,7 @@ For prototyping, testing, or simple local state, use `InMemoryRepository`:
 
 ```typescript
 const repo = new InMemoryRepository<MyEntity, string>();
-await repo.save({ id: "1", name: "Test" });
+await repo.save({ id: '1', name: 'Test' });
 const items = await repo.findPaginated({ page: 1, size: 10 });
 ```
 
@@ -104,10 +99,7 @@ const items = await repo.findPaginated({ page: 1, size: 10 });
 You can implement your own adapter to connect to any data source:
 
 ```typescript
-import {
-  StorageAdapter,
-  EntityRepository,
-} from "@di-framework/di-framework-repo";
+import { StorageAdapter, EntityRepository } from '@di-framework/di-framework-repo';
 
 class PostgresAdapter<E, ID> implements StorageAdapter<E, ID> {
   // Implementation details...

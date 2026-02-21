@@ -79,7 +79,5 @@ export type StorageAdapterFactory<E, ID = string | number> = (
 /**
  * Helper type to extract Entity & ID from an adapter
  */
-export type EntityOfAdapter<A> =
-  A extends StorageAdapter<infer E, any> ? E : never;
-export type IdOfAdapter<A> =
-  A extends StorageAdapter<any, infer ID> ? ID : never;
+export type EntityOfAdapter<A> = A extends StorageAdapter<infer E, any> ? E : never;
+export type IdOfAdapter<A> = A extends StorageAdapter<any, infer ID> ? ID : never;

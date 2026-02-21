@@ -29,15 +29,15 @@ Mixing different import IDs (e.g., `di-framework/*` or relative paths to sources
 Correct:
 
 ```ts
-import { useContainer } from "@di-framework/di-framework/container";
-import { Container, Component } from "@di-framework/di-framework/decorators";
+import { useContainer } from '@di-framework/di-framework/container';
+import { Container, Component } from '@di-framework/di-framework/decorators';
 ```
 
 Avoid:
 
 ```ts
-import { useContainer } from "di-framework/container"; // Wrong: unscoped id
-import { Container } from "../../di-framework/decorators"; // Wrong: relative id
+import { useContainer } from 'di-framework/container'; // Wrong: unscoped id
+import { Container } from '../../di-framework/decorators'; // Wrong: relative id
 ```
 
 ## Basic Usage
@@ -57,7 +57,7 @@ interface User {
 You can extend `InMemoryRepository` for quick prototyping:
 
 ```typescript
-import { InMemoryRepository } from "@di-framework/di-framework-repo";
+import { InMemoryRepository } from '@di-framework/di-framework-repo';
 
 class UserRepository extends InMemoryRepository<User, number> {
   async findByEmail(email: string): Promise<User | null> {
@@ -72,7 +72,7 @@ class UserRepository extends InMemoryRepository<User, number> {
 Use the `@Repository` decorator to automatically register your repository with the `di-framework` container.
 
 ```typescript
-import { Repository } from "@di-framework/di-framework-repo";
+import { Repository } from '@di-framework/di-framework-repo';
 
 @Repository()
 class UserRepository extends InMemoryRepository<User, number> {
@@ -95,7 +95,7 @@ class UserService {
 The `StorageAdapter` interface allows you to implement custom backends.
 
 ```typescript
-import { StorageAdapter, BaseRepository } from "@di-framework/di-framework-repo";
+import { StorageAdapter, BaseRepository } from '@di-framework/di-framework-repo';
 
 class MyCustomAdapter<E, ID> implements StorageAdapter<E, ID> {
   // Implement findById, save, delete, findPaginated, etc.

@@ -57,7 +57,7 @@ export interface ILifecycleService {
 export class DIError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "DIError";
+    this.name = 'DIError';
   }
 }
 
@@ -67,7 +67,7 @@ export class DIError extends Error {
 export class CircularDependencyError extends DIError {
   constructor(message: string) {
     super(message);
-    this.name = "CircularDependencyError";
+    this.name = 'CircularDependencyError';
   }
 }
 
@@ -77,7 +77,7 @@ export class CircularDependencyError extends DIError {
 export class ServiceNotFoundError extends DIError {
   constructor(serviceName: string) {
     super(`Service '${serviceName}' is not registered in the DI container`);
-    this.name = "ServiceNotFoundError";
+    this.name = 'ServiceNotFoundError';
   }
 }
 
@@ -99,9 +99,7 @@ export type ServiceId<T> = ServiceClass<T>;
  * type UserServiceDeps = ConstructorParameters<typeof UserService>;
  */
 export type ServiceDependencies<T> =
-  T extends ServiceClass<infer U>
-    ? ConstructorParameters<ServiceClass<U>>
-    : never;
+  T extends ServiceClass<infer U> ? ConstructorParameters<ServiceClass<U>> : never;
 
 /**
  * Utility type to make all properties of a service optional
@@ -250,21 +248,21 @@ export namespace ServiceUtils {
    * Check if an object is a service class
    */
   export function isServiceClass(obj: any): obj is ServiceClass<any> {
-    return typeof obj === "function" && obj.prototype;
+    return typeof obj === 'function' && obj.prototype;
   }
 
   /**
    * Check if an object is a factory function
    */
   export function isFactory(obj: any): obj is ServiceFactory<any> {
-    return typeof obj === "function" && !isServiceClass(obj);
+    return typeof obj === 'function' && !isServiceClass(obj);
   }
 
   /**
    * Get the service name
    */
   export function getServiceName(service: Resolvable): string {
-    if (typeof service === "string") {
+    if (typeof service === 'string') {
       return service;
     }
     return service.name;
@@ -309,8 +307,6 @@ export namespace ServiceUtils {
  *   };
  * }
  */
-export function createDecorator<T extends (...args: any[]) => any>(
-  decorator: T,
-): T {
+export function createDecorator<T extends (...args: any[]) => any>(decorator: T): T {
   return decorator;
 }

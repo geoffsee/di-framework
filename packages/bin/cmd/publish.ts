@@ -1,23 +1,28 @@
-import { $ } from "bun";
-import { join } from "path";
+import { $ } from 'bun';
+import { join } from 'path';
 
-export const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http", "packages/bin"];
+export const PACKAGES = [
+  'packages/di-framework',
+  'packages/di-framework-repo',
+  'packages/di-framework-http',
+  'packages/bin',
+];
 
 export async function publish() {
   // 1. Run tests
-  console.log("🧪 Running tests...");
+  console.log('🧪 Running tests...');
   for (const pkgDir of PACKAGES) {
     await $`bun test ${pkgDir}`;
   }
 
   // 2. Build
-  console.log("🏗️  Building packages...");
+  console.log('🏗️  Building packages...');
   await $`bun run packages/bin/cmd/build.ts`;
 
   // 3. Publish
   for (const pkgDir of PACKAGES) {
     const fullPath = join(process.cwd(), pkgDir);
-    const pkgJson = await import(join(fullPath, "package.json"));
+    const pkgJson = await import(join(fullPath, 'package.json'));
 
     console.log(`\n🚢 Publishing ${pkgJson.name}@${pkgJson.version}...`);
 
@@ -32,12 +37,12 @@ export async function publish() {
     }
   }
 
-  console.log("\n🏁 Publish process finished!");
+  console.log('\n🏁 Publish process finished!');
 }
 
 if (import.meta.main) {
   publish().catch((err) => {
-    console.error("❌ Publish script failed:", err);
+    console.error('❌ Publish script failed:', err);
     process.exit(1);
   });
 }

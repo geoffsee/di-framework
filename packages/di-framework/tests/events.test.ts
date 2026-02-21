@@ -1,22 +1,18 @@
-import { describe, it, expect, beforeEach, jest } from "bun:test";
-import { useContainer } from "../container";
-import {
-  Container as Injectable,
-  Publisher,
-  Subscriber,
-} from "../decorators";
+import { describe, it, expect, beforeEach, jest } from 'bun:test';
+import { useContainer } from '../container';
+import { Container as Injectable, Publisher, Subscriber } from '../decorators';
 
 beforeEach(() => {
   useContainer().clear();
 });
 
-describe("Event Decorators - @Publisher and @Subscriber", () => {
-  it("publishes events and delivers them to subscribers (after phase by default)", () => {
-    let received: any[] = [];
+describe('Event Decorators - @Publisher and @Subscriber', () => {
+  it('publishes events and delivers them to subscribers (after phase by default)', () => {
+    const received: any[] = [];
 
     @Injectable()
     class AuditService {
-      @Subscriber("user.created")
+      @Subscriber('user.created')
       onUserCreated(payload: any) {
         received.push(payload);
       }
@@ -24,7 +20,7 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
 
     @Injectable()
     class UserService {
-      @Publisher("user.created")
+      @Publisher('user.created')
       createUser(name: string) {
         return { id: 1, name };
       }
@@ -34,15 +30,15 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
     const audit = c.resolve(AuditService);
     const user = c.resolve(UserService);
 
-    const res = user.createUser("Alice");
-    expect(res).toEqual({ id: 1, name: "Alice" });
+    const res = user.createUser('Alice');
+    expect(res).toEqual({ id: 1, name: 'Alice' });
 
     expect(received.length).toBe(1);
     const evt = received[0];
-    expect(evt.className).toBe("UserService");
-    expect(evt.methodName).toBe("createUser");
-    expect(evt.args).toEqual(["Alice"]);
-    expect(evt.result).toEqual({ id: 1, name: "Alice" });
+    expect(evt.className).toBe('UserService');
+    expect(evt.methodName).toBe('createUser');
+    expect(evt.args).toEqual(['Alice']);
+    expect(evt.result).toEqual({ id: 1, name: 'Alice' });
   });
 
   it("supports phase: 'before' to emit prior to execution without result", () => {
@@ -50,7 +46,7 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
 
     @Injectable()
     class Listener {
-      @Subscriber("work")
+      @Subscriber('work')
       onBefore(payload: any) {
         got = payload;
       }
@@ -58,7 +54,7 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
 
     @Injectable()
     class Worker {
-      @Publisher({ event: "work", phase: "before" })
+      @Publisher({ event: 'work', phase: 'before' })
       run(n: number) {
         return n * 2;
       }
@@ -72,17 +68,17 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
     expect(r).toBe(14);
 
     expect(got).toBeTruthy();
-    expect(got.methodName).toBe("run");
+    expect(got.methodName).toBe('run');
     expect(got.args).toEqual([7]);
     expect(got.result).toBeUndefined();
   });
 
-  it("emits for async success and error cases", async () => {
+  it('emits for async success and error cases', async () => {
     const events: any[] = [];
 
     @Injectable()
     class Sink {
-      @Subscriber("async.op")
+      @Subscriber('async.op')
       onEvt(e: any) {
         events.push(e);
       }
@@ -90,14 +86,14 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
 
     @Injectable()
     class AsyncService {
-      @Publisher("async.op")
+      @Publisher('async.op')
       async succeed(x: number) {
         return x + 1;
       }
 
-      @Publisher("async.op")
+      @Publisher('async.op')
       async fail() {
-        throw new Error("boom");
+        throw new Error('boom');
       }
     }
 
@@ -109,26 +105,26 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
     expect(ok).toBe(10);
 
     // At least one success event should be present
-    const successEvt = events.find((e) => e.methodName === "succeed");
+    const successEvt = events.find((e) => e.methodName === 'succeed');
     expect(successEvt).toBeTruthy();
     expect(successEvt.result).toBe(10);
 
-    await expect(s.fail()).rejects.toThrow("boom");
+    await expect(s.fail()).rejects.toThrow('boom');
 
-    const errorEvt = events.find((e) => e.methodName === "fail");
+    const errorEvt = events.find((e) => e.methodName === 'fail');
     expect(errorEvt).toBeTruthy();
     expect(errorEvt.error).toBeTruthy();
-    expect(errorEvt.error.message).toBe("boom");
+    expect(errorEvt.error.message).toBe('boom');
   });
 
-  it("logs when logging option is enabled on @Publisher", () => {
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  it('logs when logging option is enabled on @Publisher', () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     @Injectable()
     class Logged {
-      @Publisher({ event: "log.op", logging: true })
+      @Publisher({ event: 'log.op', logging: true })
       go() {
-        return "ok";
+        return 'ok';
       }
     }
 

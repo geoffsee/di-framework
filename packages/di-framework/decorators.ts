@@ -19,10 +19,10 @@ import {
   PUBLISHER_METADATA_KEY,
   SUBSCRIBER_METADATA_KEY,
   CRON_METADATA_KEY,
-} from "./container";
+} from './container';
 
-const INJECTABLE_METADATA_KEY = "di:injectable";
-const INJECT_METADATA_KEY = "di:inject";
+const INJECTABLE_METADATA_KEY = 'di:injectable';
+const INJECT_METADATA_KEY = 'di:inject';
 
 /**
  * Options for the @Telemetry decorator
@@ -43,11 +43,7 @@ export interface TelemetryOptions {
  * @param options Configuration options for telemetry
  */
 export function Telemetry(options: TelemetryOptions = {}) {
-  return function (
-    target: any,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const methods = getOwnMetadata(TELEMETRY_METADATA_KEY, target) || {};
     methods[propertyKey as string] = options;
     defineMetadata(TELEMETRY_METADATA_KEY, methods, target);
@@ -59,13 +55,8 @@ export function Telemetry(options: TelemetryOptions = {}) {
  * The method will be automatically registered to the container's 'telemetry' event.
  */
 export function TelemetryListener() {
-  return function (
-    target: any,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) {
-    const listeners =
-      getOwnMetadata(TELEMETRY_LISTENER_METADATA_KEY, target) || [];
+  return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+    const listeners = getOwnMetadata(TELEMETRY_LISTENER_METADATA_KEY, target) || [];
     listeners.push(propertyKey);
     defineMetadata(TELEMETRY_LISTENER_METADATA_KEY, listeners, target);
   };
@@ -78,7 +69,7 @@ export interface PublisherOptions {
   /** The custom event name to emit on the container */
   event: string;
   /** When to emit relative to the method invocation. Defaults to 'after'. */
-  phase?: "before" | "after" | "both";
+  phase?: 'before' | 'after' | 'both';
   /** Optional console logging for debug purposes. Defaults to false. */
   logging?: boolean;
 }
@@ -95,20 +86,14 @@ export interface PublisherOptions {
  * }
  */
 export function Publisher(optionsOrEvent: string | PublisherOptions) {
-  return function (
-    target: any,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const options: PublisherOptions =
-      typeof optionsOrEvent === "string"
-        ? { event: optionsOrEvent }
-        : optionsOrEvent;
+      typeof optionsOrEvent === 'string' ? { event: optionsOrEvent } : optionsOrEvent;
 
     const methods = getOwnMetadata(PUBLISHER_METADATA_KEY, target) || {};
     methods[propertyKey as string] = {
       event: options.event,
-      phase: options.phase ?? "after",
+      phase: options.phase ?? 'after',
       logging: options.logging ?? false,
     } as PublisherOptions;
     defineMetadata(PUBLISHER_METADATA_KEY, methods, target);
@@ -127,11 +112,7 @@ export function Publisher(optionsOrEvent: string | PublisherOptions) {
  * }
  */
 export function Subscriber(event: string) {
-  return function (
-    target: any,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const map = getOwnMetadata(SUBSCRIBER_METADATA_KEY, target) || {};
     if (!map[event]) map[event] = [];
     map[event].push(propertyKey as string);
@@ -152,11 +133,7 @@ export function Subscriber(event: string) {
  * Cron(30000)          // every 30 seconds
  */
 export function Cron(schedule: string | number) {
-  return function (
-    target: any,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const methods = getOwnMetadata(CRON_METADATA_KEY, target) || {};
     methods[propertyKey as string] = schedule;
     defineMetadata(CRON_METADATA_KEY, methods, target);
@@ -180,9 +157,7 @@ export function Cron(schedule: string | number) {
  *   // New instance created for each resolution
  * }
  */
-export function Container(
-  options: { singleton?: boolean; container?: DIContainer } = {},
-) {
+export function Container(options: { singleton?: boolean; container?: DIContainer } = {}) {
   return function <T extends { new (...args: any[]): {} }>(constructor: T) {
     const container = options.container ?? useContainer();
     const singleton = options.singleton ?? true;
@@ -227,7 +202,7 @@ export function Container(
  */
 export function Component(target: any) {
   return function (
-    targetClass: Object | any,
+    targetClass: object | any,
     propertyKey?: string | symbol,
     parameterIndex?: number,
   ) {
@@ -243,11 +218,7 @@ export function Component(target: any) {
         const constructorMetadata =
           getOwnMetadata(INJECT_METADATA_KEY, targetClass.constructor) || {};
         constructorMetadata[propertyKey as string] = target;
-        defineMetadata(
-          INJECT_METADATA_KEY,
-          constructorMetadata,
-          targetClass.constructor,
-        );
+        defineMetadata(INJECT_METADATA_KEY, constructorMetadata, targetClass.constructor);
       }
     }
     // Constructor parameter injection

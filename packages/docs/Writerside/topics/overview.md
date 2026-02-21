@@ -72,14 +72,14 @@ const appContext = container.resolve(ApplicationContext);
 ## Quick Example
 
 ```typescript
-import { Container, Component } from "@di-framework/di-framework/decorators";
-import { useContainer } from "@di-framework/di-framework/container";
+import { Container, Component } from '@di-framework/di-framework/decorators';
+import { useContainer } from '@di-framework/di-framework/container';
 
 // Define a service
 @Container()
 export class DatabaseService {
   connect(): void {
-    console.log("Connected to database");
+    console.log('Connected to database');
   }
 }
 
@@ -97,7 +97,7 @@ export class UserService {
 // Resolve and use
 const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
-userService.getUser("123");
+userService.getUser('123');
 ```
 
 ## Next Steps

@@ -1,5 +1,5 @@
-import { EntityRepository } from "./repository";
-import type { EntityId, PaginatedResult } from "./types";
+import { EntityRepository } from './repository';
+import type { EntityId, PaginatedResult } from './types';
 
 export class InMemoryRepository<
   E extends { id: ID },
@@ -20,9 +20,7 @@ export class InMemoryRepository<
   }
 
   async findMany(ids: ID[]): Promise<E[]> {
-    return ids
-      .map((id) => this.items.get(this.normalizeId(id)))
-      .filter((e): e is E => !!e);
+    return ids.map((id) => this.items.get(this.normalizeId(id))).filter((e): e is E => !!e);
   }
 
   async save(entity: E): Promise<E> {
@@ -48,9 +46,7 @@ export class InMemoryRepository<
     const all = await this.findAll();
 
     // Filter out other params (simple exact match for this in-memory implementation)
-    const filters = Object.entries(params).filter(
-      ([key]) => key !== "page" && key !== "size",
-    );
+    const filters = Object.entries(params).filter(([key]) => key !== 'page' && key !== 'size');
     const filtered = all.filter((item) => {
       return filters.every(([key, value]) => (item as any)[key] === value);
     });

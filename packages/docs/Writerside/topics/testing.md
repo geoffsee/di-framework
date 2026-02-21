@@ -7,10 +7,10 @@ Learn how to test services effectively with the DI framework.
 Create isolated test containers to avoid polluting the global container:
 
 ```typescript
-import { Container as DIContainer } from "@di-framework/di-framework/container";
-import { describe, it, expect, beforeEach } from "bun:test";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
+import { describe, it, expect, beforeEach } from 'bun:test';
 
-describe("UserService", () => {
+describe('UserService', () => {
   let testContainer: DIContainer;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe("UserService", () => {
     testContainer = new DIContainer();
   });
 
-  it("should create user", () => {
+  it('should create user', () => {
     // Register services
     testContainer.register(DatabaseService);
     testContainer.register(UserService);
@@ -38,11 +38,11 @@ Replace real services with mock implementations:
 // Mock implementation
 class MockDatabaseService {
   query(sql: string) {
-    return { rows: [{ id: "1", name: "Test User" }] };
+    return { rows: [{ id: '1', name: 'Test User' }] };
   }
 }
 
-describe("UserService", () => {
+describe('UserService', () => {
   let testContainer: DIContainer;
 
   beforeEach(() => {
@@ -53,11 +53,11 @@ describe("UserService", () => {
     testContainer.register(UserService);
   });
 
-  it("should return user from database", () => {
+  it('should return user from database', () => {
     const userService = testContainer.resolve(UserService);
-    const user = userService.getUser("1");
+    const user = userService.getUser('1');
 
-    expect(user.rows[0].name).toBe("Test User");
+    expect(user.rows[0].name).toBe('Test User');
   });
 });
 ```
@@ -67,7 +67,7 @@ describe("UserService", () => {
 Mock configuration and factory-registered services:
 
 ```typescript
-describe("UserService with config", () => {
+describe('UserService with config', () => {
   let testContainer: DIContainer;
 
   beforeEach(() => {
@@ -75,9 +75,9 @@ describe("UserService with config", () => {
 
     // Register test configuration
     testContainer.registerFactory(
-      "config",
+      'config',
       () => ({
-        apiUrl: "http://test.example.com",
+        apiUrl: 'http://test.example.com',
         timeout: 1000,
       }),
       { singleton: true },
@@ -86,11 +86,11 @@ describe("UserService with config", () => {
     testContainer.register(UserService);
   });
 
-  it("should use test configuration", () => {
+  it('should use test configuration', () => {
     const userService = testContainer.resolve(UserService);
-    const config = testContainer.resolve("config");
+    const config = testContainer.resolve('config');
 
-    expect(config.apiUrl).toBe("http://test.example.com");
+    expect(config.apiUrl).toBe('http://test.example.com');
   });
 });
 ```
@@ -100,8 +100,8 @@ describe("UserService with config", () => {
 Verify that dependencies are correctly injected:
 
 ```typescript
-describe("OrderService dependencies", () => {
-  it("should inject all required dependencies", () => {
+describe('OrderService dependencies', () => {
+  it('should inject all required dependencies', () => {
     const testContainer = new DIContainer();
 
     testContainer.register(DatabaseService);
@@ -123,8 +123,8 @@ describe("OrderService dependencies", () => {
 Verify singleton and transient behavior:
 
 ```typescript
-describe("Service lifecycle", () => {
-  it("should return same instance for singletons", () => {
+describe('Service lifecycle', () => {
+  it('should return same instance for singletons', () => {
     const testContainer = new DIContainer();
     testContainer.register(DatabaseService, { singleton: true });
 
@@ -134,7 +134,7 @@ describe("Service lifecycle", () => {
     expect(instance1).toBe(instance2);
   });
 
-  it("should return different instances for transient services", () => {
+  it('should return different instances for transient services', () => {
     const testContainer = new DIContainer();
     testContainer.register(RequestContext, { singleton: false });
 
@@ -151,7 +151,7 @@ describe("Service lifecycle", () => {
 Share a seeded container across tests while keeping isolation:
 
 ```typescript
-import { Container as DIContainer } from "@di-framework/di-framework/container";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 
 const base = new DIContainer();
 base.register(DatabaseService);
@@ -176,10 +176,10 @@ class Greeter {
   ) {}
 }
 
-it("should allow override of primitive args", () => {
+it('should allow override of primitive args', () => {
   const c = new DIContainer();
   c.register(LoggerService);
-  const greeter = c.construct(Greeter, { 1: "hello test" });
+  const greeter = c.construct(Greeter, { 1: 'hello test' });
   expect(greeter).toBeInstanceOf(Greeter);
 });
 ```
@@ -191,13 +191,13 @@ it("should allow override of primitive args", () => {
 You can verify that events are emitted and received correctly by registering both the publisher and subscriber in a test container:
 
 ```typescript
-it("should deliver events to subscribers", () => {
+it('should deliver events to subscribers', () => {
   const testContainer = new DIContainer();
   let receivedEvent: any = null;
 
   @Container()
   class TestSubscriber {
-    @Subscriber("test.event")
+    @Subscriber('test.event')
     onEvent(payload: any) {
       receivedEvent = payload;
     }
@@ -205,9 +205,9 @@ it("should deliver events to subscribers", () => {
 
   @Container()
   class TestPublisher {
-    @Publisher("test.event")
+    @Publisher('test.event')
     doWork() {
-      return "done";
+      return 'done';
     }
   }
 
@@ -221,8 +221,8 @@ it("should deliver events to subscribers", () => {
   publisher.doWork();
 
   expect(receivedEvent).toBeDefined();
-  expect(receivedEvent.methodName).toBe("doWork");
-  expect(receivedEvent.result).toBe("done");
+  expect(receivedEvent.methodName).toBe('doWork');
+  expect(receivedEvent.result).toBe('done');
 });
 ```
 
@@ -231,25 +231,23 @@ it("should deliver events to subscribers", () => {
 You can test telemetry by creating a service with `@TelemetryListener` or by subscribing to the container's `telemetry` event:
 
 ```typescript
-it("should emit telemetry events", async () => {
+it('should emit telemetry events', async () => {
   const testContainer = new DIContainer();
   let telemetryPayload: any = null;
 
-  testContainer.on("telemetry", (payload) => {
+  testContainer.on('telemetry', (payload) => {
     telemetryPayload = payload;
   });
 
   testContainer.register(ApiService);
   const api = testContainer.resolve(ApiService);
 
-  await api.fetchData("123");
+  await api.fetchData('123');
 
   expect(telemetryPayload).toBeDefined();
-  expect(telemetryPayload.className).toBe("ApiService");
-  expect(telemetryPayload.methodName).toBe("fetchData");
-  expect(
-    telemetryPayload.endTime - telemetryPayload.startTime,
-  ).toBeGreaterThanOrEqual(0);
+  expect(telemetryPayload.className).toBe('ApiService');
+  expect(telemetryPayload.methodName).toBe('fetchData');
+  expect(telemetryPayload.endTime - telemetryPayload.startTime).toBeGreaterThanOrEqual(0);
 });
 ```
 
@@ -258,8 +256,8 @@ it("should emit telemetry events", async () => {
 Test error handling and validation:
 
 ```typescript
-describe("Error handling", () => {
-  it("should throw when service not registered", () => {
+describe('Error handling', () => {
+  it('should throw when service not registered', () => {
     const testContainer = new DIContainer();
 
     expect(() => {
@@ -267,14 +265,14 @@ describe("Error handling", () => {
     }).toThrow("Service 'UnregisteredService' is not registered");
   });
 
-  it("should detect circular dependencies", () => {
+  it('should detect circular dependencies', () => {
     const testContainer = new DIContainer();
     testContainer.register(ServiceA);
     testContainer.register(ServiceB);
 
     expect(() => {
       testContainer.resolve(ServiceA);
-    }).toThrow("Circular dependency detected");
+    }).toThrow('Circular dependency detected');
   });
 });
 ```
@@ -293,8 +291,8 @@ class SpyDatabaseService {
   }
 }
 
-describe("UserService with spy", () => {
-  it("should call database with correct query", () => {
+describe('UserService with spy', () => {
+  it('should call database with correct query', () => {
     const testContainer = new DIContainer();
     testContainer.register(SpyDatabaseService);
     testContainer.register(UserService);
@@ -302,7 +300,7 @@ describe("UserService with spy", () => {
     const userService = testContainer.resolve(UserService);
     const spy = testContainer.resolve(SpyDatabaseService);
 
-    userService.getUser("123");
+    userService.getUser('123');
 
     expect(spy.queries).toContain("SELECT * FROM users WHERE id = '123'");
   });
@@ -320,18 +318,18 @@ class MockAsyncDatabaseService {
   }
 
   async query(sql: string) {
-    return Promise.resolve({ rows: [{ id: "1" }] });
+    return Promise.resolve({ rows: [{ id: '1' }] });
   }
 }
 
-describe("Async UserService", () => {
-  it("should handle async operations", async () => {
+describe('Async UserService', () => {
+  it('should handle async operations', async () => {
     const testContainer = new DIContainer();
     testContainer.register(MockAsyncDatabaseService);
     testContainer.register(UserService);
 
     const userService = testContainer.resolve(UserService);
-    const user = await userService.getUserAsync("1");
+    const user = await userService.getUserAsync('1');
 
     expect(user.rows).toHaveLength(1);
   });
@@ -343,8 +341,8 @@ describe("Async UserService", () => {
 Test multiple services working together:
 
 ```typescript
-describe("Order processing integration", () => {
-  it("should process complete order flow", async () => {
+describe('Order processing integration', () => {
+  it('should process complete order flow', async () => {
     const testContainer = new DIContainer();
 
     // Register all required services
@@ -356,13 +354,13 @@ describe("Order processing integration", () => {
     const orderService = testContainer.resolve(OrderService);
 
     const order = await orderService.createOrder({
-      userId: "1",
-      items: [{ id: "item1", quantity: 2 }],
+      userId: '1',
+      items: [{ id: 'item1', quantity: 2 }],
       total: 100,
     });
 
     expect(order.id).toBeDefined();
-    expect(order.status).toBe("completed");
+    expect(order.status).toBe('completed');
   });
 });
 ```
@@ -387,7 +385,7 @@ const testContainer = new DIContainer(); // Global
 // Good - Mock external services
 class MockEmailService {
   async sendEmail(to: string, subject: string) {
-    return { success: true, messageId: "test-123" };
+    return { success: true, messageId: 'test-123' };
   }
 }
 
@@ -399,13 +397,13 @@ testContainer.register(RealEmailService); // Will send real emails
 
 ```typescript
 // Good - Focused test
-it("should validate user email", () => {
+it('should validate user email', () => {
   const validator = testContainer.resolve(UserValidator);
-  expect(() => validator.validateEmail("invalid")).toThrow();
+  expect(() => validator.validateEmail('invalid')).toThrow();
 });
 
 // Bad - Testing multiple things
-it("should create user and send email and log activity", () => {
+it('should create user and send email and log activity', () => {
   // Too much in one test
 });
 ```
@@ -415,13 +413,13 @@ it("should create user and send email and log activity", () => {
 ```typescript
 // Good - Clear test data
 const testUser = {
-  id: "1",
-  name: "Test User",
-  email: "test@example.com",
+  id: '1',
+  name: 'Test User',
+  email: 'test@example.com',
 };
 
 // Bad - Unclear test data
-const testUser = { id: "1", n: "TU", e: "t@e.c" };
+const testUser = { id: '1', n: 'TU', e: 't@e.c' };
 ```
 
 ## Complete Test Example
@@ -429,14 +427,12 @@ const testUser = { id: "1", n: "TU", e: "t@e.c" };
 Here's a complete testing example:
 
 ```typescript
-import { Container as DIContainer } from "@di-framework/di-framework/container";
-import { describe, it, expect, beforeEach } from "bun:test";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
+import { describe, it, expect, beforeEach } from 'bun:test';
 
 // Mock services
 class MockDatabaseService {
-  private users = new Map([
-    ["1", { id: "1", name: "John Doe", email: "john@example.com" }],
-  ]);
+  private users = new Map([['1', { id: '1', name: 'John Doe', email: 'john@example.com' }]]);
 
   query(sql: string) {
     const match = sql.match(/id = '(\d+)'/);
@@ -457,7 +453,7 @@ class MockLoggerService {
 }
 
 // Test suite
-describe("UserService", () => {
+describe('UserService', () => {
   let testContainer: DIContainer;
 
   beforeEach(() => {
@@ -467,25 +463,25 @@ describe("UserService", () => {
     testContainer.register(UserService);
   });
 
-  it("should get user by id", () => {
+  it('should get user by id', () => {
     const userService = testContainer.resolve(UserService);
-    const user = userService.getUser("1");
+    const user = userService.getUser('1');
 
-    expect(user.rows[0].name).toBe("John Doe");
+    expect(user.rows[0].name).toBe('John Doe');
   });
 
-  it("should log user retrieval", () => {
+  it('should log user retrieval', () => {
     const userService = testContainer.resolve(UserService);
     const logger = testContainer.resolve(MockLoggerService);
 
-    userService.getUser("1");
+    userService.getUser('1');
 
-    expect(logger.logs).toContain("Getting user: 1");
+    expect(logger.logs).toContain('Getting user: 1');
   });
 
-  it("should return empty for non-existent user", () => {
+  it('should return empty for non-existent user', () => {
     const userService = testContainer.resolve(UserService);
-    const user = userService.getUser("999");
+    const user = userService.getUser('999');
 
     expect(user.rows).toHaveLength(0);
   });

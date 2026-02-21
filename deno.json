@@ -1,8 +1,6 @@
 {
   "nodeModulesDir": "auto",
-  "workspace": [
-    "packages/examples/packages/deno-http"
-  ],
+  "workspace": ["packages/examples/packages/deno-http"],
   "tasks": {
     "example": "deno run --allow-net examples/deno-http/src/main.ts"
   }

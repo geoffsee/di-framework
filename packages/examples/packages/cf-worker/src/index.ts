@@ -1,12 +1,12 @@
-import { DurableObject } from "cloudflare:workers";
-import { useContainer } from "@di-framework/di-framework/container";
-import { LoggerService } from "../../services/LoggerService";
-import { handleRequest } from "./router";
+import { DurableObject } from 'cloudflare:workers';
+import { useContainer } from '@di-framework/di-framework/container';
+import { LoggerService } from '../../services/LoggerService';
+import { handleRequest } from './router';
 
 // Wire up a couple of tokens via factory to demonstrate string-token injection
 const container = useContainer();
-if (!container.has("APP_NAME")) {
-  container.registerFactory("APP_NAME", () => "DI Worker Example", {
+if (!container.has('APP_NAME')) {
+  container.registerFactory('APP_NAME', () => 'DI Worker Example', {
     singleton: true,
   });
 }
@@ -38,7 +38,11 @@ export class MyDurableObject extends DurableObject<Env> {
    * @param ctx - The interface for interacting with Durable Object state
    * @param env - The interface to reference bindings declared in wrangler.jsonc
    */
-  constructor(state: DurableObjectState, env: Env, private readonly ctx: ExecutionContext) {
+  constructor(
+    state: DurableObjectState,
+    env: Env,
+    private readonly ctx: ExecutionContext,
+  ) {
     super(state, env, ctx);
   }
 
@@ -55,18 +59,18 @@ export class MyDurableObject extends DurableObject<Env> {
 
   // Simple stateful counter using Durable Object storage
   async increment(delta: number = 1): Promise<number> {
-    const current = (await this.ctx.storage.get<number>("count")) ?? 0;
+    const current = (await this.ctx.storage.get<number>('count')) ?? 0;
     const next = current + (Number.isFinite(delta) ? delta : 1);
-    await this.ctx.storage.put("count", next);
+    await this.ctx.storage.put('count', next);
     return next;
   }
 
   async getCount(): Promise<number> {
-    return (await this.ctx.storage.get<number>("count")) ?? 0;
+    return (await this.ctx.storage.get<number>('count')) ?? 0;
   }
 
   async reset(): Promise<number> {
-    await this.ctx.storage.put("count", 0);
+    await this.ctx.storage.put('count', 0);
     return 0;
   }
 }

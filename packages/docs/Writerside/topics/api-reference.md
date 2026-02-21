@@ -18,13 +18,13 @@ Marks a class as injectable and automatically registers it with the DI container
 **Example:**
 
 ```typescript
-import { Container } from "@di-framework/di-framework/decorators";
+import { Container } from '@di-framework/di-framework/decorators';
 
 // Singleton service (default)
 @Container()
 export class DatabaseService {
   connect() {
-    console.log("Connected");
+    console.log('Connected');
   }
 }
 
@@ -35,7 +35,7 @@ export class RequestScopedService {
 }
 
 // Custom container
-import { Container as DIContainer } from "@di-framework/di-framework/container";
+import { Container as DIContainer } from '@di-framework/di-framework/container';
 const customContainer = new DIContainer();
 
 @Container({ container: customContainer })
@@ -76,7 +76,7 @@ export class ReportService {
 ```typescript
 @Container()
 export class UserService {
-  constructor(@Component("config") private config: any) {}
+  constructor(@Component('config') private config: any) {}
 }
 ```
 
@@ -137,7 +137,7 @@ Marks a method to publish a custom event on the container upon invocation. This 
 ```typescript
 @Container()
 export class UserService {
-  @Publisher("user.created")
+  @Publisher('user.created')
   createUser(name: string) {
     return { id: 1, name };
   }
@@ -157,9 +157,9 @@ Marks a method to subscribe to a custom event emitted on the container. The deco
 ```typescript
 @Container()
 export class AuditService {
-  @Subscriber("user.created")
+  @Subscriber('user.created')
   onUserCreated(event: any) {
-    console.log("User created:", event.result);
+    console.log('User created:', event.result);
   }
 }
 ```
@@ -173,14 +173,14 @@ To interact with the container, you can either obtain the shared global instance
 Option A — using a function:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 const container = useContainer();
 ```
 
 Option B — using a named import:
 
 ```typescript
-import { container } from "@di-framework/di-framework/container";
+import { container } from '@di-framework/di-framework/container';
 ```
 
 Note: Prefer Option A when you want to make the acquisition explicit in your code examples; both options reference the same singleton instance by default.
@@ -194,7 +194,7 @@ Returns the global DI container instance.
 **Example:**
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
+import { useContainer } from '@di-framework/di-framework/container';
 
 const container = useContainer();
 ```
@@ -230,7 +230,7 @@ Register a service using a factory function.
 
 ```typescript
 container.registerFactory(
-  "config",
+  'config',
   () => ({
     apiKey: process.env.API_KEY,
     dbUrl: process.env.DATABASE_URL,
@@ -241,7 +241,7 @@ container.registerFactory(
 // Use in services
 @Container()
 export class UserService {
-  constructor(@Component("config") private config: any) {}
+  constructor(@Component('config') private config: any) {}
 }
 ```
 
@@ -262,7 +262,7 @@ Resolve and get an instance of a service.
 const userService = container.resolve<UserService>(UserService);
 
 // By name (for factory-registered services)
-const config = container.resolve("config");
+const config = container.resolve('config');
 ```
 
 ### container.has(serviceClass)
@@ -311,8 +311,8 @@ Subscribe to container lifecycle events (observer pattern). Returns an unsubscri
 **Example:**
 
 ```typescript
-const stop = container.on("resolved", ({ key, fromCache }) => {
-  const name = typeof key === "string" ? key : key.name;
+const stop = container.on('resolved', ({ key, fromCache }) => {
+  const name = typeof key === 'string' ? key : key.name;
   console.log(`Resolved ${name} (from cache: ${fromCache})`);
 });
 
@@ -327,9 +327,9 @@ Create a fresh instance without registering it, while still resolving dependenci
 **Example:**
 
 ```typescript
-import { Component } from "@di-framework/di-framework/decorators";
-import { container } from "@di-framework/di-framework/container";
-import { LoggerService } from "../../packages/examples/services/LoggerService";
+import { Component } from '@di-framework/di-framework/decorators';
+import { container } from '@di-framework/di-framework/container';
+import { LoggerService } from '../../packages/examples/services/LoggerService';
 
 class Greeter {
   constructor(
@@ -338,7 +338,7 @@ class Greeter {
   ) {}
 }
 
-const greeter = container.construct(Greeter, { 1: "Hello from config" });
+const greeter = container.construct(Greeter, { 1: 'Hello from config' });
 ```
 
 ### container.fork(options?)
@@ -366,7 +366,7 @@ Called to initialize environment-specific configuration.
 @Container()
 export class DatabaseService {
   setEnv(env: Record<string, any>) {
-    console.log("DB URL:", env.DATABASE_URL);
+    console.log('DB URL:', env.DATABASE_URL);
   }
 }
 
@@ -384,12 +384,12 @@ Called to set execution context (e.g., request context).
 @Container()
 export class RequestService {
   setCtx(context: any) {
-    console.log("Context:", context);
+    console.log('Context:', context);
   }
 }
 
 const service = container.resolve(RequestService);
-service.setCtx({ userId: "123", requestId: "abc" });
+service.setCtx({ userId: '123', requestId: 'abc' });
 ```
 
 ## Types
@@ -400,15 +400,8 @@ The DI container class.
 
 ```typescript
 class Container {
-  register<T>(
-    serviceClass: new (...args: any[]) => T,
-    options?: { singleton?: boolean },
-  ): void;
-  registerFactory<T>(
-    name: string,
-    factory: () => T,
-    options?: { singleton?: boolean },
-  ): void;
+  register<T>(serviceClass: new (...args: any[]) => T, options?: { singleton?: boolean }): void;
+  registerFactory<T>(name: string, factory: () => T, options?: { singleton?: boolean }): void;
   resolve<T>(serviceClass: new (...args: any[]) => T | string): T;
   has(serviceClass: any): boolean;
   getServiceNames(): string[];

@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  INSTANCE: "Writerside/d"
-  DOCKER_VERSION: "2.1.1479-p3869"
+  INSTANCE: 'Writerside/d'
+  DOCKER_VERSION: '2.1.1479-p3869'
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
           instance: ${{ env.INSTANCE }}
           location: packages/docs
           docker-version: ${{ env.DOCKER_VERSION }}
-          artifact: "webHelpD2-all.zip"
+          artifact: 'webHelpD2-all.zip'
 
       - name: Unzip artifact
         run: unzip -O UTF-8 -qq artifacts/webHelpD2-all.zip -d dir

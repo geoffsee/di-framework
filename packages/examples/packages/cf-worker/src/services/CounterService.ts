@@ -1,14 +1,12 @@
-import { Container, Component } from "@di-framework/di-framework/decorators";
-import { LoggerService } from "../../../services/LoggerService";
+import { Container, Component } from '@di-framework/di-framework/decorators';
+import { LoggerService } from '../../../services/LoggerService';
 
 @Container()
 export class CounterService {
-  constructor(
-    @Component(LoggerService) private readonly logger: LoggerService,
-  ) {}
+  constructor(@Component(LoggerService) private readonly logger: LoggerService) {}
 
   private getStub(env: any) {
-    return (env as any).MY_DURABLE_OBJECT.getByName("counter");
+    return (env as any).MY_DURABLE_OBJECT.getByName('counter');
   }
 
   async increment(env: any, delta = 1) {

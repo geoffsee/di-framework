@@ -1,22 +1,22 @@
 #!/usr/bin/env bun
-import { build } from "./cmd/build";
-import { test } from "./cmd/test";
-import { typecheck } from "./cmd/typecheck";
-import { publish } from "./cmd/publish";
+import { build } from './cmd/build';
+import { test } from './cmd/test';
+import { typecheck } from './cmd/typecheck';
+import { publish } from './cmd/publish';
 
 const COMMANDS: Record<string, { description: string; run: () => Promise<void> }> = {
-  build: { description: "Builds all packages and syncs versions", run: build },
-  test: { description: "Runs the E2E test suite", run: test },
-  typecheck: { description: "Runs TypeScript type checking across packages", run: typecheck },
-  publish: { description: "Publishes all packages to npm", run: publish },
+  build: { description: 'Builds all packages and syncs versions', run: build },
+  test: { description: 'Runs the E2E test suite', run: test },
+  typecheck: { description: 'Runs TypeScript type checking across packages', run: typecheck },
+  publish: { description: 'Publishes all packages to npm', run: publish },
 };
 
 async function main() {
   const cmdName = process.argv[2];
 
   if (!cmdName) {
-    console.error("Please provide a command\n");
-    console.error("Available commands:");
+    console.error('Please provide a command\n');
+    console.error('Available commands:');
     for (const [name, { description }] of Object.entries(COMMANDS)) {
       console.error(`  ${name.padEnd(12)} ${description}`);
     }
@@ -33,6 +33,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Failed to execute command:", err.message ?? err);
+  console.error('Failed to execute command:', err.message ?? err);
   process.exit(1);
 });

@@ -7,16 +7,16 @@ This guide will walk you through the basic concepts of the DI framework with sim
 The simplest way to use the framework is to mark a class with the `@Container()` decorator:
 
 ```typescript
-import { Container } from "@di-framework/di-framework/decorators";
+import { Container } from '@di-framework/di-framework/decorators';
 
 @Container()
 export class DatabaseService {
   connect(): void {
-    console.log("Connected to database");
+    console.log('Connected to database');
   }
 
   query(sql: string) {
-    console.log("Executing query:", sql);
+    console.log('Executing query:', sql);
     return { rows: [] };
   }
 }
@@ -31,8 +31,8 @@ You can inject dependencies into your services using the `@Component()` decorato
 ### Property Injection
 
 ```typescript
-import { Container, Component } from "@di-framework/di-framework/decorators";
-import { DatabaseService } from "./DatabaseService";
+import { Container, Component } from '@di-framework/di-framework/decorators';
+import { DatabaseService } from './DatabaseService';
 
 @Container()
 export class UserService {
@@ -67,14 +67,14 @@ export class UserService {
 To use your services, resolve them from the container:
 
 ```typescript
-import { useContainer } from "@di-framework/di-framework/container";
-import { UserService } from "./UserService";
+import { useContainer } from '@di-framework/di-framework/container';
+import { UserService } from './UserService';
 
 const container = useContainer();
 const userService = container.resolve<UserService>(UserService);
 
 // All dependencies are automatically injected!
-const user = userService.getUser("123");
+const user = userService.getUser('123');
 ```
 
 ## 4. Multiple Dependencies
@@ -91,7 +91,7 @@ export class ApplicationContext {
   ) {}
 
   async initialize() {
-    this.logger.log("Initializing application...");
+    this.logger.log('Initializing application...');
     await this.db.connect();
     this.auth.setup();
   }
@@ -116,12 +116,12 @@ Here's a complete example showing how everything works together:
 
 ```typescript
 // DatabaseService.ts
-import { Container } from "@di-framework/di-framework/decorators";
+import { Container } from '@di-framework/di-framework/decorators';
 
 @Container()
 export class DatabaseService {
   connect() {
-    console.log("Database connected");
+    console.log('Database connected');
   }
 
   query(sql: string) {
@@ -130,8 +130,8 @@ export class DatabaseService {
 }
 
 // UserService.ts
-import { Container, Component } from "@di-framework/di-framework/decorators";
-import { DatabaseService } from "./DatabaseService";
+import { Container, Component } from '@di-framework/di-framework/decorators';
+import { DatabaseService } from './DatabaseService';
 
 @Container()
 export class UserService {
@@ -144,12 +144,12 @@ export class UserService {
 }
 
 // main.ts
-import { useContainer } from "@di-framework/di-framework/container";
-import { UserService } from "./UserService";
+import { useContainer } from '@di-framework/di-framework/container';
+import { UserService } from './UserService';
 
 const container = useContainer();
 const userService = container.resolve(UserService);
-const user = userService.getUser("123");
+const user = userService.getUser('123');
 console.log(user);
 ```
 

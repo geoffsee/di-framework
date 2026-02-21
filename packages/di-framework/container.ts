@@ -15,17 +15,17 @@ type ServiceDefinition<T = any> = {
 };
 
 type ContainerEventName =
-  | "registered"
-  | "resolved"
-  | "cleared"
-  | "constructed"
-  | "telemetry"
+  | 'registered'
+  | 'resolved'
+  | 'cleared'
+  | 'constructed'
+  | 'telemetry'
   | string;
 type ContainerEventPayloads = {
   registered: {
     key: string | Constructor;
     singleton: boolean;
-    kind: "class" | "factory";
+    kind: 'class' | 'factory';
   };
   resolved: {
     key: string | Constructor;
@@ -53,14 +53,14 @@ type ContainerEventPayloads = {
 };
 type Listener<T> = (payload: T) => void;
 
-const INJECTABLE_METADATA_KEY = "di:injectable";
-const INJECT_METADATA_KEY = "di:inject";
-const DESIGN_PARAM_TYPES_KEY = "design:paramtypes";
-export const TELEMETRY_METADATA_KEY = "di:telemetry";
-export const TELEMETRY_LISTENER_METADATA_KEY = "di:telemetry-listener";
-export const PUBLISHER_METADATA_KEY = "di:publisher";
-export const SUBSCRIBER_METADATA_KEY = "di:subscriber";
-export const CRON_METADATA_KEY = "di:cron";
+const INJECTABLE_METADATA_KEY = 'di:injectable';
+const INJECT_METADATA_KEY = 'di:inject';
+const DESIGN_PARAM_TYPES_KEY = 'design:paramtypes';
+export const TELEMETRY_METADATA_KEY = 'di:telemetry';
+export const TELEMETRY_LISTENER_METADATA_KEY = 'di:telemetry-listener';
+export const PUBLISHER_METADATA_KEY = 'di:publisher';
+export const SUBSCRIBER_METADATA_KEY = 'di:subscriber';
+export const CRON_METADATA_KEY = 'di:cron';
 
 /**
  * Simple metadata storage that doesn't require reflect-metadata
@@ -90,12 +90,12 @@ function getOwnMetadata(key: string | symbol, target: any): any {
 // Parse a single cron field into an array of matching values.
 // Supports: * (any), star/N (step), N (exact), N,M (list), N-M (range)
 function parseCronField(field: string, min: number, max: number): number[] {
-  if (field === "*") {
+  if (field === '*') {
     const out: number[] = [];
     for (let i = min; i <= max; i++) out.push(i);
     return out;
   }
-  if (field.startsWith("*/")) {
+  if (field.startsWith('*/')) {
     const step = parseInt(field.slice(2), 10);
     const out: number[] = [];
     for (let i = min; i <= max; i++) {
@@ -103,11 +103,11 @@ function parseCronField(field: string, min: number, max: number): number[] {
     }
     return out;
   }
-  if (field.includes(",")) {
-    return field.split(",").map((s) => parseInt(s.trim(), 10));
+  if (field.includes(',')) {
+    return field.split(',').map((s) => parseInt(s.trim(), 10));
   }
-  if (field.includes("-")) {
-    const [lo = 0, hi = 0] = field.split("-").map((s) => parseInt(s.trim(), 10));
+  if (field.includes('-')) {
+    const [lo = 0, hi = 0] = field.split('-').map((s) => parseInt(s.trim(), 10));
     const out: number[] = [];
     for (let i = lo; i <= hi; i++) out.push(i);
     return out;
@@ -149,7 +149,7 @@ function getNextCronTime(fields: CronFields, from: Date): Date {
       fields.minute.includes(next.getMinutes()) &&
       fields.hour.includes(next.getHours()) &&
       fields.dayOfMonth.includes(next.getDate()) &&
-      (fields.month.includes(next.getMonth() + 1)) &&
+      fields.month.includes(next.getMonth() + 1) &&
       fields.dayOfWeek.includes(next.getDay())
     ) {
       return next;
@@ -182,10 +182,10 @@ export class Container {
       singleton: options.singleton ?? true,
     });
 
-    this.emit("registered", {
+    this.emit('registered', {
       key: serviceClass,
       singleton: options.singleton ?? true,
-      kind: "class",
+      kind: 'class',
     });
     return this;
   }
@@ -202,10 +202,10 @@ export class Container {
       type: factory,
       singleton: options.singleton ?? true,
     });
-    this.emit("registered", {
+    this.emit('registered', {
       key: name,
       singleton: options.singleton ?? true,
-      kind: "factory",
+      kind: 'factory',
     });
     return this;
   }
@@ -214,29 +214,26 @@ export class Container {
    * Get or create a service instance
    */
   public resolve<T>(serviceClass: Constructor<T> | string): T {
-    const key = typeof serviceClass === "string" ? serviceClass : serviceClass;
-    const keyStr =
-      typeof serviceClass === "string" ? serviceClass : serviceClass.name;
+    const key = typeof serviceClass === 'string' ? serviceClass : serviceClass;
+    const keyStr = typeof serviceClass === 'string' ? serviceClass : serviceClass.name;
 
     // Check for circular dependencies
     if (this.resolutionStack.has(key)) {
       throw new Error(
-        `Circular dependency detected while resolving ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(" -> ")} -> ${keyStr}`,
+        `Circular dependency detected while resolving ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(' -> ')} -> ${keyStr}`,
       );
     }
 
     const definition = this.services.get(key);
     if (!definition) {
-      throw new Error(
-        `Service '${keyStr}' is not registered in the DI container`,
-      );
+      throw new Error(`Service '${keyStr}' is not registered in the DI container`);
     }
 
     const wasCached = definition.singleton && !!definition.instance;
 
     // Return cached singleton
     if (definition.singleton && definition.instance) {
-      this.emit("resolved", {
+      this.emit('resolved', {
         key,
         instance: definition.instance,
         singleton: true,
@@ -255,7 +252,7 @@ export class Container {
         definition.instance = instance;
       }
 
-      this.emit("resolved", {
+      this.emit('resolved', {
         key,
         instance,
         singleton: definition.singleton,
@@ -273,21 +270,18 @@ export class Container {
    * Supports constructor overrides for primitives/config (constructor pattern).
    * Always returns a fresh instance (no caching).
    */
-  public construct<T>(
-    serviceClass: Constructor<T>,
-    overrides: Record<number, any> = {},
-  ): T {
+  public construct<T>(serviceClass: Constructor<T>, overrides: Record<number, any> = {}): T {
     const keyStr = serviceClass.name;
     if (this.resolutionStack.has(serviceClass)) {
       throw new Error(
-        `Circular dependency detected while constructing ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(" -> ")} -> ${keyStr}`,
+        `Circular dependency detected while constructing ${keyStr}. Stack: ${Array.from(this.resolutionStack).join(' -> ')} -> ${keyStr}`,
       );
     }
 
     this.resolutionStack.add(serviceClass);
     try {
       const instance = this.instantiate<T>(serviceClass, overrides);
-      this.emit("constructed", { key: serviceClass, instance, overrides });
+      this.emit('constructed', { key: serviceClass, instance, overrides });
       return instance;
     } finally {
       this.resolutionStack.delete(serviceClass);
@@ -308,7 +302,7 @@ export class Container {
     const count = this.services.size;
     this.stopCronJobs();
     this.services.clear();
-    this.emit("cleared", { count });
+    this.emit('cleared', { count });
   }
 
   /**
@@ -327,7 +321,7 @@ export class Container {
   public getServiceNames(): string[] {
     const names = new Set<string>();
     this.services.forEach((_, key) => {
-      if (typeof key === "string") {
+      if (typeof key === 'string') {
         names.add(key);
       }
     });
@@ -405,7 +399,7 @@ export class Container {
     Object.entries(subscriberMap).forEach(([event, methods]) => {
       methods.forEach((methodName) => {
         const method = (instance as any)[methodName];
-        if (typeof method === "function") {
+        if (typeof method === 'function') {
           this.on(event as any, (payload: any) => {
             try {
               method.call(instance, payload);
@@ -421,13 +415,15 @@ export class Container {
     });
 
     // Handle @Publisher(options)
-    const publisherMethods: Record<string, { event: string; phase?: "before" | "after" | "both"; logging?: boolean }> =
-      getMetadata(PUBLISHER_METADATA_KEY, constructor.prototype) || {};
+    const publisherMethods: Record<
+      string,
+      { event: string; phase?: 'before' | 'after' | 'both'; logging?: boolean }
+    > = getMetadata(PUBLISHER_METADATA_KEY, constructor.prototype) || {};
     Object.entries(publisherMethods).forEach(([methodName, options]) => {
       const originalMethod = (instance as any)[methodName];
-      if (typeof originalMethod === "function") {
+      if (typeof originalMethod === 'function') {
         const self = this;
-        const phase = options.phase ?? "after";
+        const phase = options.phase ?? 'after';
         (instance as any)[methodName] = function (...args: any[]) {
           const startTime = Date.now();
 
@@ -446,7 +442,7 @@ export class Container {
               const duration = payload.endTime - payload.startTime;
               const status = error
                 ? `ERROR: ${error && (error as any).message ? (error as any).message : String(error)}`
-                : "SUCCESS";
+                : 'SUCCESS';
               console.log(
                 `[Publisher] ${className}.${methodName} -> '${options.event}' - ${status} (${duration}ms)`,
               );
@@ -456,7 +452,7 @@ export class Container {
           };
 
           try {
-            if (phase === "before" || phase === "both") {
+            if (phase === 'before' || phase === 'both') {
               // Emit before invocation (no result yet)
               emit(undefined, undefined);
             }
@@ -466,7 +462,7 @@ export class Container {
             if (result instanceof Promise) {
               return result
                 .then((val) => {
-                  if (phase === "after" || phase === "both") {
+                  if (phase === 'after' || phase === 'both') {
                     emit(val, undefined);
                   }
                   return val;
@@ -478,7 +474,7 @@ export class Container {
                 });
             }
 
-            if (phase === "after" || phase === "both") {
+            if (phase === 'after' || phase === 'both') {
               emit(result, undefined);
             }
             return result;
@@ -500,18 +496,15 @@ export class Container {
 
     Object.entries(cronMethods).forEach(([methodName, schedule]) => {
       const method = (instance as any)[methodName];
-      if (typeof method !== "function") return;
+      if (typeof method !== 'function') return;
 
-      if (typeof schedule === "number") {
+      if (typeof schedule === 'number') {
         // Simple interval in ms
         const timer = setInterval(() => {
           try {
             method.call(instance);
           } catch (err) {
-            console.error(
-              `[Cron] ${constructor.name}.${methodName} threw`,
-              err,
-            );
+            console.error(`[Cron] ${constructor.name}.${methodName} threw`, err);
           }
         }, schedule);
         this.cronJobs.push({ stop: () => clearInterval(timer) });
@@ -531,10 +524,7 @@ export class Container {
             try {
               method.call(instance);
             } catch (err) {
-              console.error(
-                `[Cron] ${constructor.name}.${methodName} threw`,
-                err,
-              );
+              console.error(`[Cron] ${constructor.name}.${methodName} threw`, err);
             }
             scheduleNext();
           }, delay);
@@ -564,8 +554,8 @@ export class Container {
     type: Constructor<T> | ServiceFactory<T>,
     overrides: Record<number, any> = {},
   ): T {
-    if (typeof type !== "function") {
-      throw new Error("Service type must be a constructor or factory function");
+    if (typeof type !== 'function') {
+      throw new Error('Service type must be a constructor or factory function');
     }
 
     // If it's a factory function (not a class), just call it
@@ -628,28 +618,22 @@ export class Container {
     // Check both the instance and the constructor prototype for metadata
     const injectProperties = getMetadata(INJECT_METADATA_KEY, type) || {};
     const protoInjectProperties =
-      getMetadata(INJECT_METADATA_KEY, (type as Constructor<T>).prototype) ||
-      {};
+      getMetadata(INJECT_METADATA_KEY, (type as Constructor<T>).prototype) || {};
 
     const allInjectProperties = {
       ...injectProperties,
       ...protoInjectProperties,
     };
 
-    Object.entries(allInjectProperties).forEach(
-      ([propName, targetType]: [string, any]) => {
-        if (!propName.startsWith("param_") && targetType) {
-          try {
-            (instance as any)[propName] = this.resolve(targetType);
-          } catch (error) {
-            console.warn(
-              `Failed to inject property '${propName}' on ${type.name}:`,
-              error,
-            );
-          }
+    Object.entries(allInjectProperties).forEach(([propName, targetType]: [string, any]) => {
+      if (!propName.startsWith('param_') && targetType) {
+        try {
+          (instance as any)[propName] = this.resolve(targetType);
+        } catch (error) {
+          console.warn(`Failed to inject property '${propName}' on ${type.name}:`, error);
         }
-      },
-    );
+      }
+    });
 
     return instance;
   }
@@ -665,15 +649,12 @@ export class Container {
       getMetadata(TELEMETRY_LISTENER_METADATA_KEY, constructor.prototype) || [];
     listenerMethods.forEach((methodName) => {
       const method = (instance as any)[methodName];
-      if (typeof method === "function") {
-        this.on("telemetry", (payload) => {
+      if (typeof method === 'function') {
+        this.on('telemetry', (payload) => {
           try {
             method.call(instance, payload);
           } catch (err) {
-            console.error(
-              `[Container] TelemetryListener '${className}.${methodName}' threw`,
-              err,
-            );
+            console.error(`[Container] TelemetryListener '${className}.${methodName}' threw`, err);
           }
         });
       }
@@ -684,7 +665,7 @@ export class Container {
       getMetadata(TELEMETRY_METADATA_KEY, constructor.prototype) || {};
     Object.entries(telemetryMethods).forEach(([methodName, options]) => {
       const originalMethod = (instance as any)[methodName];
-      if (typeof originalMethod === "function") {
+      if (typeof originalMethod === 'function') {
         const self = this;
         (instance as any)[methodName] = function (...args: any[]) {
           const startTime = Date.now();
@@ -701,15 +682,11 @@ export class Container {
 
             if (options.logging) {
               const duration = payload.endTime - payload.startTime;
-              const status = error
-                ? `ERROR: ${error.message || error}`
-                : "SUCCESS";
-              console.log(
-                `[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`,
-              );
+              const status = error ? `ERROR: ${error.message || error}` : 'SUCCESS';
+              console.log(`[Telemetry] ${className}.${methodName} - ${status} (${duration}ms)`);
             }
 
-            self.emit("telemetry", payload);
+            self.emit('telemetry', payload);
           };
 
           try {
@@ -742,11 +719,7 @@ export class Container {
    * Check if a function is a class constructor
    */
   private isClass(func: Function): boolean {
-    return (
-      typeof func === "function" &&
-      func.prototype &&
-      func.prototype.constructor === func
-    );
+    return typeof func === 'function' && func.prototype && func.prototype.constructor === func;
   }
 
   /**
@@ -759,11 +732,11 @@ export class Container {
 
     const paramsStr = match[1];
     return paramsStr
-      .split(",")
+      .split(',')
       .map((param) => {
         const trimmed = param.trim();
-        const withoutDefault = trimmed.split("=")[0] || "";
-        const withoutType = withoutDefault.split(":")[0] || "";
+        const withoutDefault = trimmed.split('=')[0] || '';
+        const withoutType = withoutDefault.split(':')[0] || '';
         return withoutType.trim();
       })
       .filter((param) => param);

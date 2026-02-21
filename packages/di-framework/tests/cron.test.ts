@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { useContainer } from "../container";
-import { Container as Injectable, Cron } from "../decorators";
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { useContainer } from '../container';
+import { Container as Injectable, Cron } from '../decorators';
 
 beforeEach(() => {
   useContainer().clear();
@@ -10,8 +10,8 @@ afterEach(() => {
   useContainer().clear();
 });
 
-describe("@Cron decorator", () => {
-  it("runs a method on an interval (ms shorthand)", async () => {
+describe('@Cron decorator', () => {
+  it('runs a method on an interval (ms shorthand)', async () => {
     let count = 0;
 
     @Injectable()
@@ -30,7 +30,7 @@ describe("@Cron decorator", () => {
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
-  it("stops cron jobs when container is cleared", async () => {
+  it('stops cron jobs when container is cleared', async () => {
     let count = 0;
 
     @Injectable()
@@ -54,7 +54,7 @@ describe("@Cron decorator", () => {
     expect(count).toBe(countBeforeClear);
   });
 
-  it("stopCronJobs() stops jobs without clearing services", async () => {
+  it('stopCronJobs() stops jobs without clearing services', async () => {
     let count = 0;
 
     @Injectable()
@@ -77,7 +77,7 @@ describe("@Cron decorator", () => {
     expect(c.has(Worker)).toBe(true);
   });
 
-  it("handles errors in cron methods without stopping the schedule", async () => {
+  it('handles errors in cron methods without stopping the schedule', async () => {
     let calls = 0;
 
     @Injectable()
@@ -85,7 +85,7 @@ describe("@Cron decorator", () => {
       @Cron(40)
       boom() {
         calls++;
-        if (calls === 1) throw new Error("first call fails");
+        if (calls === 1) throw new Error('first call fails');
       }
     }
 
