@@ -1,11 +1,68 @@
 import registry from "./registry.ts";
+import { SCHEMAS } from "./decorators.ts";
 
 export type OpenAPIOptions = {
   title?: string;
   version?: string;
   description?: string;
   outputPath?: string;
+  schemas?: Record<string, unknown>;
 };
+
+/** Recursively extract `$ref` schema names from a value. */
+function collectRefs(obj: unknown, out: Set<string>): void {
+  if (typeof obj !== "object" || obj === null) return;
+
+  if (Array.isArray(obj)) {
+    for (const item of obj) collectRefs(item, out);
+    return;
+  }
+
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (key === "$ref" && typeof value === "string") {
+      const match = /^#\/components\/schemas\/(.+)$/.exec(value);
+      if (match?.[1]) out.add(match[1]);
+    } else {
+      collectRefs(value, out);
+    }
+  }
+}
+
+/**
+ * Resolve a schema name and all schemas it transitively references.
+ * Writes resolved schemas into `resolved`.
+ */
+function resolveSchema(name: string, resolved: Record<string, unknown>, schemas: Record<string, unknown>): void {
+  if (name in resolved) return;
+
+  const schema = schemas[name];
+  if (!schema) return;
+
+  resolved[name] = schema;
+
+  // Find transitive refs within the schema itself
+  const transitive = new Set<string>();
+  collectRefs(schema, transitive);
+  for (const dep of transitive) {
+    resolveSchema(dep, resolved, schemas);
+  }
+}
+
+/** Convert itty-router `:param` paths to OpenAPI `{param}` format. */
+function toOpenAPIPath(path: string): string {
+  return path.replace(/:([a-zA-Z_]\w*)/g, "{$1}");
+}
+
+/** Extract path parameter names from an itty-router path. */
+function extractPathParams(path: string): string[] {
+  const names: string[] = [];
+  const re = /:([a-zA-Z_]\w*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(path)) !== null) {
+    if (m[1]) names.push(m[1]);
+  }
+  return names;
+}
 
 export function generateOpenAPI(
   options: OpenAPIOptions = {},
@@ -28,13 +85,19 @@ export function generateOpenAPI(
 
   const targets = registryToUse.getTargets();
 
+  const metaParamsMap = new Map<string, unknown[]>();
+
   for (const target of targets) {
     // Look for endpoints on the target (static properties)
     for (const key of Object.getOwnPropertyNames(target)) {
-      const property = target[key];
+      const property = (target as any)[key];
       if (property && property.isEndpoint) {
         const path = property.path || "/unknown";
-        const method = property.method || "get";
+        const method = (property.method || "get").toLowerCase();
+
+        if (property.metadata?.parameters) {
+          metaParamsMap.set(`${path}|${method}`, property.metadata.parameters as unknown[]);
+        }
 
         if (!spec.paths[path]) {
           spec.paths[path] = {};
@@ -54,6 +117,49 @@ export function generateOpenAPI(
       }
     }
   }
+
+  // Rewrite paths: convert :param → {param} and inject parameters
+  const rewrittenPaths: Record<string, Record<string, unknown>> = {};
+
+  for (const [rawPath, methods] of Object.entries(spec.paths)) {
+    const openApiPath = toOpenAPIPath(rawPath);
+    const pathParamNames = extractPathParams(rawPath);
+
+    const autoParams = pathParamNames.map((name) => ({
+      name,
+      in: "path",
+      required: true,
+      schema: { type: "string" },
+    }));
+
+    rewrittenPaths[openApiPath] ??= {};
+
+    for (const [method, operation] of Object.entries(
+      methods as Record<string, any>,
+    )) {
+      const decoratorParams = metaParamsMap.get(`${rawPath}|${method}`) ?? [];
+      if (autoParams.length > 0 || decoratorParams.length > 0) {
+        operation.parameters = [...autoParams, ...decoratorParams];
+      }
+      rewrittenPaths[openApiPath][method] = operation;
+    }
+  }
+
+  spec.paths = rewrittenPaths;
+
+  // Collect schemas from decorator Symbols
+  const resolved: Record<string, unknown> = {};
+
+  for (const target of targets) {
+    const refs: Set<string> | undefined = (target as Record<symbol, Set<string>>)[SCHEMAS];
+    if (!refs) continue;
+
+    for (const name of refs) {
+      resolveSchema(name, resolved, options.schemas || {});
+    }
+  }
+
+  spec.components.schemas = resolved;
 
   return spec;
 }

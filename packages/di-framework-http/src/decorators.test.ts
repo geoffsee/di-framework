@@ -1,6 +1,8 @@
 import { describe, it, expect } from "bun:test";
-import { Controller, Endpoint } from "./decorators.ts";
+import { Controller, Endpoint, SCHEMAS } from "./decorators.ts";
 import registry from "./registry.ts";
+import { useContainer } from "@di-framework/di-framework/container";
+import { Component } from "@di-framework/di-framework/decorators";
 
 describe("Decorators", () => {
   it("should register a controller and its endpoints", () => {
@@ -43,5 +45,52 @@ describe("Decorators", () => {
     expect(registry.getTargets().has(InstanceController)).toBe(true);
     // @ts-ignore
     expect(InstanceController.prototype.method.isEndpoint).toBe(true);
+  });
+
+  it("should inject static properties on Controller classes", () => {
+    class InjectedService {
+      value = 42;
+    }
+    useContainer().register(InjectedService);
+
+    @Controller()
+    class InjectedController {
+      @Component(InjectedService)
+      static service: InjectedService;
+    }
+
+    expect(InjectedController.service).toBeDefined();
+    expect(InjectedController.service.value).toBe(42);
+  });
+
+  it("should extract schemas from Endpoint metadata and store them via SCHEMAS symbol", () => {
+    class SchemaEndpoint {
+      @Endpoint({
+        responses: {
+          "200": {
+            description: "A successful response",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MyModel" }
+              }
+            }
+          }
+        },
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/MyRequest" }
+            }
+          }
+        }
+      })
+      static myEndpoint() {}
+    }
+
+    const schemas = (SchemaEndpoint as any)[SCHEMAS];
+    expect(schemas).toBeDefined();
+    expect(schemas.has("MyModel")).toBe(true);
+    expect(schemas.has("MyRequest")).toBe(true);
+    expect(schemas.size).toBe(2);
   });
 });

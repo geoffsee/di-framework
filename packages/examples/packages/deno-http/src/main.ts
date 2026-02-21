@@ -53,7 +53,7 @@ const data = {
 }
 
 function pick<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
+    return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
 function capitalize(str: string): string {
@@ -75,7 +75,7 @@ class NaturalLanguageService {
 type Env = {};
 type ExecutionContext = {};
 
-const router = TypedRouter<[Env, ExecutionContext]>();
+export const router = TypedRouter<[Env, ExecutionContext]>();
 
 // Response Types
 type SentencesResponse = { nonsense: string; count: number };
@@ -101,7 +101,7 @@ export class NaturalLanguageController {
         "/:count",
         (req) => {
             const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
-            const count = parseInt(req.params.count) || 5;
+            const count = parseInt(req.params.count as string) || 5;
             return json({nonsense: ctrl.service.getText(count), count});
         },
     );

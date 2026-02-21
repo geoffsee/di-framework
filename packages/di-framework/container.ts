@@ -60,6 +60,7 @@ export const TELEMETRY_METADATA_KEY = "di:telemetry";
 export const TELEMETRY_LISTENER_METADATA_KEY = "di:telemetry-listener";
 export const PUBLISHER_METADATA_KEY = "di:publisher";
 export const SUBSCRIBER_METADATA_KEY = "di:subscriber";
+export const CRON_METADATA_KEY = "di:cron";
 
 /**
  * Simple metadata storage that doesn't require reflect-metadata
@@ -86,10 +87,83 @@ function getOwnMetadata(key: string | symbol, target: any): any {
   return getMetadata(key, target);
 }
 
+// Parse a single cron field into an array of matching values.
+// Supports: * (any), star/N (step), N (exact), N,M (list), N-M (range)
+function parseCronField(field: string, min: number, max: number): number[] {
+  if (field === "*") {
+    const out: number[] = [];
+    for (let i = min; i <= max; i++) out.push(i);
+    return out;
+  }
+  if (field.startsWith("*/")) {
+    const step = parseInt(field.slice(2), 10);
+    const out: number[] = [];
+    for (let i = min; i <= max; i++) {
+      if (i % step === 0) out.push(i);
+    }
+    return out;
+  }
+  if (field.includes(",")) {
+    return field.split(",").map((s) => parseInt(s.trim(), 10));
+  }
+  if (field.includes("-")) {
+    const [lo = 0, hi = 0] = field.split("-").map((s) => parseInt(s.trim(), 10));
+    const out: number[] = [];
+    for (let i = lo; i <= hi; i++) out.push(i);
+    return out;
+  }
+  return [parseInt(field, 10)];
+}
+
+interface CronFields {
+  minute: number[];
+  hour: number[];
+  dayOfMonth: number[];
+  month: number[];
+  dayOfWeek: number[];
+}
+
+function parseCronExpression(expr: string): CronFields {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5)
+    throw new Error(
+      `Invalid cron expression "${expr}": expected 5 fields (minute hour dayOfMonth month dayOfWeek)`,
+    );
+  return {
+    minute: parseCronField(parts[0] as string, 0, 59),
+    hour: parseCronField(parts[1] as string, 0, 23),
+    dayOfMonth: parseCronField(parts[2] as string, 1, 31),
+    month: parseCronField(parts[3] as string, 1, 12),
+    dayOfWeek: parseCronField(parts[4] as string, 0, 6),
+  };
+}
+
+function getNextCronTime(fields: CronFields, from: Date): Date {
+  const next = new Date(from);
+  next.setSeconds(0, 0);
+  next.setMinutes(next.getMinutes() + 1);
+
+  // Search forward up to ~2 years of minutes
+  for (let i = 0; i < 1_051_920; i++) {
+    if (
+      fields.minute.includes(next.getMinutes()) &&
+      fields.hour.includes(next.getHours()) &&
+      fields.dayOfMonth.includes(next.getDate()) &&
+      (fields.month.includes(next.getMonth() + 1)) &&
+      fields.dayOfWeek.includes(next.getDay())
+    ) {
+      return next;
+    }
+    next.setMinutes(next.getMinutes() + 1);
+  }
+  throw new Error(`No matching cron time found for expression within 2 years`);
+}
+
 export class Container {
   private services = new Map<string | Constructor, ServiceDefinition>();
   private resolutionStack = new Set<string | Constructor>();
   private listeners = new Map<ContainerEventName, Set<Listener<any>>>();
+  private cronJobs: Array<{ stop: () => void }> = [];
 
   /**
    * Register a service class as injectable
@@ -232,8 +306,19 @@ export class Container {
    */
   public clear(): void {
     const count = this.services.size;
+    this.stopCronJobs();
     this.services.clear();
     this.emit("cleared", { count });
+  }
+
+  /**
+   * Stop all active cron jobs
+   */
+  public stopCronJobs(): void {
+    for (const job of this.cronJobs) {
+      job.stop();
+    }
+    this.cronJobs = [];
   }
 
   /**
@@ -407,6 +492,72 @@ export class Container {
   }
 
   /**
+   * Apply cron schedules defined via @Cron decorator
+   */
+  private applyCron<T>(instance: T, constructor: Constructor<T>): void {
+    const cronMethods: Record<string, string | number> =
+      getMetadata(CRON_METADATA_KEY, constructor.prototype) || {};
+
+    Object.entries(cronMethods).forEach(([methodName, schedule]) => {
+      const method = (instance as any)[methodName];
+      if (typeof method !== "function") return;
+
+      if (typeof schedule === "number") {
+        // Simple interval in ms
+        const timer = setInterval(() => {
+          try {
+            method.call(instance);
+          } catch (err) {
+            console.error(
+              `[Cron] ${constructor.name}.${methodName} threw`,
+              err,
+            );
+          }
+        }, schedule);
+        this.cronJobs.push({ stop: () => clearInterval(timer) });
+      } else {
+        // Cron expression
+        const fields = parseCronExpression(schedule);
+        let stopped = false;
+
+        const scheduleNext = () => {
+          if (stopped) return;
+          const now = new Date();
+          const next = getNextCronTime(fields, now);
+          const delay = next.getTime() - now.getTime();
+
+          const timer = setTimeout(() => {
+            if (stopped) return;
+            try {
+              method.call(instance);
+            } catch (err) {
+              console.error(
+                `[Cron] ${constructor.name}.${methodName} threw`,
+                err,
+              );
+            }
+            scheduleNext();
+          }, delay);
+
+          // Update the stop function to clear the latest timer
+          job.stop = () => {
+            stopped = true;
+            clearTimeout(timer);
+          };
+        };
+
+        const job = {
+          stop: () => {
+            stopped = true;
+          },
+        };
+        this.cronJobs.push(job);
+        scheduleNext();
+      }
+    });
+  }
+
+  /**
    * Private method to instantiate a service
    */
   private instantiate<T>(
@@ -469,6 +620,9 @@ export class Container {
 
     // Apply custom event publishers and subscribers
     this.applyEvents(instance, type as Constructor<T>);
+
+    // Apply cron schedules
+    this.applyCron(instance, type as Constructor<T>);
 
     // Call @Component() decorators on properties
     // Check both the instance and the constructor prototype for metadata

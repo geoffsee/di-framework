@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { generateOpenAPI } from "./openapi.ts";
+import { SCHEMAS } from "./decorators.ts";
 
 describe("generateOpenAPI", () => {
   it("should generate a default OpenAPI spec with default options", () => {
@@ -122,5 +123,84 @@ describe("generateOpenAPI", () => {
 
     expect(spec.paths["/unknown"]).toBeDefined();
     expect(spec.paths["/unknown"].get).toBeDefined();
+  });
+
+  it("should convert :param paths to {param} and inject path parameters", () => {
+    const mockController = class ParamController {};
+    // @ts-ignore
+    mockController.getUser = () => {};
+    // @ts-ignore
+    mockController.getUser.isEndpoint = true;
+    // @ts-ignore
+    mockController.getUser.path = "/users/:userId/posts/:postId";
+    // @ts-ignore
+    mockController.getUser.method = "get";
+
+    const registry = { getTargets: () => new Set([mockController]) } as any;
+    const spec = generateOpenAPI({}, registry);
+
+    const openApiPath = "/users/{userId}/posts/{postId}";
+    expect(spec.paths[openApiPath]).toBeDefined();
+    const operation = spec.paths[openApiPath].get;
+    expect(operation.parameters).toBeDefined();
+    expect(operation.parameters.length).toBe(2);
+    expect(operation.parameters[0]).toEqual({
+      name: "userId",
+      in: "path",
+      required: true,
+      schema: { type: "string" },
+    });
+    expect(operation.parameters[1].name).toBe("postId");
+  });
+
+  it("should combine automatic path parameters with decorator parameters", () => {
+    const mockController = class MixController {};
+    // @ts-ignore
+    mockController.get = () => {};
+    // @ts-ignore
+    mockController.get.isEndpoint = true;
+    // @ts-ignore
+    mockController.get.path = "/items/:id";
+    // @ts-ignore
+    mockController.get.method = "get";
+    // @ts-ignore
+    mockController.get.metadata = {
+      parameters: [{ name: "filter", in: "query" }]
+    };
+
+    const registry = { getTargets: () => new Set([mockController]) } as any;
+    const spec = generateOpenAPI({}, registry);
+
+    const operation = spec.paths["/items/{id}"].get;
+    expect(operation.parameters).toBeDefined();
+    expect(operation.parameters.length).toBe(2);
+    expect(operation.parameters[0].name).toBe("id");
+    expect(operation.parameters[0].in).toBe("path");
+    expect(operation.parameters[1].name).toBe("filter");
+    expect(operation.parameters[1].in).toBe("query");
+  });
+
+  it("should resolve referenced component schemas via the SCHEMAS symbol", () => {
+    const mockController = class SchemaController {};
+    // @ts-ignore
+    mockController[SCHEMAS] = new Set(["User", "Post"]);
+
+    const registry = { getTargets: () => new Set([mockController]) } as any;
+    
+    // Provide the schema definitions in options
+    const schemas = {
+      User: { type: "object", properties: { id: { type: "string" }, profile: { $ref: "#/components/schemas/Profile" } } },
+      Post: { type: "object", properties: { title: { type: "string" } } },
+      Profile: { type: "object", properties: { age: { type: "integer" } } }, // Transitive ref
+      Unused: { type: "object" } // Should not be included
+    };
+
+    const spec = generateOpenAPI({ schemas }, registry);
+
+    const resolved = spec.components.schemas;
+    expect(resolved["User"]).toBeDefined();
+    expect(resolved["Post"]).toBeDefined();
+    expect(resolved["Profile"]).toBeDefined(); // Transitively resolved!
+    expect(resolved["Unused"]).toBeUndefined();
   });
 });

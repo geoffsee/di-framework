@@ -38,8 +38,8 @@ export class MyDurableObject extends DurableObject<Env> {
    * @param ctx - The interface for interacting with Durable Object state
    * @param env - The interface to reference bindings declared in wrangler.jsonc
    */
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
+  constructor(state: DurableObjectState, env: Env, private readonly ctx: ExecutionContext) {
+    super(state, env, ctx);
   }
 
   /**
@@ -80,7 +80,7 @@ export default {
    * @param ctx - The execution context of the Worker
    * @returns The response to be sent back to the client
    */
-  async fetch(request, env, ctx): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     return handleRequest(request, env, ctx);
   },
 } satisfies ExportedHandler<Env>;
