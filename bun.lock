@@ -11,16 +11,29 @@
         "typescript": "^5",
       },
     },
+    "packages/bin": {
+      "name": "@di-framework/cli",
+      "version": "0.0.0-prerelease.301",
+      "bin": {
+        "di-framework": "dist/di-framework",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/di-framework": {
       "name": "@di-framework/di-framework",
-      "version": "0.0.0-prerelease-0",
+      "version": "0.0.0-prerelease.301",
       "peerDependencies": {
         "typescript": "^5",
       },
     },
     "packages/di-framework-http": {
       "name": "@di-framework/di-framework-http",
-      "version": "0.0.0-prerelease.4",
+      "version": "0.0.0-prerelease.301",
       "bin": {
         "di-framework-http": "./dist/src/cli.js",
       },
@@ -38,7 +51,7 @@
     },
     "packages/di-framework-repo": {
       "name": "@di-framework/di-framework-repo",
-      "version": "0.0.0-prerelease-0",
+      "version": "0.0.0-prerelease.301",
       "peerDependencies": {
         "@di-framework/di-framework": "workspace:*",
         "typescript": "^5",
@@ -60,6 +73,8 @@
     },
   },
   "packages": {
+    "@di-framework/cli": ["@di-framework/cli@workspace:packages/bin"],
+
     "@di-framework/di-framework": ["@di-framework/di-framework@workspace:packages/di-framework"],
 
     "@di-framework/di-framework-http": ["@di-framework/di-framework-http@workspace:packages/di-framework-http"],

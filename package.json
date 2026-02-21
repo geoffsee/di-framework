@@ -5,9 +5,10 @@
   "type": "module",
   "private": true,
   "workspaces": [
+    "packages/bin",
+    "packages/examples",
     "packages/di-framework",
     "packages/di-framework-http",
-    "packages/examples",
     "packages/di-framework-repo"
   ],
   "scripts": {
