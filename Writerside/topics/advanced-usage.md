@@ -175,6 +175,41 @@ export class ApplicationContext {
 }
 ```
 
+## Event-Driven Architecture
+
+The framework supports cross-platform event-driven patterns using the `@Publisher` and `@Subscriber` decorators, allowing services to communicate loosely through the container.
+
+### Emitting Events with @Publisher
+
+Use `@Publisher` to emit a custom event when a method is called. By default, it emits after the method executes successfully or fails.
+
+```typescript
+@Container()
+export class UserService {
+  @Publisher({ event: "user.created", phase: "after", logging: true })
+  async createUser(dto: any) {
+    // ...
+    return { id: 1, ...dto };
+  }
+}
+```
+
+### Receiving Events with @Subscriber
+
+Use `@Subscriber` to automatically listen for custom events. Subscribed methods receive a payload containing the `className`, `methodName`, `args`, `startTime`, `endTime`, `result`, and `error`.
+
+```typescript
+@Container()
+export class NotificationService {
+  @Subscriber("user.created")
+  onUserCreated(event: any) {
+    if (event.result) {
+      console.log(`Sending welcome email to ${event.result.name}`);
+    }
+  }
+}
+```
+
 ## Telemetry and Monitoring
 
 The framework provides built-in support for tracking method execution using the `@Telemetry` and `@TelemetryListener` decorators.

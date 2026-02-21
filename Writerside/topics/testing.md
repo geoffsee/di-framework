@@ -186,6 +186,46 @@ it("should allow override of primitive args", () => {
 
 **Why:** Handy for targeted unit tests where you need DI-managed dependencies plus specific literal parameters.
 
+## Testing Publishers and Subscribers
+
+You can verify that events are emitted and received correctly by registering both the publisher and subscriber in a test container:
+
+```typescript
+it("should deliver events to subscribers", () => {
+  const testContainer = new DIContainer();
+  let receivedEvent: any = null;
+
+  @Container()
+  class TestSubscriber {
+    @Subscriber("test.event")
+    onEvent(payload: any) {
+      receivedEvent = payload;
+    }
+  }
+
+  @Container()
+  class TestPublisher {
+    @Publisher("test.event")
+    doWork() {
+      return "done";
+    }
+  }
+
+  testContainer.register(TestSubscriber);
+  testContainer.register(TestPublisher);
+
+  // Resolving the subscriber registers the listener
+  testContainer.resolve(TestSubscriber);
+  const publisher = testContainer.resolve(TestPublisher);
+
+  publisher.doWork();
+
+  expect(receivedEvent).toBeDefined();
+  expect(receivedEvent.methodName).toBe("doWork");
+  expect(receivedEvent.result).toBe("done");
+});
+```
+
 ## Testing Telemetry
 
 You can test telemetry by creating a service with `@TelemetryListener` or by subscribing to the container's `telemetry` event:

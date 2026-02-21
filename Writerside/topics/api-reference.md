@@ -118,6 +118,52 @@ export class MonitoringService {
 }
 ```
 
+### @Publisher(optionsOrEvent)
+
+Marks a method to publish a custom event on the container upon invocation. This is useful for cross-platform event-driven architectures.
+
+**Parameters:**
+
+- `optionsOrEvent` - A string representing the event name, or an options object.
+
+**Options:**
+
+- `event: string` - The custom event name.
+- `phase?: "before" | "after" | "both"` (default: `"after"`) - When to emit the event relative to method invocation.
+- `logging?: boolean` (default: `false`) - Optional console logging for debug purposes.
+
+**Example:**
+
+```typescript
+@Container()
+export class UserService {
+  @Publisher("user.created")
+  createUser(name: string) {
+    return { id: 1, name };
+  }
+}
+```
+
+### @Subscriber(event)
+
+Marks a method to subscribe to a custom event emitted on the container. The decorated method will automatically receive the published payload when the event occurs.
+
+**Parameters:**
+
+- `event: string` - The custom event name to listen for.
+
+**Example:**
+
+```typescript
+@Container()
+export class AuditService {
+  @Subscriber("user.created")
+  onUserCreated(event: any) {
+    console.log("User created:", event.result);
+  }
+}
+```
+
 ## Container API
 
 ### Getting a container instance
