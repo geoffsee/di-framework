@@ -1,15 +1,15 @@
 {
   "name": "di-framework",
-  "version": "0.0.0-prerelease.306",
+  "version": "0.0.0-prerelease.307",
   "module": "build.ts",
   "type": "module",
   "private": true,
   "workspaces": [
-    "packages/bin",
-    "packages/examples",
-    "packages/di-framework",
-    "packages/di-framework-http",
-    "packages/di-framework-repo"
+    "./packages/bin",
+    "./packages/examples",
+    "./packages/di-framework",
+    "./packages/di-framework-http",
+    "./packages/di-framework-repo"
   ],
   "scripts": {
     "build": "bun run packages/bin/cmd/build.ts",

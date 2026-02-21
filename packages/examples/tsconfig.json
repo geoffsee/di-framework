@@ -1,18 +1,11 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "baseUrl": "."
-  },
   "include": [
-    "index.ts",
-    "http-router/**/*.ts",
-    "services/**/*.ts",
-    "test-example/**/*.ts"
+    "packages/advanced/**/*.ts",
+    "packages/basic/**/*.ts",
+    "packages/http-router/**/*.ts",
+    "packages/services/**/*.ts",
+    "packages/test-example/**/*.ts"
   ],
-  "exclude": [
-    "advanced",
-    "cf-worker",
-    "deno-http"
-  ]
+  "exclude": ["node_modules"]
 }

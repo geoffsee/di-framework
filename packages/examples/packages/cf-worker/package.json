@@ -12,6 +12,7 @@
   "devDependencies": {
     "typescript": "latest",
     "wrangler": "latest",
+    "@cloudflare/workers-types": "latest",
     "@di-framework/di-framework": "file:../../di-framework"
   }
 }

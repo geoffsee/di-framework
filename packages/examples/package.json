@@ -2,6 +2,9 @@
   "name": "examples",
   "module": "index.ts",
   "type": "module",
+  "workspaces": [
+    "./packages/*"
+  ],
   "private": true,
   "scripts": {
     "build": "tsc --noEmit"

@@ -29,7 +29,7 @@ describe("CLI", () => {
   it("should generate OpenAPI spec with --controllers and --output", () => {
     const controllersPath = path.resolve(
       import.meta.dir,
-      "../../examples/http-router/index.ts",
+      "../../examples/packages/http-router/index.ts",
     );
     const { stdout, status } = spawnSync("bun", [
       CLI_PATH,
@@ -58,7 +58,7 @@ describe("CLI", () => {
 
     const controllersPath = path.resolve(
       import.meta.dir,
-      "../../examples/http-router/index.ts",
+      "../../examples/packages/http-router/index.ts",
     );
     const { status } = spawnSync("bun", [
       CLI_PATH,

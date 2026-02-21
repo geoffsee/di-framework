@@ -6,7 +6,7 @@
  */
 
 import {useContainer} from "@di-framework/di-framework/container";
-import {ApplicationContext} from "./services/ApplicationContext";
+import {ApplicationContext} from "../services/ApplicationContext";
 
 console.log("=".repeat(60));
 console.log("di-framework Demo");
