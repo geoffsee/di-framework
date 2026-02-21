@@ -2,9 +2,9 @@ import { $ } from "bun";
 import { join } from "path";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 
-const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http"];
+export const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http", "packages/bin"];
 
-async function build() {
+export async function build() {
   console.log("🚀 Starting build process...");
 
   const rootPkgPath = join(process.cwd(), "package.json");
@@ -20,8 +20,7 @@ async function build() {
     const pkgJsonPath = join(fullPath, "package.json");
     if (existsSync(pkgJsonPath)) {
       const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
-      pkgJson.version = version;
-      writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + "\n");
+      writeFileSync(pkgJsonPath, JSON.stringify({ name: pkgJson.name, version, ...pkgJson }, null, 2) + "\n");
     }
 
     // 1. Clean dist
@@ -41,7 +40,9 @@ async function build() {
   console.log("\n✨ All builds completed successfully!");
 }
 
-build().catch((err) => {
-  console.error("❌ Build failed:", err);
-  process.exit(1);
-});
+if (import.meta.main || !Bun.isMainThread) {
+  build().catch((err) => {
+    console.error("❌ Build failed:", err);
+    process.exit(1);
+  });
+}

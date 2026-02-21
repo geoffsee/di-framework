@@ -137,7 +137,7 @@ describe("Event Decorators - @Publisher and @Subscriber", () => {
     svc.go();
 
     expect(logSpy).toHaveBeenCalled();
-    const last = logSpy.mock.calls[logSpy.mock.calls.length - 1][0];
+    const last = logSpy.mock.calls[logSpy.mock.calls.length - 1]![0];
     expect(last).toContain("[Publisher] Logged.go -> 'log.op' - SUCCESS");
 
     logSpy.mockRestore();

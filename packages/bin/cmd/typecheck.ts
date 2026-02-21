@@ -2,9 +2,9 @@ import { $ } from "bun";
 import { join } from "path";
 import { existsSync } from "fs";
 
-const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http"];
+export const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http", "packages/bin"];
 
-async function typecheck() {
+export async function typecheck() {
   console.log("🚀 Starting typecheck process...");
 
   let hasError = false;
@@ -44,7 +44,9 @@ async function typecheck() {
   }
 }
 
-typecheck().catch((err) => {
-  console.error("❌ Typecheck failed with an unexpected error:", err);
-  process.exit(1);
-});
+if (import.meta.main || !Bun.isMainThread) {
+  typecheck().catch((err) => {
+    console.error("❌ Typecheck failed with an unexpected error:", err);
+    process.exit(1);
+  });
+}

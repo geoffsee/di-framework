@@ -1,10 +1,9 @@
 #!/usr/bin/env bun
-import { $ } from "bun";
 import { join } from "path";
-import { existsSync, readdirSync } from "fs";
 
-const COMMAND_DESCRIPTIONS: Record<string, string> = {
+const COMMANDS: Record<string, string> = {
   build: "Builds the packages in the monorepo",
+  test: "Runs the E2E test suite",
   typecheck: "Runs TypeScript type checking across the packages",
   publish: "Publishes the built packages to the npm registry",
 };
@@ -14,42 +13,30 @@ async function main() {
   const cmdName = args[0];
 
   if (!cmdName) {
-    console.error("❌ Please provide a command\n");
+    console.error("Please provide a command\n");
     console.error("Available commands:");
-    
-    const cmdDir = join(import.meta.dir, "cmd");
-    if (existsSync(cmdDir)) {
-      const files = readdirSync(cmdDir);
-      for (const file of files) {
-        if (file.endsWith(".ts")) {
-          const name = file.replace(".ts", "");
-          const desc = COMMAND_DESCRIPTIONS[name] || "No description available";
-          console.error(`  ${name.padEnd(10)} - ${desc}`);
-        }
-      }
+    for (const [name, desc] of Object.entries(COMMANDS)) {
+      console.error(`  ${name.padEnd(12)} ${desc}`);
     }
-    
+    process.exit(1);
+  }
+
+  if (!(cmdName in COMMANDS)) {
+    console.error(`Unknown command: ${cmdName}`);
     process.exit(1);
   }
 
   const cmdFile = join(import.meta.dir, "cmd", `${cmdName}.ts`);
 
-  if (!existsSync(cmdFile)) {
-    console.error(`❌ Command not found: ${cmdName}`);
-    process.exit(1);
-  }
+  const worker = new Worker(cmdFile, { env: process.env });
 
-  // Forward the rest of the arguments to the script
-  const scriptArgs = args.slice(1);
-  
-  if (scriptArgs.length > 0) {
-    await $`bun run ${cmdFile} ${scriptArgs}`.env(process.env);
-  } else {
-    await $`bun run ${cmdFile}`.env(process.env);
-  }
+  await new Promise<void>((resolve, reject) => {
+    worker.addEventListener("close", () => resolve());
+    worker.addEventListener("error", (e) => reject(e));
+  });
 }
 
 main().catch((err) => {
-  console.error("❌ Failed to execute command:", err);
+  console.error("Failed to execute command:", err.message ?? err);
   process.exit(1);
 });

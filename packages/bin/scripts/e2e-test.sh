@@ -60,22 +60,14 @@ fi
 
 echo ""
 
-# 3. TypeScript type checking (check container.ts specifically for the original errors)
+# 3. TypeScript type checking (per-package)
 print_test "Running TypeScript type checks..."
-ERRORS=$(npx tsc --noEmit 2>&1)
-CONTAINER_ERRORS=$(echo "$ERRORS" | grep "container.ts(179,54)\|container.ts(253,\|container.ts(255," || true)
-
-if [ -z "$CONTAINER_ERRORS" ]; then
-  print_success "Container.ts type checks passed (original errors fixed)"
+if npx tsc --noEmit -p packages/di-framework/tsconfig.json 2>/dev/null; then
+  print_success "di-framework type checks passed"
 else
-  print_error "Container.ts has type errors: $CONTAINER_ERRORS"
+  print_error "di-framework type checks failed"
+  npx tsc --noEmit -p packages/di-framework/tsconfig.json 2>&1 | head -20
   exit 1
-fi
-
-# Show other errors but don't fail on them (decorator config issues)
-OTHER_ERRORS=$(echo "$ERRORS" | grep -v "container.ts(179,54)\|container.ts(253,\|container.ts(255," || true)
-if [ ! -z "$OTHER_ERRORS" ]; then
-  echo -e "${YELLOW}ℹ Note: Other TypeScript errors exist (decorator config), but original container.ts errors are fixed${NC}"
 fi
 
 echo ""
@@ -93,10 +85,10 @@ echo ""
 
 # 5. Validate examples compile
 print_test "Validating example code..."
-if npx tsc --noEmit packages/examples/advanced/index.ts 2>/dev/null; then
+if npx tsc --noEmit -p packages/examples/tsconfig.json 2>/dev/null; then
   print_success "Advanced example validated"
 else
-  echo -e "${YELLOW}ℹ Advanced example has decorator config issues (non-critical)${NC}"
+  print_error "Advanced example has type errors"
 fi
 
 echo ""

@@ -1,9 +1,9 @@
 import { $ } from "bun";
 import { join } from "path";
 
-const PACKAGES = ["packages/di-framework", "packages/di-framework-repo",  "packages/di-framework-http"];
+export const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http", "packages/bin"];
 
-async function publish() {
+export async function publish() {
   // 1. Run tests first
   console.log("🧪 Running tests...");
   await $`bun test`;
@@ -33,7 +33,9 @@ async function publish() {
   console.log("\n🏁 Publish process finished!");
 }
 
-publish().catch((err) => {
-  console.error("❌ Publish script failed:", err);
-  process.exit(1);
-});
+if (import.meta.main || !Bun.isMainThread) {
+  publish().catch((err) => {
+    console.error("❌ Publish script failed:", err);
+    process.exit(1);
+  });
+}

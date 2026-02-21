@@ -1,32 +1,18 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-
-    // Decorator support
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": false,
-
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-
-    // Best practices
-    "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "rootDir": ".",
+    "baseUrl": "."
+  },
+  "include": [
+    "index.ts",
+    "advanced/**/*.ts",
+    "http-router/**/*.ts",
+    "services/**/*.ts",
+    "test-example/**/*.ts"
+  ],
+  "exclude": [
+    "cf-worker",
+    "deno-http"
+  ]
 }

@@ -123,7 +123,7 @@ describe("Telemetry Decorators", () => {
     service.doLogged("hello");
 
     expect(logSpy).toHaveBeenCalled();
-    const lastCall = logSpy.mock.calls[logSpy.mock.calls.length - 1][0];
+    const lastCall = logSpy.mock.calls[logSpy.mock.calls.length - 1]![0];
     expect(lastCall).toContain("[Telemetry] LoggingService.doLogged - SUCCESS");
     expect(lastCall).toMatch(/\(\d+ms\)/);
 
@@ -147,7 +147,7 @@ describe("Telemetry Decorators", () => {
     expect(() => service.doLoggedError()).toThrow("logged fail");
 
     expect(logSpy).toHaveBeenCalled();
-    const lastCall = logSpy.mock.calls[logSpy.mock.calls.length - 1][0];
+    const lastCall = logSpy.mock.calls[logSpy.mock.calls.length - 1]![0];
     expect(lastCall).toContain(
       "[Telemetry] LoggingErrorService.doLoggedError - ERROR: logged fail",
     );

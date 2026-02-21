@@ -1,10 +1,15 @@
 {
   "name": "@di-framework/cli",
-  "private": true,
+  "version": "0.0.0-prerelease.100",
+  "private": false,
   "type": "module",
   "main": "main.ts",
   "bin": {
-    "di-framework": "main.ts"
+    "di-framework": "dist/di-framework"
+  },
+  "scripts": {
+    "build": "bun build --compile main.ts --outfile=./dist/di-framework",
+    "postinstall": "bun run build"
   },
   "devDependencies": {
     "@types/bun": "latest"
