@@ -16,6 +16,8 @@ import {
   getMetadata,
   TELEMETRY_METADATA_KEY,
   TELEMETRY_LISTENER_METADATA_KEY,
+  PUBLISHER_METADATA_KEY,
+  SUBSCRIBER_METADATA_KEY,
 } from "./container";
 
 const INJECTABLE_METADATA_KEY = "di:injectable";
@@ -65,6 +67,74 @@ export function TelemetryListener() {
       getOwnMetadata(TELEMETRY_LISTENER_METADATA_KEY, target) || [];
     listeners.push(propertyKey);
     defineMetadata(TELEMETRY_LISTENER_METADATA_KEY, listeners, target);
+  };
+}
+
+/**
+ * Options for the @Publisher decorator
+ */
+export interface PublisherOptions {
+  /** The custom event name to emit on the container */
+  event: string;
+  /** When to emit relative to the method invocation. Defaults to 'after'. */
+  phase?: "before" | "after" | "both";
+  /** Optional console logging for debug purposes. Defaults to false. */
+  logging?: boolean;
+}
+
+/**
+ * Marks a method to publish a custom event on invocation.
+ * Useful for cross-platform event-driven architectures.
+ *
+ * Example:
+ * @Container()
+ * class UserService {
+ *   @Publisher('user.created')
+ *   createUser(dto: CreateUserDto) { ... }
+ * }
+ */
+export function Publisher(optionsOrEvent: string | PublisherOptions) {
+  return function (
+    target: any,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) {
+    const options: PublisherOptions =
+      typeof optionsOrEvent === "string"
+        ? { event: optionsOrEvent }
+        : optionsOrEvent;
+
+    const methods = getOwnMetadata(PUBLISHER_METADATA_KEY, target) || {};
+    methods[propertyKey as string] = {
+      event: options.event,
+      phase: options.phase ?? "after",
+      logging: options.logging ?? false,
+    } as PublisherOptions;
+    defineMetadata(PUBLISHER_METADATA_KEY, methods, target);
+  };
+}
+
+/**
+ * Marks a method to subscribe to a custom event emitted on the container.
+ * The decorated method will receive the published payload.
+ *
+ * Example:
+ * @Container()
+ * class AuditService {
+ *   @Subscriber('user.created')
+ *   onUserCreated(payload: any) { ... }
+ * }
+ */
+export function Subscriber(event: string) {
+  return function (
+    target: any,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) {
+    const map = getOwnMetadata(SUBSCRIBER_METADATA_KEY, target) || {};
+    if (!map[event]) map[event] = [];
+    map[event].push(propertyKey as string);
+    defineMetadata(SUBSCRIBER_METADATA_KEY, map, target);
   };
 }
 

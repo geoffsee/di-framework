@@ -19,7 +19,8 @@ type ContainerEventName =
   | "resolved"
   | "cleared"
   | "constructed"
-  | "telemetry";
+  | "telemetry"
+  | string;
 type ContainerEventPayloads = {
   registered: {
     key: string | Constructor;
@@ -57,6 +58,8 @@ const INJECT_METADATA_KEY = "di:inject";
 const DESIGN_PARAM_TYPES_KEY = "design:paramtypes";
 export const TELEMETRY_METADATA_KEY = "di:telemetry";
 export const TELEMETRY_LISTENER_METADATA_KEY = "di:telemetry-listener";
+export const PUBLISHER_METADATA_KEY = "di:publisher";
+export const SUBSCRIBER_METADATA_KEY = "di:subscriber";
 
 /**
  * Simple metadata storage that doesn't require reflect-metadata
@@ -267,40 +270,138 @@ export class Container {
    * Subscribe to container lifecycle events (observer pattern).
    * Returns an unsubscribe function.
    */
-  public on<K extends keyof ContainerEventPayloads>(
+  public on<K extends keyof ContainerEventPayloads | (string & {})>(
     event: K,
-    listener: Listener<ContainerEventPayloads[K]>,
+    listener: Listener<K extends keyof ContainerEventPayloads ? ContainerEventPayloads[K] : any>,
   ): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
+    if (!this.listeners.has(event as string)) {
+      this.listeners.set(event as string, new Set());
     }
 
-    this.listeners.get(event)!.add(listener as Listener<any>);
+    this.listeners.get(event as string)!.add(listener as Listener<any>);
     return () => this.off(event, listener);
   }
 
   /**
    * Remove a previously registered listener
    */
-  public off<K extends keyof ContainerEventPayloads>(
+  public off<K extends keyof ContainerEventPayloads | (string & {})>(
     event: K,
-    listener: Listener<ContainerEventPayloads[K]>,
+    listener: Listener<K extends keyof ContainerEventPayloads ? ContainerEventPayloads[K] : any>,
   ): void {
-    this.listeners.get(event)?.delete(listener as Listener<any>);
+    this.listeners.get(event as string)?.delete(listener as Listener<any>);
   }
 
-  private emit<K extends keyof ContainerEventPayloads>(
+  public emit<K extends keyof ContainerEventPayloads | (string & {})>(
     event: K,
-    payload: ContainerEventPayloads[K],
+    payload: K extends keyof ContainerEventPayloads ? ContainerEventPayloads[K] : any,
   ): void {
-    const listeners = this.listeners.get(event);
+    const listeners = this.listeners.get(event as string);
     if (!listeners || listeners.size === 0) return;
 
     listeners.forEach((listener) => {
       try {
         (listener as Listener<any>)(payload);
       } catch (err) {
-        console.error(`[Container] listener for '${event}' threw`, err);
+        console.error(`[Container] listener for '${String(event)}' threw`, err);
+      }
+    });
+  }
+
+  /**
+   * Apply event publishers and subscribers defined via decorators
+   */
+  private applyEvents<T>(instance: T, constructor: Constructor<T>): void {
+    const className = constructor.name;
+
+    // Handle @Subscriber(event)
+    const subscriberMap: Record<string, string[]> =
+      getMetadata(SUBSCRIBER_METADATA_KEY, constructor.prototype) || {};
+    Object.entries(subscriberMap).forEach(([event, methods]) => {
+      methods.forEach((methodName) => {
+        const method = (instance as any)[methodName];
+        if (typeof method === "function") {
+          this.on(event as any, (payload: any) => {
+            try {
+              method.call(instance, payload);
+            } catch (err) {
+              console.error(
+                `[Container] Subscriber '${className}.${methodName}' for event '${event}' threw`,
+                err,
+              );
+            }
+          });
+        }
+      });
+    });
+
+    // Handle @Publisher(options)
+    const publisherMethods: Record<string, { event: string; phase?: "before" | "after" | "both"; logging?: boolean }> =
+      getMetadata(PUBLISHER_METADATA_KEY, constructor.prototype) || {};
+    Object.entries(publisherMethods).forEach(([methodName, options]) => {
+      const originalMethod = (instance as any)[methodName];
+      if (typeof originalMethod === "function") {
+        const self = this;
+        const phase = options.phase ?? "after";
+        (instance as any)[methodName] = function (...args: any[]) {
+          const startTime = Date.now();
+
+          const emit = (result?: any, error?: any) => {
+            const payload = {
+              className,
+              methodName,
+              args,
+              startTime,
+              endTime: Date.now(),
+              result,
+              error,
+            };
+
+            if (options.logging) {
+              const duration = payload.endTime - payload.startTime;
+              const status = error
+                ? `ERROR: ${error && (error as any).message ? (error as any).message : String(error)}`
+                : "SUCCESS";
+              console.log(
+                `[Publisher] ${className}.${methodName} -> '${options.event}' - ${status} (${duration}ms)`,
+              );
+            }
+
+            self.emit(options.event as any, payload as any);
+          };
+
+          try {
+            if (phase === "before" || phase === "both") {
+              // Emit before invocation (no result yet)
+              emit(undefined, undefined);
+            }
+
+            const result = originalMethod.apply(this, args);
+
+            if (result instanceof Promise) {
+              return result
+                .then((val) => {
+                  if (phase === "after" || phase === "both") {
+                    emit(val, undefined);
+                  }
+                  return val;
+                })
+                .catch((err) => {
+                  // Always emit on error to allow subscribers to react
+                  emit(undefined, err);
+                  throw err;
+                });
+            }
+
+            if (phase === "after" || phase === "both") {
+              emit(result, undefined);
+            }
+            return result;
+          } catch (err) {
+            emit(undefined, err);
+            throw err;
+          }
+        };
       }
     });
   }
@@ -365,6 +466,9 @@ export class Container {
 
     // Apply Telemetry and TelemetryListener
     this.applyTelemetry(instance, type as Constructor<T>);
+
+    // Apply custom event publishers and subscribers
+    this.applyEvents(instance, type as Constructor<T>);
 
     // Call @Component() decorators on properties
     // Check both the instance and the constructor prototype for metadata
