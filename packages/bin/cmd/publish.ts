@@ -10,7 +10,7 @@ async function publish() {
 
   // 2. Build
   console.log("🏗️  Building packages...");
-  await $`bun run scripts/build.ts`;
+  await $`bun run packages/bin/build.ts`;
 
   // 3. Publish
   for (const pkgDir of PACKAGES) {

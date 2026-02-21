@@ -1,0 +1,15 @@
+{
+  "name": "@di-framework/cli",
+  "private": true,
+  "type": "module",
+  "main": "main.ts",
+  "bin": {
+    "di-framework": "main.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
