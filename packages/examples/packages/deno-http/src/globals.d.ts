@@ -3,3 +3,7 @@ declare module '@std/assert' {
 }
 
 declare const Deno: any;
+
+interface ImportMeta {
+  main: boolean;
+}
