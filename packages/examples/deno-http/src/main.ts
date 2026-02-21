@@ -88,7 +88,7 @@ export class NaturalLanguageController {
     private service!: NaturalLanguageService;
 
     @Endpoint({summary: "Get random nonsense", responses: {"200": {description: "Nonsense sentences"}}})
-    static getRoot = router.get<RequestSpec<Json<void>>, ResponseSpec<SentenceResponse>>(
+    static getRoot = router.get<RequestSpec<void>, ResponseSpec<SentenceResponse>>(
         "/",
         () => {
             const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
@@ -97,7 +97,7 @@ export class NaturalLanguageController {
     );
 
     @Endpoint({summary: "Get N nonsense sentences", responses: {"200": {description: "Nonsense sentences with count"}}})
-    static getCount = router.get<RequestSpec<Json<void>>, ResponseSpec<SentencesResponse>>(
+    static getCount = router.get<RequestSpec<void>, ResponseSpec<SentencesResponse>>(
         "/:count",
         (req) => {
             const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
