@@ -5,11 +5,8 @@
  * compared to the manual approach shown in SAMPLE.ts
  */
 
-import { useContainer } from "@di-framework/di-framework/container";
-import { DatabaseService } from "./services/DatabaseService";
-import { LoggerService } from "./services/LoggerService";
-import { UserService } from "./services/UserService";
-import { ApplicationContext } from "./services/ApplicationContext";
+import {useContainer} from "@di-framework/di-framework/container";
+import {ApplicationContext} from "./services/ApplicationContext";
 
 console.log("=".repeat(60));
 console.log("di-framework Demo");

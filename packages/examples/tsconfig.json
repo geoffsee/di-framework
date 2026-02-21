@@ -6,12 +6,12 @@
   },
   "include": [
     "index.ts",
-    "advanced/**/*.ts",
     "http-router/**/*.ts",
     "services/**/*.ts",
     "test-example/**/*.ts"
   ],
   "exclude": [
+    "advanced",
     "cf-worker",
     "deno-http"
   ]
