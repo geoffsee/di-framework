@@ -5,6 +5,8 @@ import {
   type Multipart,
   type RequestSpec,
   type ResponseSpec,
+  type PathParams,
+  type QueryParams,
 } from "./typed-router.ts";
 
 describe("TypedRouter", () => {
@@ -191,5 +193,24 @@ describe("TypedRouter", () => {
     });
     const res = await router.fetch(req);
     expect(res.status).toBe(415);
+  });
+
+  it("should type params and query from RequestSpec", async () => {
+    const router = TypedRouter();
+    router.get<
+      RequestSpec<PathParams<{ id: string }> & QueryParams<{ search?: string }>>,
+      ResponseSpec<{ id: string; search?: string }>
+    >("/item/:id", (req) => {
+      // Type testing:
+      const id: string = req.params.id;
+      const search: string | undefined = req.query.search;
+      return json({ id, search });
+    });
+
+    const req = new Request("http://localhost/item/123?search=test");
+    const res = await router.fetch(req);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as any;
+    expect(body).toEqual({ id: "123", search: "test" });
   });
 });

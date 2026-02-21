@@ -11,6 +11,8 @@ export type Multipart<T> = {
   readonly __kind: "multipart";
   readonly __type?: T;
 };
+export type PathParams<T> = { readonly __pathParams?: T };
+export type QueryParams<T> = { readonly __queryParams?: T };
 
 /** Spec types you’ll use in generics */
 export type RequestSpec<BodySpec = unknown> = { readonly __req?: BodySpec };
@@ -24,9 +26,19 @@ type ContentOf<BodySpec> =
       ? FormData
       : unknown;
 
+type PathParamsOf<BodySpec> = BodySpec extends PathParams<infer T>
+  ? T
+  : Record<string, string>;
+
+type QueryParamsOf<BodySpec> = BodySpec extends QueryParams<infer T>
+  ? T
+  : Record<string, string | string[] | undefined>;
+
 /** The actual request type your handlers receive */
-export type TypedRequest<ReqSpec> = IRequest & {
+export type TypedRequest<ReqSpec> = Omit<IRequest, "params" | "query"> & {
   content: ContentOf<ReqSpec extends RequestSpec<infer B> ? B : never>;
+  params: PathParamsOf<ReqSpec extends RequestSpec<infer B> ? B : never>;
+  query: QueryParamsOf<ReqSpec extends RequestSpec<infer B> ? B : never>;
 };
 
 /** Typed response helper (phantom only) */
