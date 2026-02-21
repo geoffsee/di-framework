@@ -4,13 +4,15 @@ import { join } from "path";
 export const PACKAGES = ["packages/di-framework", "packages/di-framework-repo", "packages/di-framework-http", "packages/bin"];
 
 export async function publish() {
-  // 1. Run tests first
+  // 1. Run tests
   console.log("🧪 Running tests...");
-  await $`bun test`;
+  for (const pkgDir of PACKAGES) {
+    await $`bun test ${pkgDir}`;
+  }
 
   // 2. Build
   console.log("🏗️  Building packages...");
-  await $`bun run packages/bin/build.ts`;
+  await $`bun run packages/bin/cmd/build.ts`;
 
   // 3. Publish
   for (const pkgDir of PACKAGES) {

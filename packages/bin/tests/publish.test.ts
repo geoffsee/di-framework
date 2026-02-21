@@ -65,7 +65,7 @@ describe("publish command", () => {
     it("runs tests before build in the source", () => {
       const source = readFileSync(join(import.meta.dir, "..", "cmd", "publish.ts"), "utf-8");
       const testIndex = source.indexOf("bun test");
-      const buildIndex = source.indexOf("bun run packages/bin/build.ts");
+      const buildIndex = source.indexOf("bun run packages/bin/cmd/build.ts");
       const publishIndex = source.indexOf("bun publish");
 
       expect(testIndex).toBeGreaterThan(-1);
