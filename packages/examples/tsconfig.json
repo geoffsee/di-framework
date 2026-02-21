@@ -1,5 +1,12 @@
 {
   "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@di-framework/di-framework/container": ["../di-framework/container.ts"],
+      "@di-framework/di-framework/decorators": ["../di-framework/decorators.ts"],
+      "@di-framework/di-framework-http": ["../di-framework-http/index.ts"]
+    }
+  },
   "include": [
     "packages/advanced/**/*.ts",
     "packages/basic/**/*.ts",
