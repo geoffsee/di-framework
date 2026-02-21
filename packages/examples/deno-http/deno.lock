@@ -1,0 +1,60 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@std/assert@1": "1.0.13",
+    "jsr:@std/internal@^1.0.6": "1.0.9",
+    "npm:@di-framework/di-framework-http@*": "0.0.0-prerelease.4_@di-framework+di-framework@0.0.0-prerelease-0__typescript@5.9.3_typescript@5.9.3",
+    "npm:@di-framework/di-framework-repo@*": "0.0.0-prerelease-0_@di-framework+di-framework@0.0.0-prerelease-0__typescript@5.9.3_typescript@5.9.3",
+    "npm:@di-framework/di-framework@*": "0.0.0-prerelease-0_typescript@5.9.3"
+  },
+  "jsr": {
+    "@std/assert@1.0.13": {
+      "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.9": {
+      "integrity": "bdfb97f83e4db7a13e8faab26fb1958d1b80cc64366501af78a0aee151696eb8"
+    }
+  },
+  "npm": {
+    "@di-framework/di-framework-http@0.0.0-prerelease.4_@di-framework+di-framework@0.0.0-prerelease-0__typescript@5.9.3_typescript@5.9.3": {
+      "integrity": "sha512-t9+Kaw4BpxRS2iM1U07tLHVqw7JnfNpiE3cTzcPez4giyEXWdjqZYiMJ59s0qhzCFOd9QYngF/ESqKN20PX9rQ==",
+      "dependencies": [
+        "@di-framework/di-framework",
+        "itty-router",
+        "typescript"
+      ],
+      "bin": true
+    },
+    "@di-framework/di-framework-repo@0.0.0-prerelease-0_@di-framework+di-framework@0.0.0-prerelease-0__typescript@5.9.3_typescript@5.9.3": {
+      "integrity": "sha512-rCiCIrylueU4hCw8fRZjBsOVc+ps/OOTTkxYtc4H39XuEmFQ/3kwAEuOxLbkJeI+S6kUTRgV+T0nLNZSr6hHbw==",
+      "dependencies": [
+        "@di-framework/di-framework",
+        "typescript"
+      ]
+    },
+    "@di-framework/di-framework@0.0.0-prerelease-0_typescript@5.9.3": {
+      "integrity": "sha512-iZMIeh7GYdWsb0e9jvd3QeMzak23Q3WkixteRD/gEJvK4HJYzhnF3p69TCMfjEZ0xr0O382j3oxEs5ujGVSkfg==",
+      "dependencies": [
+        "typescript"
+      ]
+    },
+    "itty-router@5.0.22": {
+      "integrity": "sha512-9hmdGErWdYDOurGYxSbqLhy4EFReIwk71hMZTJ5b+zfa2zjMNV1ftFno2b8VjAQvX615gNB8Qxbl9JMRqHnIVA=="
+    },
+    "typescript@5.9.3": {
+      "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+      "bin": true
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/assert@1",
+      "npm:@di-framework/di-framework-http@*",
+      "npm:@di-framework/di-framework-repo@*",
+      "npm:@di-framework/di-framework@*"
+    ]
+  }
+}
