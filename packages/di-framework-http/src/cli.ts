@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import { generateOpenAPI } from "./openapi.ts";
+import registry from "./registry.ts";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -16,42 +17,20 @@ if (command === "generate") {
     process.exit(1);
   }
 
-  const controllersPath = path.resolve(
-    process.cwd(),
-    args[controllersArg + 1]!,
-  );
-
   async function run() {
     try {
-      // Import the user's controllers to trigger registration
+      // Import the user's controllers to trigger decorator registration
       const controllersPathResolved = path.resolve(
         process.cwd(),
         args[controllersArg + 1]!,
       );
-      const imported = await import(controllersPathResolved);
-
-      // Try to find if they exported the registry, otherwise use our internal one
-      let registryToUse = imported.default || imported.registry;
-
-      if (!registryToUse || typeof registryToUse.getTargets !== "function") {
-        try {
-          // Try to import from @di-framework/di-framework-http if it exists in node_modules
-          // @ts-ignore - this may not exist in development but will in a user project
-          const dfHttp = await import("@di-framework/di-framework-http");
-          // @ts-ignore - dfHttp shape depends on runtime context
-          registryToUse = dfHttp.default || dfHttp.registry;
-        } catch {
-          // Fallback to local import if running from source/bundle
-          const regModule = await import("./registry.ts");
-          registryToUse = regModule.default;
-        }
-      }
+      await import(controllersPathResolved);
 
       const spec = generateOpenAPI(
         {
           title: "API Documentation",
         },
-        registryToUse,
+        registry,
       );
 
       fs.writeFileSync(outputPath!, JSON.stringify(spec, null, 2));

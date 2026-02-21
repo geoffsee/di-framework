@@ -12,6 +12,6 @@
   "devDependencies": {
     "typescript": "latest",
     "wrangler": "latest",
-    "@di-framework/di-framework": "workspace:*"
+    "@di-framework/di-framework": "file:../../di-framework"
   }
 }

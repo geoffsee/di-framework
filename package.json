@@ -1,6 +1,6 @@
 {
   "name": "di-framework",
-  "version": "0.0.0-prerelease.303",
+  "version": "0.0.0-prerelease.304",
   "module": "build.ts",
   "type": "module",
   "private": true,
@@ -15,7 +15,8 @@
     "build": "bun run packages/bin/cmd/build.ts",
     "publish": "bun run packages/bin/cmd/publish.ts",
     "link-cli": "(cd packages/bin && bun link >/dev/null 2>&1)",
-    "postinstall": "bun link-cli && echo 'di-framework <command> [args...]'"
+    "postinstall": "bun link-cli && echo 'di-framework <command> [args...]'",
+    "tsc": "tsc"
   },
   "devDependencies": {
     "@types/bun": "latest",

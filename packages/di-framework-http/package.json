@@ -22,7 +22,9 @@
   "type": "module",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "index.ts",
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && bun build ./index.ts ./src/cli.ts --outdir ./dist --target node --external itty-router && tsc --emitDeclarationOnly --declaration --outDir dist",

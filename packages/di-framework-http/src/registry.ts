@@ -26,6 +26,9 @@ export class Registry {
   }
 }
 
-const registry = new Registry();
+const GLOBAL_KEY = Symbol.for("@di-framework/http-registry");
+
+const registry: Registry =
+  (globalThis as any)[GLOBAL_KEY] ?? ((globalThis as any)[GLOBAL_KEY] = new Registry());
 
 export default registry;
