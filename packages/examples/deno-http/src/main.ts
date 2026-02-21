@@ -1,106 +1,113 @@
 import {
-  Container,
-  Component,
-  Telemetry,
-  getInjectionContainer,
+    Container,
+    Component,
+    Telemetry,
+    getInjectionContainer,
 } from "@di-framework/di-framework/decorators";
 import {
-  TypedRouter,
-  json,
-  Endpoint,
-  type RequestSpec,
-  type ResponseSpec,
-  type Json,
+    TypedRouter,
+    json,
+    Endpoint,
+    type RequestSpec,
+    type ResponseSpec,
+    type Json,
 } from "@di-framework/di-framework-http";
 
-const subjects = [
-  "The engineer",
-  "A curious developer",
-  "The system",
-  "An automated agent",
-  "The application",
-  "A distributed service",
-  "The algorithm",
-];
-
-const verbs = [
-  "analyzes",
-  "optimizes",
-  "generates",
-  "processes",
-  "transforms",
-  "evaluates",
-  "orchestrates",
-];
-
-const objects = [
-  "incoming requests",
-  "structured data",
-  "user input",
-  "real-time signals",
-  "network traffic",
-  "application state",
-  "complex workflows",
-];
-
-const modifiers = [
-  "with precision",
-  "in real time",
-  "at scale",
-  "without hesitation",
-  "under heavy load",
-  "with measurable impact",
-  "in a distributed environment",
-];
+const data = {
+    subjects: [
+        "You",
+        "The version of you they approved",
+        "The man staring back from the mirror",
+        "The consumer they built you to be",
+        "Your fear of being nobody",
+        "The life you keep postponing",
+        "The animal underneath the resume",
+    ],
+    verbs: [
+        "is chasing",
+        "is addicted to",
+        "is hiding behind",
+        "is slowly becoming",
+        "is terrified of losing",
+        "mistakes for freedom",
+        "calls success",
+    ],
+    objects: [
+        "a life that was never yours",
+        "approval from strangers",
+        "a job that owns your time",
+        "things you don't need",
+        "a story someone else wrote",
+        "comfort dressed up as purpose",
+        "a cage with better lighting",
+    ],
+    modifiers: [
+        "and wonders why it feels empty",
+        "while calling it progress",
+        "because silence feels dangerous",
+        "so you never have to be alone with yourself",
+        "and you know it",
+        "but you keep buying anyway",
+        "and that's the joke",
+    ],
+}
 
 function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 @Container()
 class NaturalLanguageService {
-  @Telemetry({ logging: true })
-  getText(sentenceCount: number): string {
-    return Array.from({ length: sentenceCount }, () => {
-      const sentence = `${pick(subjects)} ${pick(verbs)} ${pick(objects)} ${pick(modifiers)}.`;
-      return capitalize(sentence);
-    }).join(" ");
-  }
+    @Telemetry({logging: true})
+    getText(sentenceCount: number): string {
+        return Array.from({length: sentenceCount}, () => {
+            const sentence = `${pick(data.subjects)} ${pick(data.verbs)} ${pick(data.objects)} ${pick(data.modifiers)}.`;
+            return capitalize(sentence);
+        }).join(" ");
+    }
 }
 
-const router = TypedRouter();
+// Types of stuff supplied to router
+type Env = {};
+type ExecutionContext = {};
 
+const router = TypedRouter<[Env, ExecutionContext]>();
+
+// Response Types
+type SentencesResponse = { nonsense: string; count: number };
+type SentenceResponse = { nonsense: string };
+
+// Denosaur LLM
 @Container()
 export class NaturalLanguageController {
-  @Component(NaturalLanguageService)
-  private service!: NaturalLanguageService;
+    @Component(NaturalLanguageService)
+    private service!: NaturalLanguageService;
 
-  @Endpoint({ summary: "Get random nonsense", responses: { "200": { description: "Nonsense sentences" } } })
-  static getRoot = router.get<RequestSpec<Json<void>>, ResponseSpec<{ nonsense: string }>>(
-    "/",
-    () => {
-      const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
-      return json({ nonsense: ctrl.service.getText(5) });
-    },
-  );
+    @Endpoint({summary: "Get random nonsense", responses: {"200": {description: "Nonsense sentences"}}})
+    static getRoot = router.get<RequestSpec<Json<void>>, ResponseSpec<SentenceResponse>>(
+        "/",
+        () => {
+            const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
+            return json({nonsense: ctrl.service.getText(5)});
+        },
+    );
 
-  @Endpoint({ summary: "Get N nonsense sentences", responses: { "200": { description: "Nonsense sentences with count" } } })
-  static getCount = router.get<RequestSpec<Json<void>>, ResponseSpec<{ nonsense: string; count: number }>>(
-    "/:count",
-    (req) => {
-      const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
-      const count = parseInt(req.params.count) || 5;
-      return json({ nonsense: ctrl.service.getText(count), count });
-    },
-  );
+    @Endpoint({summary: "Get N nonsense sentences", responses: {"200": {description: "Nonsense sentences with count"}}})
+    static getCount = router.get<RequestSpec<Json<void>>, ResponseSpec<SentencesResponse>>(
+        "/:count",
+        (req) => {
+            const ctrl = getInjectionContainer().resolve(NaturalLanguageController);
+            const count = parseInt(req.params.count) || 5;
+            return json({nonsense: ctrl.service.getText(count), count});
+        },
+    );
 }
 
-export { router };
 
 if (import.meta.main) {
-  Deno.serve({ port: 8000 }, router.fetch);
+    Deno.serve({port: 8000}, router.fetch);
 }
