@@ -1,39 +1,35 @@
 #!/usr/bin/env bun
-import { join } from "path";
+import { build } from "./cmd/build";
+import { test } from "./cmd/test";
+import { typecheck } from "./cmd/typecheck";
+import { publish } from "./cmd/publish";
 
-const COMMANDS: Record<string, string> = {
-  build: "Builds the packages in the monorepo",
-  test: "Runs the E2E test suite",
-  typecheck: "Runs TypeScript type checking across the packages",
-  publish: "Publishes the built packages to the npm registry",
+const COMMANDS: Record<string, { description: string; run: () => Promise<void> }> = {
+  build: { description: "Builds all packages and syncs versions", run: build },
+  test: { description: "Runs the E2E test suite", run: test },
+  typecheck: { description: "Runs TypeScript type checking across packages", run: typecheck },
+  publish: { description: "Publishes all packages to npm", run: publish },
 };
 
 async function main() {
-  const args = process.argv.slice(2);
-  const cmdName = args[0];
+  const cmdName = process.argv[2];
 
   if (!cmdName) {
     console.error("Please provide a command\n");
     console.error("Available commands:");
-    for (const [name, desc] of Object.entries(COMMANDS)) {
-      console.error(`  ${name.padEnd(12)} ${desc}`);
+    for (const [name, { description }] of Object.entries(COMMANDS)) {
+      console.error(`  ${name.padEnd(12)} ${description}`);
     }
     process.exit(1);
   }
 
-  if (!(cmdName in COMMANDS)) {
+  const cmd = COMMANDS[cmdName];
+  if (!cmd) {
     console.error(`Unknown command: ${cmdName}`);
     process.exit(1);
   }
 
-  const cmdFile = join(import.meta.dir, "cmd", `${cmdName}.ts`);
-
-  const worker = new Worker(cmdFile, { env: process.env });
-
-  await new Promise<void>((resolve, reject) => {
-    worker.addEventListener("close", () => resolve());
-    worker.addEventListener("error", (e) => reject(e));
-  });
+  await cmd.run();
 }
 
 main().catch((err) => {

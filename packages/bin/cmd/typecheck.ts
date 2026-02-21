@@ -44,7 +44,7 @@ export async function typecheck() {
   }
 }
 
-if (import.meta.main || !Bun.isMainThread) {
+if (import.meta.main) {
   typecheck().catch((err) => {
     console.error("❌ Typecheck failed with an unexpected error:", err);
     process.exit(1);

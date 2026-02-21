@@ -35,7 +35,7 @@ export async function publish() {
   console.log("\n🏁 Publish process finished!");
 }
 
-if (import.meta.main || !Bun.isMainThread) {
+if (import.meta.main) {
   publish().catch((err) => {
     console.error("❌ Publish script failed:", err);
     process.exit(1);

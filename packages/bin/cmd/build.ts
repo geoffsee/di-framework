@@ -20,7 +20,7 @@ export async function build() {
     const pkgJsonPath = join(fullPath, "package.json");
     if (existsSync(pkgJsonPath)) {
       const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
-      writeFileSync(pkgJsonPath, JSON.stringify({ name: pkgJson.name, version, ...pkgJson }, null, 2) + "\n");
+      writeFileSync(pkgJsonPath, JSON.stringify({ ...pkgJson, version }, null, 2) + "\n");
     }
 
     // 1. Clean dist
@@ -40,7 +40,7 @@ export async function build() {
   console.log("\n✨ All builds completed successfully!");
 }
 
-if (import.meta.main || !Bun.isMainThread) {
+if (import.meta.main) {
   build().catch((err) => {
     console.error("❌ Build failed:", err);
     process.exit(1);

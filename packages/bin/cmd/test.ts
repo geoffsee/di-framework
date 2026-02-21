@@ -1,16 +1,23 @@
 import { $ } from "bun";
 import { join } from "path";
-
-export const SCRIPT_PATH = join(import.meta.dir, "..", "scripts", "e2e-test.sh");
-export const REPO_ROOT = join(import.meta.dir, "..", "..", "..");
+import { writeFileSync, unlinkSync } from "fs";
+import { tmpdir } from "os";
+// @ts-ignore — static import embeds the file at compile time
+import E2E_SCRIPT from "../scripts/e2e-test.sh" with { type: "text" };
 
 export async function test() {
-  await $`bash ${SCRIPT_PATH}`.cwd(REPO_ROOT).env(process.env);
+  const tmp = join(tmpdir(), `di-framework-e2e-${process.pid}.sh`);
+  writeFileSync(tmp, E2E_SCRIPT, { mode: 0o755 });
+  try {
+    await $`bash ${tmp}`.env(process.env);
+  } finally {
+    unlinkSync(tmp);
+  }
 }
 
-if (import.meta.main || !Bun.isMainThread) {
+if (import.meta.main) {
   test().catch((err) => {
-    console.error("❌ Tests failed:", err);
+    console.error("Tests failed:", err);
     process.exit(1);
   });
 }

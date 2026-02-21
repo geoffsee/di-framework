@@ -1,11 +1,13 @@
 import { describe, it, expect } from "bun:test";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { SCRIPT_PATH, REPO_ROOT } from "../cmd/test";
+
+const SCRIPT_PATH = join(import.meta.dir, "..", "scripts", "e2e-test.sh");
+const REPO_ROOT = join(import.meta.dir, "..", "..", "..");
 
 describe("test command", () => {
   describe("paths", () => {
-    it("e2e script exists at the resolved path", () => {
+    it("e2e script exists at the source path", () => {
       expect(existsSync(SCRIPT_PATH)).toBe(true);
     });
 
@@ -42,6 +44,13 @@ describe("test command", () => {
     it("reports a summary", () => {
       const content = readFileSync(SCRIPT_PATH, "utf-8");
       expect(content).toContain("Test Summary");
+    });
+  });
+
+  describe("embedded script", () => {
+    it("is read into the module at import time", async () => {
+      const mod = await import("../cmd/test");
+      expect(mod.test).toBeFunction();
     });
   });
 });

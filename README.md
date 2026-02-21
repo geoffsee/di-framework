@@ -9,7 +9,21 @@ npm i @di-framework/di-framework
 - `packages/di-framework` - core container
 - `packages/di-framework-repo` - data access
 - `packages/di-framework-http` - http handling
+- `packages/bin` - CLI tooling
 - `packages/examples` - usage examples
+
+## CLI
+`bun x @di-framework/bin`
+```
+di-framework <command>
+```
+
+| Command | Description |
+|---|---|
+| `test` | Runs the E2E test suite (type checks, unit tests, example validation) |
+| `build` | Builds all packages and syncs versions from the workspace root |
+| `typecheck` | Runs `tsc --noEmit` across all packages |
+| `publish` | Tests, builds, and publishes all packages to npm |
 
 ## Simple Example
 
