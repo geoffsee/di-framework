@@ -12,7 +12,7 @@ type Args = {
 
 export function parseArgs(argv: string[]): Args {
   let tsconfigPath: string | undefined;
-  let pretty = process.stdout.isTTY;
+  let pretty = Boolean(process.stdout.isTTY);
   let from: Args['from'] = 'cwd';
 
   for (const arg of argv.slice(2)) {
