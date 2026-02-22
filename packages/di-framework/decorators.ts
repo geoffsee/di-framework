@@ -173,6 +173,28 @@ export function Container(options: { singleton?: boolean; container?: DIContaine
 }
 
 /**
+ * Eagerly resolves a class once at definition time.
+ *
+ * Useful for startup-only classes (e.g. HTTP controllers) whose constructors
+ * register routes or side effects and should run before handling requests.
+ */
+export function Bootstrap(options: { singleton?: boolean; container?: DIContainer } = {}) {
+  return function <T extends { new (...args: any[]): {} }>(constructor: T) {
+    const container = options.container ?? useContainer();
+
+    // Allow bootstrap to be used with or without @Container().
+    if (!container.has(constructor)) {
+      const singleton = options.singleton ?? true;
+      defineMetadata(INJECTABLE_METADATA_KEY, true, constructor);
+      container.register(constructor, { singleton });
+    }
+
+    container.resolve(constructor);
+    return constructor;
+  };
+}
+
+/**
  * Marks a constructor parameter or property for dependency injection
  *
  * Can be used on:

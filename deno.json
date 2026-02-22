@@ -1,7 +1,11 @@
 {
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false
+  },
   "nodeModulesDir": "auto",
   "workspace": ["packages/examples/packages/deno-http"],
   "tasks": {
-    "example": "deno run --allow-net examples/deno-http/src/main.ts"
+    "example": "deno run --allow-net --sloppy-imports packages/examples/packages/deno-http/src/main.ts"
   }
 }

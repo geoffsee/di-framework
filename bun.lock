@@ -21,7 +21,7 @@
     },
     "packages/bin": {
       "name": "@di-framework/cli",
-      "version": "0.0.0-prerelease.309",
+      "version": "0.0.0-prerelease.310",
       "bin": {
         "di-framework": "dist/di-framework",
       },
@@ -34,14 +34,14 @@
     },
     "packages/di-framework": {
       "name": "@di-framework/di-framework",
-      "version": "0.0.0-prerelease.309",
+      "version": "0.0.0-prerelease.310",
       "peerDependencies": {
         "typescript": "^5",
       },
     },
     "packages/di-framework-http": {
       "name": "@di-framework/di-framework-http",
-      "version": "0.0.0-prerelease.309",
+      "version": "0.0.0-prerelease.310",
       "bin": {
         "di-framework-http": "./dist/src/cli.js",
       },
@@ -59,7 +59,7 @@
     },
     "packages/di-framework-repo": {
       "name": "@di-framework/di-framework-repo",
-      "version": "0.0.0-prerelease.309",
+      "version": "0.0.0-prerelease.310",
       "peerDependencies": {
         "@di-framework/di-framework": "workspace:*",
         "typescript": "^5",

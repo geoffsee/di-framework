@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { useContainer, Container as DIContainer } from '../container';
 import {
+  Bootstrap,
   Container as Injectable,
   Component,
   isInjectable,
@@ -118,5 +119,45 @@ describe('Decorators - singleton option and container injection', () => {
     expect(custom.has(LocalService)).toBe(true);
     // Not registered in the global container since a custom one was used
     expect(useContainer().has(LocalService)).toBe(false);
+  });
+});
+
+describe('Decorators - @Bootstrap', () => {
+  it('eagerly resolves a class decorated with @Container', () => {
+    let constructed = 0;
+
+    @Injectable({ singleton: false })
+    class WarmedDependency {}
+
+    @Bootstrap()
+    @Injectable({ singleton: false })
+    class WarmedService {
+      constructor(@Component(WarmedDependency) public dep: WarmedDependency) {
+        constructed += 1;
+      }
+    }
+
+    const c = useContainer();
+    expect(constructed).toBe(1);
+    expect(c.has(WarmedService)).toBe(true);
+
+    c.resolve(WarmedService);
+    expect(constructed).toBe(2);
+  });
+
+  it('registers and resolves a class even without @Container', () => {
+    let constructed = 0;
+
+    @Bootstrap()
+    class StartupTask {
+      constructor() {
+        constructed += 1;
+      }
+    }
+
+    const c = useContainer();
+    expect(constructed).toBe(1);
+    expect(c.has(StartupTask)).toBe(true);
+    expect(c.resolve(StartupTask)).toBeInstanceOf(StartupTask);
   });
 });
