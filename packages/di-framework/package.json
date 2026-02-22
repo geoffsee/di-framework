@@ -1,6 +1,6 @@
 {
   "name": "@di-framework/di-framework",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Lightweight, zero-dependency TypeScript Dependency Injection framework using decorators. Works seamlessly with SWC and TypeScript's native decorator support.",
   "main": "./dist/container.js",
   "types": "./dist/container.d.ts",
@@ -58,6 +58,7 @@
   "files": [
     "dist",
     "README.md",
-    "MIGRATION_GUIDE.md"
+    "MIGRATION_GUIDE.md",
+    "*.ts"
   ]
 }
