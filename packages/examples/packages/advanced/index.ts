@@ -26,7 +26,7 @@ class EmailService {
 }
 
 @Container()
-class NotificationService {
+export class NotificationService {
   @Component(EmailService)
   private email!: EmailService;
 
