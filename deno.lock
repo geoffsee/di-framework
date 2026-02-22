@@ -1,11 +1,19 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.13",
+    "jsr:@deno/sandbox@*": "0.12.0",
+    "jsr:@std/assert@*": "1.0.19",
+    "jsr:@std/assert@1": "1.0.19",
+    "jsr:@std/async@*": "1.2.0",
+    "jsr:@std/fs@^1.0.19": "1.0.23",
+    "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/internal@^1.0.6": "1.0.9",
+    "jsr:@std/path@^1.1.2": "1.1.4",
+    "jsr:@std/path@^1.1.4": "1.1.4",
     "npm:@eslint/js@^10.0.1": "10.0.1_eslint@10.0.1",
     "npm:@types/bun@latest": "1.3.9",
     "npm:@types/deno@*": "2.5.0",
+    "npm:@types/ws@^8.18.1": "8.18.1",
     "npm:eslint-config-prettier@^10.1.8": "10.1.8_eslint@10.0.1",
     "npm:eslint-plugin-prettier@^5.5.5": "5.5.5_eslint@10.0.1_eslint-config-prettier@10.1.8__eslint@10.0.1_prettier@3.8.1",
     "npm:eslint@^10.0.1": "10.0.1",
@@ -16,17 +24,54 @@
     "npm:lint-staged@^16.2.7": "16.2.7",
     "npm:prettier@^3.8.1": "3.8.1",
     "npm:typescript-eslint@^8.56.0": "8.56.0_eslint@10.0.1_typescript@5.9.3_@typescript-eslint+parser@8.56.0__eslint@10.0.1__typescript@5.9.3",
-    "npm:typescript@5": "5.9.3"
+    "npm:typescript@5": "5.9.3",
+    "npm:ws@^8.18.3": "8.19.0",
+    "npm:zod@^4.1.5": "4.3.6"
   },
   "jsr": {
+    "@deno/sandbox@0.12.0": {
+      "integrity": "1840e3a7210437d5a83c54fc026a1f4fef8ea55ef99314d788971df7041aa882",
+      "dependencies": [
+        "jsr:@std/fs",
+        "jsr:@std/path@^1.1.2",
+        "npm:@types/ws",
+        "npm:ws",
+        "npm:zod"
+      ]
+    },
     "@std/assert@1.0.13": {
       "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
       "dependencies": [
-        "jsr:@std/internal"
+        "jsr:@std/internal@^1.0.6"
+      ]
+    },
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal@^1.0.12"
+      ]
+    },
+    "@std/async@1.2.0": {
+      "integrity": "c059c6f6d95ca7cc012ae8e8d7164d1697113d54b0b679e4372b354b11c2dee5"
+    },
+    "@std/fs@1.0.23": {
+      "integrity": "3ecbae4ce4fee03b180fa710caff36bb5adb66631c46a6460aaad49515565a37",
+      "dependencies": [
+        "jsr:@std/internal@^1.0.12",
+        "jsr:@std/path@^1.1.4"
       ]
     },
     "@std/internal@1.0.9": {
       "integrity": "bdfb97f83e4db7a13e8faab26fb1958d1b80cc64366501af78a0aee151696eb8"
+    },
+    "@std/internal@1.0.12": {
+      "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
+    },
+    "@std/path@1.1.4": {
+      "integrity": "1d2d43f39efb1b42f0b1882a25486647cb851481862dc7313390b2bb044314b5",
+      "dependencies": [
+        "jsr:@std/internal@^1.0.12"
+      ]
     }
   },
   "npm": {
@@ -841,6 +886,9 @@
     },
     "yocto-queue@0.1.0": {
       "integrity": "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="
+    },
+    "zod@4.3.6": {
+      "integrity": "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="
     }
   },
   "workspace": {
@@ -884,6 +932,14 @@
       },
       "packages/examples/packages/deno-http": {
         "dependencies": [
+          "jsr:@std/assert@1",
+          "npm:@types/deno@*",
+          "npm:itty-router@5"
+        ]
+      },
+      "packages/examples/packages/deno-sandboxes": {
+        "dependencies": [
+          "jsr:@deno/sandbox@*",
           "jsr:@std/assert@1",
           "npm:@types/deno@*",
           "npm:itty-router@5"

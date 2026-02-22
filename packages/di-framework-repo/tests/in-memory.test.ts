@@ -77,6 +77,6 @@ describe('InMemoryRepository', () => {
 
     const resultPage2 = await repo.findPaginated({ age: 30, page: 2, size: 2 });
     expect(resultPage2.items).toHaveLength(1);
-    expect(resultPage2.items[0].name).toBe('David');
+    expect(resultPage2.items[0]?.name).toBe('David');
   });
 });

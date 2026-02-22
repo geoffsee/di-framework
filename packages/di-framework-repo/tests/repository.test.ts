@@ -22,7 +22,11 @@ class MockAdapter<E, ID> implements StorageAdapter<E, ID> {
     size: 10,
     pages: 0,
   }));
-  transaction = mock(async <T>(fn: (adapter: any) => Promise<T>) => fn(this));
+  transactionMock = mock(async () => {});
+  async transaction<T>(fn: (adapter: this) => Promise<T>): Promise<T> {
+    await this.transactionMock();
+    return fn(this);
+  }
   dispose = mock(async () => {});
 }
 
@@ -93,7 +97,7 @@ describe('BaseRepository', () => {
 
     const result = await repo.testInTransaction(txFn);
 
-    expect(adapter.transaction).toHaveBeenCalled();
+    expect(adapter.transactionMock).toHaveBeenCalled();
     expect(result).toBe('result');
   });
 

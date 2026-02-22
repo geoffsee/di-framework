@@ -7,6 +7,8 @@ import { UserService } from '../../services/UserService';
 import { ConfigService } from './services/ConfigService';
 import { CounterService } from './services/CounterService';
 
+type ServiceCtor = new (...args: any[]) => unknown;
+
 describe('cf-worker router', () => {
   beforeAll(() => {
     const container = useContainer();
@@ -14,13 +16,14 @@ describe('cf-worker router', () => {
     // Needed because workspace module resolution can cause the @Container()
     // decorator to register into a different container singleton than the
     // one router.ts uses (dist/ vs source .ts dual-loading).
-    for (const Svc of [
+    const services: ServiceCtor[] = [
       LoggerService,
       DatabaseService,
       UserService,
       ConfigService,
       CounterService,
-    ]) {
+    ];
+    for (const Svc of services) {
       if (!container.has(Svc)) container.register(Svc, { singleton: true });
     }
     if (!container.has('APP_NAME')) {
