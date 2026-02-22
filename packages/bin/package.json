@@ -1,6 +1,6 @@
 {
   "name": "@di-framework/cli",
-  "version": "0.0.0-prerelease.310",
+  "version": "0.0.0-prerelease.311",
   "private": false,
   "type": "module",
   "main": "main.ts",

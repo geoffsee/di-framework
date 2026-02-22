@@ -1,6 +1,6 @@
 {
   "name": "@di-framework/di-framework-repo",
-  "version": "0.0.0-prerelease.310",
+  "version": "0.0.0-prerelease.311",
   "description": "A coherent abstraction of repositories and storage adapters for di-framework.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
