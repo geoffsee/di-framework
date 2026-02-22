@@ -19,12 +19,25 @@
   ],
   "exports": {
     ".": {
+      "bun": "./container.ts",
       "import": "./dist/container.js",
       "types": "./dist/container.d.ts"
     },
-    "./container": "./dist/container.js",
-    "./decorators": "./dist/decorators.js",
-    "./types": "./dist/types.js"
+    "./container": {
+      "bun": "./container.ts",
+      "import": "./dist/container.js",
+      "types": "./dist/container.d.ts"
+    },
+    "./decorators": {
+      "bun": "./decorators.ts",
+      "import": "./dist/decorators.js",
+      "types": "./dist/decorators.d.ts"
+    },
+    "./types": {
+      "bun": "./types.ts",
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
   },
   "license": "MIT",
   "repository": {
