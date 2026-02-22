@@ -1,0 +1,8 @@
+{
+  "name": "di-advanced-example",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "@di-framework/di-framework": "file:../../../di-framework"
+  }
+}

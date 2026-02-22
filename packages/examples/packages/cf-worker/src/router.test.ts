@@ -1,14 +1,28 @@
 import { expect, test, describe, beforeAll } from 'bun:test';
 import { useContainer } from '@di-framework/di-framework/container';
 import { handleRequest } from './router';
-// Ensure decorator side-effects for services are applied in same module graph
-import '../../services/LoggerService';
-import '../../services/DatabaseService';
-import '../../services/UserService';
+import { LoggerService } from '../../services/LoggerService';
+import { DatabaseService } from '../../services/DatabaseService';
+import { UserService } from '../../services/UserService';
+import { ConfigService } from './services/ConfigService';
+import { CounterService } from './services/CounterService';
 
 describe('cf-worker router', () => {
   beforeAll(() => {
     const container = useContainer();
+    // Register services that router.ts resolves by class reference.
+    // Needed because workspace module resolution can cause the @Container()
+    // decorator to register into a different container singleton than the
+    // one router.ts uses (dist/ vs source .ts dual-loading).
+    for (const Svc of [
+      LoggerService,
+      DatabaseService,
+      UserService,
+      ConfigService,
+      CounterService,
+    ]) {
+      if (!container.has(Svc)) container.register(Svc, { singleton: true });
+    }
     if (!container.has('APP_NAME')) {
       container.registerFactory('APP_NAME', () => 'Test Worker', {
         singleton: true,
