@@ -53,10 +53,12 @@ export function resolveInside(
 }
 
 export function asWitIdentifier(value: string): string {
-  const identifier = value
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const collapsed = value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+  let start = 0;
+  let end = collapsed.length;
+  while (start < end && collapsed[start] === '-') start++;
+  while (end > start && collapsed[end - 1] === '-') end--;
+  const identifier = collapsed.slice(start, end);
   return /^[a-z]/.test(identifier) ? identifier : `app-${identifier || 'component'}`;
 }
 
