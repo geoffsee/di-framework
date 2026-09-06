@@ -68,7 +68,8 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
     return { exitCode: await child.exited };
   },
   capture: (command, args) => {
-    const result = spawnSync(command, args as string[], { encoding: 'utf8' });
+    // Bounded so a wedged tool (e.g. docker with an unreachable daemon) reads as unavailable.
+    const result = spawnSync(command, args as string[], { encoding: 'utf8', timeout: 5_000 });
     if (result.error || result.status !== 0) return undefined;
     return (result.stdout || result.stderr).trim().split('\n')[0];
   },

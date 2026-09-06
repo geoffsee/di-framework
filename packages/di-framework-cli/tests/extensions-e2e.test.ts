@@ -61,5 +61,5 @@ describe('wasmcloud extension end-to-end', () => {
     expect(envelope.data.checks.length).toBeGreaterThan(0);
     expect([0, 1]).toContain(exitCode);
     expect(envelope.ok).toBe(exitCode === 0);
-  });
+  }, 60_000); // doctor probes real tools; each probe is bounded, the sum can exceed bun's 5s default
 });

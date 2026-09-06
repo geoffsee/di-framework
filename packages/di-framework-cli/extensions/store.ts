@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { CommandFailure } from '../command';
@@ -78,9 +78,12 @@ export function listInstalledExtensions(
 function ensureStore(storeDirectory: string): void {
   mkdirSync(storeDirectory, { recursive: true });
   const manifestPath = join(storeDirectory, 'package.json');
-  if (!existsSync(manifestPath)) {
-    const manifest = { name: 'di-framework-extensions', private: true, dependencies: {} };
-    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const manifest = { name: 'di-framework-extensions', private: true, dependencies: {} };
+  try {
+    // Exclusive create; keep-if-present without an existsSync TOCTOU.
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx' });
+  } catch (error) {
+    if ((error as { code?: string }).code !== 'EEXIST') throw error;
   }
 }
 

@@ -209,6 +209,14 @@ describe('extensions store', () => {
     expect(manifest.dependencies['left-pad']).toBe('^1');
   });
 
+  it('rethrows store-manifest write failures that are not EEXIST', async () => {
+    const store = mkdtempSync(join(tmpdir(), 'ext-store-broken-'));
+    mkdirSync(join(store, 'package.json'));
+    await expect(
+      installExtension('demo', { storeDirectory: store, runner: simulatingRunner([]) }),
+    ).rejects.toMatchObject({ code: 'EISDIR' });
+  });
+
   it('rejects reserved extension names before invoking the package manager', async () => {
     const invocations: string[][] = [];
     await expect(
