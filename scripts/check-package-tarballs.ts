@@ -29,6 +29,9 @@ const RAW_TS_ALLOWED_PACKAGES = new Set([
   '@di-framework/cli',
   '@di-framework/tsc',
   '@di-framework/ai',
+  // Ships src alongside dist so the bun-run @di-framework/cli can resolve its
+  // "bun" export condition without a build step.
+  '@di-framework/cli-extension',
 ]);
 
 function extractPathsFromExports(exportsObj: unknown): string[] {

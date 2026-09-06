@@ -1,0 +1,59 @@
+import type { CliIo, CommandResult } from '@di-framework/cli-extension';
+import { buildComponent } from './build.js';
+import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
+import { loadProject } from './project.js';
+import { invalidUsage, readOptionValue, requireNodeBinary, toolFailed } from './support.js';
+
+export type DevOptions = { host: string; port: string };
+
+export function parseDevArgs(args: readonly string[]): DevOptions {
+  let host: string | undefined;
+  let port: string | undefined;
+  for (let position = 0; position < args.length; position++) {
+    const token = args[position] ?? '';
+    switch (token) {
+      case '--host':
+        if (host !== undefined) invalidUsage(`Option may be provided only once: ${token}`, token);
+        host = readOptionValue(args, ++position, token);
+        break;
+      case '--port':
+        if (port !== undefined) invalidUsage(`Option may be provided only once: ${token}`, token);
+        port = readOptionValue(args, ++position, token);
+        break;
+      default:
+        invalidUsage(`Unknown option or argument: ${token}`, token);
+    }
+  }
+  return { host: host ?? '127.0.0.1', port: port ?? '8000' };
+}
+
+export async function runWasmcloudDev(
+  args: readonly string[],
+  io: CliIo,
+  deps: WasmcloudDeps = DEFAULT_DEPS,
+): Promise<CommandResult> {
+  const options = parseDevArgs(args);
+  const project = loadProject(deps.cwd());
+  await buildComponent(project, io, deps);
+  io.stdout.write(`Serving on http://${options.host}:${options.port}\n`);
+  const served = await deps.runner(
+    requireNodeBinary(deps.nodeBinaryPath()),
+    [
+      deps.jcoCliPath(),
+      'serve',
+      project.outputPath,
+      '--host',
+      options.host,
+      '--port',
+      options.port,
+    ],
+    { cwd: project.projectRoot },
+  );
+  if (served.exitCode !== 0) {
+    throw toolFailed('jco serve', served.exitCode);
+  }
+  return {
+    data: { application: project.applicationName, host: options.host, port: options.port },
+    text: 'Dev server stopped.',
+  };
+}

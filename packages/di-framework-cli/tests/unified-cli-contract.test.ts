@@ -7,7 +7,15 @@ import { COMMAND_TREE, createCommandTree } from '../main';
 
 const REPO_ROOT = join(import.meta.dir, '..', '..', '..');
 
-const CANONICAL_GROUPS = ['agent', 'http', 'http openapi', 'skills', 'skills index', 'mx'];
+const CANONICAL_GROUPS = [
+  'agent',
+  'http',
+  'http openapi',
+  'skills',
+  'skills index',
+  'mx',
+  'extensions',
+];
 const CANONICAL_LEAVES = [
   'init',
   'generate',
@@ -28,6 +36,9 @@ const CANONICAL_LEAVES = [
   'mx test',
   'mx typecheck',
   'mx publish',
+  'extensions install',
+  'extensions uninstall',
+  'extensions list',
 ];
 
 const FEATURE_ADAPTER_OPERATIONS: Readonly<Record<string, readonly string[]>> = {
@@ -57,6 +68,9 @@ const FEATURE_ADAPTER_OPERATIONS: Readonly<Record<string, readonly string[]>> = 
     'migrateSkillsIndex',
   ],
   'cmd/skills/validate.ts': ['validateSkillCatalog'],
+  'cmd/extensions/install.ts': ['installExtension'],
+  'cmd/extensions/uninstall.ts': ['uninstallExtension'],
+  'cmd/extensions/list.ts': ['listInstalledExtensions'],
 };
 
 const REMOVED_ENTRYPOINTS = [

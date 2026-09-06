@@ -28,16 +28,51 @@ di-framework
 │   ├── audit
 │   ├── init
 │   └── migrate
-└── mx
-    ├── build
-    ├── test
-    ├── typecheck
-    └── publish
+├── mx
+│   ├── build
+│   ├── test
+│   ├── typecheck
+│   └── publish
+└── extensions
+    ├── install
+    ├── uninstall
+    └── list
 ```
 
-This tree is exhaustive. There are no public command aliases, deprecated routes, or package-specific
-alternatives. In particular, maintainer commands are available only below `di-framework mx`; feature
-packages must not publish their own executable or accept command-line arguments in domain APIs.
+This tree is exhaustive for built-in commands. There are no public command aliases, deprecated
+routes, or package-specific alternatives. In particular, maintainer commands are available only below
+`di-framework mx`; feature packages must not publish their own executable or accept command-line
+arguments in domain APIs. The single sanctioned extension point is the installed-extension namespace
+described below: a top-level token that is not a built-in command may dispatch to an installed CLI
+extension.
+
+## Installed extensions
+
+`di-framework extensions install <name>` installs an extension package into the user-global store at
+`~/.di-framework/extensions` (overridden by `DI_FRAMEWORK_EXTENSIONS_DIR`); afterwards
+`di-framework <name> …` routes to the command tree that extension provides. Extensions are ordinary
+npm packages named by convention:
+
+- `@di-framework/cli-plugin-<name>` — canonical; a bare `<name>` given to `extensions install`
+  resolves to this package.
+- `di-framework-cli-plugin-<name>` and `@<scope>/di-framework-cli-plugin-<name>` — accepted for
+  third-party extensions.
+
+Dispatch rules:
+
+- The manifest is the package default export, built with `defineExtension` from
+  `@di-framework/cli-extension` (`schemaVersion: 1`); its `name` must equal the `<name>` embedded in
+  the package name, and its command tree is structurally validated before mounting.
+- Built-in commands always win: extension resolution only runs for tokens that are not in the tree
+  above, and installing an extension whose name collides with a built-in command or `help` is
+  rejected.
+- A project-local installation (the extension package present in the current project's
+  `node_modules`) overrides the user-global store.
+- Extension packages must not declare a `bin`; `di-framework` remains the only executable.
+- Mounted extension commands inherit this contract in full — help rendering, the JSON envelope, the
+  exit-status table, and injectable I/O — because they execute through the same dispatch
+  infrastructure. Extension handlers throw `CommandFailure` from `@di-framework/cli-extension`;
+  failures are matched structurally, so version skew between installed copies is safe.
 
 ## Naming and help
 

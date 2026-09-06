@@ -1,0 +1,47 @@
+{
+  "name": "@di-framework/cli-extension",
+  "version": "5.2.3",
+  "description": "Author API for di-framework CLI extensions: command types, failures, and the extension manifest contract.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "type": "module",
+  "license": "(MIT OR Apache-2.0)",
+  "author": "@di-framework Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/di-framework/di-framework",
+    "directory": "packages/di-framework-cli-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/di-framework/di-framework/issues"
+  },
+  "homepage": "https://github.com/di-framework/di-framework#readme",
+  "keywords": [
+    "cli",
+    "extension",
+    "plugin",
+    "command",
+    "di-framework"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "build": "rm -rf dist && bun x tsc -p tsconfig.build.json"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ]
+}

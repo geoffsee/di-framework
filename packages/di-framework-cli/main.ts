@@ -6,6 +6,9 @@ import { runAgentMigrate } from './cmd/agent/migrate';
 /** di-framework CLI — app tooling by default; monorepo maintainers use `mx`. */
 import { build } from './cmd/build';
 import { check } from './cmd/check';
+import { runExtensionsInstall } from './cmd/extensions/install';
+import { runExtensionsList } from './cmd/extensions/list';
+import { runExtensionsUninstall } from './cmd/extensions/uninstall';
 import { generateCommand } from './cmd/generate';
 import { runHttpOpenAPIGenerate } from './cmd/http/openapi-generate';
 import { init } from './cmd/init';
@@ -29,6 +32,7 @@ import {
   executeCommand,
   formatCommandHelp,
 } from './command';
+import { DEFAULT_EXTENSION_DISPATCH, type ExtensionDispatch } from './extensions/dispatch';
 
 export type CliHandlers = {
   init(args: string[], io: CliIo): Promise<CommandResult>;
@@ -50,6 +54,9 @@ export type CliHandlers = {
   mxTest(args: string[], io: CliIo): Promise<CommandResult>;
   mxTypecheck(argv: string[], io: CliIo): Promise<CommandResult>;
   mxPublish(args: string[], io: CliIo): Promise<CommandResult>;
+  extensionsInstall(args: string[]): Promise<CommandResult>;
+  extensionsUninstall(args: string[]): Promise<CommandResult>;
+  extensionsList(args: string[]): Promise<CommandResult>;
 };
 
 const DEFAULT_HANDLERS: CliHandlers = {
@@ -72,6 +79,9 @@ const DEFAULT_HANDLERS: CliHandlers = {
   mxTest: runMxTest,
   mxTypecheck: runMxTypecheck,
   mxPublish: runMxPublish,
+  extensionsInstall: runExtensionsInstall,
+  extensionsUninstall: runExtensionsUninstall,
+  extensionsList: runExtensionsList,
 };
 
 export function createCommandTree(handlers: CliHandlers = DEFAULT_HANDLERS): CommandNode {
@@ -282,6 +292,29 @@ export function createCommandTree(handlers: CliHandlers = DEFAULT_HANDLERS): Com
           },
         },
       },
+      extensions: {
+        description: 'Manage installed CLI extensions',
+        children: {
+          install: {
+            description: 'Install a CLI extension into the user-global store',
+            usage: 'di-framework extensions install <name-or-package>[@range]',
+            options: [
+              '<name-or-package>  Extension name (resolved to @di-framework/cli-plugin-<name>) or full package name',
+            ],
+            run: ({ args }) => handlers.extensionsInstall(args),
+          },
+          uninstall: {
+            description: 'Remove an installed CLI extension',
+            usage: 'di-framework extensions uninstall <name-or-package>',
+            run: ({ args }) => handlers.extensionsUninstall(args),
+          },
+          list: {
+            description: 'List installed CLI extensions',
+            usage: 'di-framework extensions list',
+            run: ({ args }) => handlers.extensionsList(args),
+          },
+        },
+      },
     },
   };
 }
@@ -292,8 +325,25 @@ export function printHelp(stream: CliStream = process.stdout): void {
   stream.write(formatCommandHelp(COMMAND_TREE));
 }
 
-export function main(argv: string[] = process.argv.slice(2), io?: CliIo): Promise<0 | 1 | 2 | 3> {
-  return executeCommand(COMMAND_TREE, argv, io);
+const HELP_TOKENS = new Set(['help', '--help', '-h']);
+
+export async function main(
+  argv: string[] = process.argv.slice(2),
+  io?: CliIo,
+  extensions: ExtensionDispatch = DEFAULT_EXTENSION_DISPATCH,
+): Promise<0 | 1 | 2 | 3> {
+  const tree = createCommandTree();
+  const children = tree.children ?? {};
+  const first = argv.find((token) => token !== '--json');
+  if (first !== undefined && !HELP_TOKENS.has(first) && children[first] === undefined) {
+    const mounted = await extensions.resolveCommand(first, process.cwd());
+    if (mounted) children[first] = mounted;
+  } else if (first === undefined || HELP_TOKENS.has(first)) {
+    for (const [name, stub] of Object.entries(extensions.installedStubs(process.cwd()))) {
+      children[name] ??= stub;
+    }
+  }
+  return executeCommand(tree, argv, io);
 }
 
 export function runMain(

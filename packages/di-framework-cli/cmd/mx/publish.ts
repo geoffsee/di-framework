@@ -19,6 +19,8 @@ export const PACKAGES = [
   'packages/di-framework-ai-utils',
   'packages/di-framework-codegen',
   'packages/di-framework-cloudfoundry',
+  'packages/di-framework-cli-extension',
+  'packages/di-framework-cli-plugin-wasmcloud',
   'packages/di-framework-cli',
   // plugin.cjs + Go sidecar; package.json "build" is a no-op (not tsc/bun compile)
   'packages/di-framework-tsc',

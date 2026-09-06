@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, spyOn } from 'bun:test';
+import { afterAll, afterEach, beforeAll, describe, expect, it, spyOn } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,6 +29,16 @@ function captureIo() {
 
 describe('CLI main router', () => {
   const temps: string[] = [];
+  // Isolate main() from any real user-global extensions store.
+  const emptyStore = mkdtempSync(join(tmpdir(), 'main-ext-store-'));
+  const previousStore = process.env.DI_FRAMEWORK_EXTENSIONS_DIR;
+  beforeAll(() => {
+    process.env.DI_FRAMEWORK_EXTENSIONS_DIR = emptyStore;
+  });
+  afterAll(() => {
+    process.env.DI_FRAMEWORK_EXTENSIONS_DIR = previousStore;
+    rmSync(emptyStore, { recursive: true, force: true });
+  });
   afterEach(() => {
     process.chdir(REPO_ROOT);
     for (const temp of temps.splice(0)) rmSync(temp, { recursive: true, force: true });
@@ -44,6 +54,7 @@ describe('CLI main router', () => {
       'http',
       'skills',
       'mx',
+      'extensions',
     ]);
     expect(Object.keys(COMMAND_TREE.children?.mx?.children ?? {})).toEqual([
       'build',
@@ -172,6 +183,18 @@ describe('CLI main router', () => {
         calls.push(['mx publish', undefined]);
         return {};
       },
+      extensionsInstall: async (args) => {
+        calls.push(['extensions install', args]);
+        return {};
+      },
+      extensionsUninstall: async (args) => {
+        calls.push(['extensions uninstall', args]);
+        return {};
+      },
+      extensionsList: async (args) => {
+        calls.push(['extensions list', args]);
+        return {};
+      },
     };
     const tree = createCommandTree(handlers);
     for (const argv of [
@@ -194,6 +217,9 @@ describe('CLI main router', () => {
       ['mx', 'test'],
       ['mx', 'typecheck', '--pretty=0'],
       ['mx', 'publish'],
+      ['extensions', 'install', '@di-framework/cli-plugin-demo'],
+      ['extensions', 'uninstall', 'demo'],
+      ['extensions', 'list'],
     ]) {
       expect(await executeCommand(tree, argv, captureIo().io)).toBe(0);
     }
@@ -217,6 +243,9 @@ describe('CLI main router', () => {
       ['mx test', undefined],
       ['mx typecheck', ['--pretty=0']],
       ['mx publish', undefined],
+      ['extensions install', ['@di-framework/cli-plugin-demo']],
+      ['extensions uninstall', ['demo']],
+      ['extensions list', []],
     ]);
   });
 

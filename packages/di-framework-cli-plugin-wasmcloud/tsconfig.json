@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@di-framework/cli-extension": ["../di-framework-cli-extension/dist/index.d.ts"],
+      "@di-framework/cli-extension/*": ["../di-framework-cli-extension/dist/*"]
+    }
+  },
+  "include": ["src/**/*", "types/**/*"]
+}
