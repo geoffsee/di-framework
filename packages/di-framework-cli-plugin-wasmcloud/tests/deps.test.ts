@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, sep } from 'node:path';
-import { DEFAULT_DEPS, nodeCompatibilityPlugin } from '../src/deps';
+import { join } from 'node:path';
+import { DEFAULT_DEPS, findJcoEntry, nodeCompatibilityPlugin } from '../src/deps';
 
 describe('nodeCompatibilityPlugin', () => {
   it('routes the virtual application module and stubs node built-ins', () => {
@@ -54,7 +54,11 @@ describe('DEFAULT_DEPS', () => {
   });
 
   it('locates the jco CLI, shipped assets, and project resolutions', () => {
-    expect(DEFAULT_DEPS.jcoCliPath()).toEndWith(`${sep}jco.js`);
+    // A node_modules path (not bun's install cache) so Node can run jco directly.
+    expect(DEFAULT_DEPS.jcoCliPath()).toEndWith(
+      join('node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js'),
+    );
+    expect(findJcoEntry(mkdtempSync(join(tmpdir(), 'wasmcloud-nojco-')))).toBeUndefined();
     expect(['string', 'undefined']).toContain(typeof DEFAULT_DEPS.nodeBinaryPath());
     expect(DEFAULT_DEPS.assetsDirectory()).toEndWith(join('dist', 'assets'));
     expect(DEFAULT_DEPS.env).toBe(process.env);

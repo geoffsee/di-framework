@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { existsSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,7 +57,25 @@ export function nodeCompatibilityPlugin(entryPath: string) {
   };
 }
 
-const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// Real path, not a store symlink, so walking up reaches this package's node_modules.
+const packageRoot = resolve(dirname(realpathSync(fileURLToPath(import.meta.url))), '..');
+
+/**
+ * jco's entry inside a real node_modules tree, walking up from this package.
+ * Bun's `import.meta.resolve` can return its global install cache, where jco's
+ * own dependencies are not resolvable by Node; a node_modules path always is.
+ */
+export function findJcoEntry(startDirectory: string): string | undefined {
+  let previous = '';
+  let current = startDirectory;
+  while (current !== previous) {
+    const candidate = join(current, 'node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js');
+    if (existsSync(candidate)) return candidate;
+    previous = current;
+    current = dirname(current);
+  }
+  return undefined;
+}
 
 export const DEFAULT_DEPS: WasmcloudDeps = {
   runner: async (command, args, options) => {
@@ -87,6 +106,7 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
     }
   },
   jcoCliPath: () =>
+    findJcoEntry(packageRoot) ??
     join(dirname(fileURLToPath(import.meta.resolve('@bytecodealliance/jco'))), 'jco.js'),
   nodeBinaryPath: () => Bun.which('node') ?? undefined,
   // Assets ship transpiled under dist/assets; src and dist are siblings of it.

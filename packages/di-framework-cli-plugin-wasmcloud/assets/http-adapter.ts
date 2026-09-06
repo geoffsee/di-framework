@@ -81,6 +81,7 @@ async function dispatch(request: Request): Promise<Response> {
 }
 
 async function writeResponse(response: Response, outparam: any): Promise<void> {
+  const bytes = new Uint8Array(await response.arrayBuffer());
   const encoder = new TextEncoder();
   const fields = Fields.fromList(
     [...response.headers.entries()].map(([name, value]) => [name, encoder.encode(value)]),
@@ -88,33 +89,51 @@ async function writeResponse(response: Response, outparam: any): Promise<void> {
   const outgoing = new OutgoingResponse(fields);
   outgoing.setStatusCode(response.status);
   const body = outgoing.body();
+  // Hand the response to the host before writing: the host only starts draining
+  // the body stream once the outparam is set, so writing the body first
+  // deadlocks on payloads larger than the host's stream buffer.
+  ResponseOutparam.set(outparam, { tag: 'ok', val: outgoing });
   const output = body.write();
 
   try {
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    output.blockingWriteAndFlush(bytes);
+    // wasi:io permits at most check-write bytes per write (a larger chunk traps
+    // the component), so stream the body with the canonical subscribe/poll loop.
+    const pollable = output.subscribe();
+    try {
+      let offset = 0;
+      while (offset < bytes.length) {
+        pollable.block();
+        const permit = Number(output.checkWrite());
+        if (permit === 0) continue;
+        const end = Math.min(offset + permit, bytes.length);
+        output.write(bytes.subarray(offset, end));
+        offset = end;
+      }
+      output.blockingFlush();
+    } finally {
+      pollable[Symbol.dispose]();
+    }
   } finally {
     output[Symbol.dispose]();
   }
 
   OutgoingBody.finish(body, undefined);
-  ResponseOutparam.set(outparam, { tag: 'ok', val: outgoing });
 }
 
 export const incomingHandler = {
   async handle(incoming: any, outparam: any): Promise<void> {
+    let response: Response;
     try {
-      const request = await toWebRequest(incoming);
-      await writeResponse(await dispatch(request), outparam);
+      response = await dispatch(await toWebRequest(incoming));
     } catch (error) {
+      // Only a response computed before the outparam is set can be replaced;
+      // failures while streaming the body have no recovery channel.
       console.error('Unhandled DI Framework request error', error);
-      await writeResponse(
-        new Response(JSON.stringify({ error: 'Internal server error' }), {
-          status: 500,
-          headers: { 'content-type': 'application/json' },
-        }),
-        outparam,
-      );
+      response = new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      });
     }
+    await writeResponse(response, outparam);
   },
 };

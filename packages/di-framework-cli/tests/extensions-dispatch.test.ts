@@ -128,6 +128,17 @@ describe('extension dispatch', () => {
     expect(await dispatch.resolveCommand('missing', emptyDirectory())).toBeUndefined();
   });
 
+  it('treats an installed but unresolvable package directory as not installed', async () => {
+    // Present in node_modules (passes the nearby check) but with no manifest or
+    // entry, so module resolution itself fails.
+    const store = makeStore({ '@di-framework/cli-plugin-hollow': '^1' });
+    mkdirSync(join(store, 'node_modules', '@di-framework', 'cli-plugin-hollow'), {
+      recursive: true,
+    });
+    const dispatch = createExtensionDispatch(store);
+    expect(await dispatch.resolveCommand('hollow', emptyDirectory())).toBeUndefined();
+  });
+
   it('mounts failure nodes for broken, invalid, and misnamed extensions', async () => {
     const cases: Array<{ source: string; code: string }> = [
       { source: 'export default {', code: 'EXTENSION_LOAD_FAILED' },
