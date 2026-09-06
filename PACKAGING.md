@@ -13,13 +13,17 @@ semver ranges rather than monorepo-only `workspace:` protocols.
 | `core` | `dist`, README, licenses, migration guide | runtime |
 | `repo`, `http`, `graphql`, `events`, `config`, `auth`, `authz`, `socket`, `rpc`, `codegen`, `ai-utils` | `dist`, README | runtime |
 | `ai` | `src`, README | intentional TypeScript source package |
-| `cli` | `main.ts`, `cmd`, `scripts`, README | intentional Bun source CLI |
+| `cli` | `main.ts`, `command.ts`, `cmd`, `extensions`, `scripts`, README | intentional Bun source CLI |
+| `cli-extension` | `dist`, `src`, README | runtime with a TypeScript `bun` export condition |
+| `cli-plugin-wasmcloud` | `dist`, README | runtime (CLI extension; `dist/assets` carries the transpiled adapter and WIT files) |
 | `tsc` | `bin`, `plugin.cjs`, `plugin`, README, licenses | compiler plugin and Go sidecars |
 
 Runtime source maps are not published, so tarballs do not duplicate
-`sourcesContent`. The three source/plugin exceptions are required because Bun
+`sourcesContent`. The source/plugin exceptions are required because Bun
 executes the AI and CLI TypeScript entry points directly and the transformer
-loads its JavaScript plugin plus platform sidecars.
+loads its JavaScript plugin plus platform sidecars. `cli-extension` additionally
+ships `src` beside `dist` so the Bun-run CLI can resolve its `bun` export
+condition without a build step.
 
 ## Recorded audit results
 

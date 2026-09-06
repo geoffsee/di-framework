@@ -4,7 +4,9 @@ CLI for apps built with `@di-framework/*`. Monorepo maintainer actions live unde
 
 The complete hierarchy, output format, error behavior, exit statuses, and package ownership boundaries are
 defined by the [unified CLI command contract](../../docs/cli-command-contract.md). That hierarchy is
-exhaustive: public aliases, legacy routes, and package-specific CLIs are not supported.
+exhaustive for built-in commands: public aliases, legacy routes, and package-specific CLIs are not
+supported. Additional top-level command groups are provided only by installed
+[CLI extensions](#extensions).
 
 Requires [Bun](https://bun.sh). The package ships TypeScript source as the `bin` entry — no platform-specific compiled binary.
 
@@ -41,6 +43,9 @@ di-framework <command> [args...]
 | **`skills index query`** | Query an index and report selected matches or abstention |
 | **`skills index migrate`** | Rewrite an index in the current format |
 | **`skills validate`** | Validate neutral default and explicit Agent Skills catalogs |
+| **`extensions install <name>`** | Install a CLI extension into the user-global store |
+| **`extensions uninstall <name>`** | Remove an installed CLI extension |
+| **`extensions list`** | List installed CLI extensions |
 
 ```bash
 di-framework init my-api
@@ -49,6 +54,26 @@ cd my-api && bun install && bun run dev
 di-framework check
 di-framework build
 ```
+
+## Extensions
+
+Optional command groups ship as installable extension packages so the core CLI stays lean:
+
+```bash
+di-framework extensions install wasmcloud   # installs @di-framework/cli-plugin-wasmcloud
+di-framework wasmcloud --help               # the extension's own command tree
+di-framework extensions list
+di-framework extensions uninstall wasmcloud
+```
+
+Extensions install into `~/.di-framework/extensions` (override with `DI_FRAMEWORK_EXTENSIONS_DIR`);
+an extension package present in the current project's `node_modules` takes precedence over the
+user-global store. Accepted package names are `@di-framework/cli-plugin-<name>`,
+`di-framework-cli-plugin-<name>`, and `@<scope>/di-framework-cli-plugin-<name>`; the extension's
+default export is a manifest built with `defineExtension` from
+[`@di-framework/cli-extension`](../di-framework-cli-extension/README.md). Mounted extension commands
+inherit the CLI's help rendering, `--json` envelope, and exit-status contract. Built-in commands can
+never be shadowed, and extension packages must not declare a `bin`.
 
 ### Agent configuration audit
 

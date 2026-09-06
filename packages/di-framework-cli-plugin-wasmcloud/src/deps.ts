@@ -1,0 +1,102 @@
+import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { rolldown } from 'rolldown';
+
+export type ProcessRunner = (
+  command: string,
+  args: readonly string[],
+  options: { cwd: string; env?: Record<string, string | undefined> },
+) => Promise<{ exitCode: number }>;
+
+/** First output line of a probe command, or undefined when it is unavailable. */
+export type CaptureRunner = (command: string, args: readonly string[]) => string | undefined;
+
+export type BundleOptions = {
+  adapterPath: string;
+  entryPath: string;
+  outFile: string;
+};
+
+export type Bundler = (options: BundleOptions) => Promise<void>;
+
+/** Every process, filesystem-adjacent, and toolchain boundary the commands touch. */
+export type WasmcloudDeps = {
+  runner: ProcessRunner;
+  capture: CaptureRunner;
+  bundler: Bundler;
+  jcoCliPath(): string;
+  /** jco needs real Node.js; it uses node internals Bun does not implement. */
+  nodeBinaryPath(): string | undefined;
+  assetsDirectory(): string;
+  resolveFromProject(projectRoot: string, specifier: string): string | undefined;
+  env: Record<string, string | undefined>;
+  cwd(): string;
+};
+
+/** Resolves `virtual:di-framework-application` to the app entry and stubs node built-ins. */
+export function nodeCompatibilityPlugin(entryPath: string) {
+  return {
+    name: 'di-framework-component-runtime',
+    resolveId(source: string) {
+      if (source === 'virtual:di-framework-application') return entryPath;
+      if (source === 'node:fs' || source === 'node:path') return `\0${source}`;
+      return null;
+    },
+    load(id: string) {
+      if (id === '\0node:fs') {
+        return "export const writeFileSync = () => { throw new Error('node:fs is unavailable in a WebAssembly component'); };";
+      }
+      if (id === '\0node:path') {
+        return 'export const isAbsolute = () => false; export const resolve = value => value;';
+      }
+      return null;
+    },
+  };
+}
+
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+export const DEFAULT_DEPS: WasmcloudDeps = {
+  runner: async (command, args, options) => {
+    const child = Bun.spawn([command, ...args], {
+      cwd: options.cwd,
+      env: options.env ?? process.env,
+      stdio: ['inherit', 'inherit', 'inherit'],
+    });
+    return { exitCode: await child.exited };
+  },
+  capture: (command, args) => {
+    const result = spawnSync(command, args as string[], { encoding: 'utf8' });
+    if (result.error || result.status !== 0) return undefined;
+    return (result.stdout || result.stderr).trim().split('\n')[0];
+  },
+  bundler: async ({ adapterPath, entryPath, outFile }) => {
+    const bundle = await rolldown({
+      input: adapterPath,
+      external: /^wasi:.*/,
+      plugins: [nodeCompatibilityPlugin(entryPath)],
+      treeshake: { moduleSideEffects: false },
+    });
+    try {
+      await bundle.write({ file: outFile, format: 'esm' });
+    } finally {
+      await bundle.close();
+    }
+  },
+  jcoCliPath: () =>
+    join(dirname(fileURLToPath(import.meta.resolve('@bytecodealliance/jco'))), 'jco.js'),
+  nodeBinaryPath: () => Bun.which('node') ?? undefined,
+  // Assets ship transpiled under dist/assets; src and dist are siblings of it.
+  assetsDirectory: () => join(packageRoot, 'dist', 'assets'),
+  resolveFromProject: (projectRoot, specifier) => {
+    try {
+      return createRequire(join(projectRoot, 'package.json')).resolve(specifier);
+    } catch {
+      return undefined;
+    }
+  },
+  env: process.env,
+  cwd: () => process.cwd(),
+};

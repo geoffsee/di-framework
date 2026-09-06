@@ -56,6 +56,12 @@
       "@di-framework/ai-utils/*": ["packages/di-framework-ai-utils/src/*"],
       "@di-framework/cloudfoundry": ["packages/di-framework-cloudfoundry/src/index.ts"],
       "@di-framework/cloudfoundry/*": ["packages/di-framework-cloudfoundry/src/*"],
+      "@di-framework/cli-extension": ["packages/di-framework-cli-extension/src/index.ts"],
+      "@di-framework/cli-extension/*": ["packages/di-framework-cli-extension/src/*"],
+      "@di-framework/cli-plugin-wasmcloud": [
+        "packages/di-framework-cli-plugin-wasmcloud/src/index.ts"
+      ],
+      "@di-framework/cli-plugin-wasmcloud/*": ["packages/di-framework-cli-plugin-wasmcloud/src/*"],
       "@di-framework/codegen": ["packages/di-framework-codegen/index.ts"],
       "@di-framework/codegen/*": ["packages/di-framework-codegen/*"]
     }

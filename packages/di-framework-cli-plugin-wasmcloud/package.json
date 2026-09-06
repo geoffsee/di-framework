@@ -1,0 +1,52 @@
+{
+  "name": "@di-framework/cli-plugin-wasmcloud",
+  "version": "5.2.3",
+  "description": "di-framework CLI extension that builds, serves, and deploys DI Framework apps as wasmCloud WebAssembly components.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "type": "module",
+  "license": "(MIT OR Apache-2.0)",
+  "author": "@di-framework Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/di-framework/di-framework",
+    "directory": "packages/di-framework-cli-plugin-wasmcloud"
+  },
+  "bugs": {
+    "url": "https://github.com/di-framework/di-framework/issues"
+  },
+  "homepage": "https://github.com/di-framework/di-framework#readme",
+  "keywords": [
+    "wasmcloud",
+    "webassembly",
+    "wasi",
+    "component-model",
+    "cli-extension",
+    "di-framework"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "build": "rm -rf dist && bun x tsc -p tsconfig.dist.json && bun build assets/http-adapter.ts --no-bundle --outfile dist/assets/http-adapter.js && cp -R assets/wit dist/assets/wit"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@bytecodealliance/jco": "1.17.9",
+    "@di-framework/cli-extension": "^5",
+    "rolldown": "1.2.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

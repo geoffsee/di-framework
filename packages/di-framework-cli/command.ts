@@ -1,53 +1,27 @@
-export type ExitCode = 0 | 1 | 2 | 3;
+import type { CliIo, CommandNode, ExitCode, JsonValue } from '@di-framework/cli-extension';
+import { CommandFailure, isCommandFailure } from '@di-framework/cli-extension';
 
-export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonValue[]
-  | { [key: string]: JsonValue | undefined };
-
-export type CliStream = { write(chunk: string): unknown };
-
-export type CliIo = {
-  stdout: CliStream;
-  stderr: CliStream;
-};
+export type {
+  CliIo,
+  CliStream,
+  CommandContext,
+  CommandNode,
+  CommandResult,
+  ExitCode,
+  ExtensionManifest,
+  JsonValue,
+  ManifestIssue,
+} from '@di-framework/cli-extension';
+export {
+  CommandFailure,
+  defineExtension,
+  EXTENSION_NAME_PATTERN,
+  EXTENSION_SCHEMA_VERSION,
+  isCommandFailure,
+  validateExtensionManifest,
+} from '@di-framework/cli-extension';
 
 export const PROCESS_IO: CliIo = { stdout: process.stdout, stderr: process.stderr };
-
-export type CommandResult = {
-  data?: JsonValue;
-  text?: string;
-  exitCode?: ExitCode;
-};
-
-export type CommandContext = {
-  args: string[];
-  command: string[];
-  io: CliIo;
-};
-
-export type CommandNode = {
-  description: string;
-  usage?: string;
-  options?: readonly string[];
-  children?: Record<string, CommandNode>;
-  run?: (context: CommandContext) => CommandResult | undefined | Promise<CommandResult | undefined>;
-};
-
-export class CommandFailure extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-    readonly exitCode: Exclude<ExitCode, 0>,
-    readonly details?: JsonValue,
-  ) {
-    super(message);
-    this.name = 'CommandFailure';
-  }
-}
 
 const HELP_TOKENS = new Set(['help', '--help', '-h']);
 
@@ -174,7 +148,7 @@ export async function executeCommand(
     }
     return exitCode;
   } catch (error) {
-    const failure = error instanceof CommandFailure ? error : unexpectedFailure(error);
+    const failure = isCommandFailure(error) ? error : unexpectedFailure(error);
     if (json) {
       writeJson(io, {
         schemaVersion: 1,
