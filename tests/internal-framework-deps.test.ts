@@ -6,7 +6,7 @@ import {
   preparePublishManifest,
   rangeAcceptsRelease,
   validateInternalFrameworkDeps,
-} from '../scripts/internal-framework-deps';
+} from '../packages/di-framework-cli/scripts/internal-framework-deps';
 
 describe('internal framework dependency ranges', () => {
   it('derives the framework major from the release version', () => {

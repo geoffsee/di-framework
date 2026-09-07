@@ -13,7 +13,6 @@ import { generateCommand } from './cmd/generate';
 import { runHttpOpenAPIGenerate } from './cmd/http/openapi-generate';
 import { init } from './cmd/init';
 import { runMxBuild } from './cmd/mx/build';
-import { runMxPublish } from './cmd/mx/publish';
 import { runMxTest } from './cmd/mx/test';
 import { runMxTypecheck } from './cmd/mx/typecheck';
 import {
@@ -78,7 +77,10 @@ const DEFAULT_HANDLERS: CliHandlers = {
   mxBuild: runMxBuild,
   mxTest: runMxTest,
   mxTypecheck: runMxTypecheck,
-  mxPublish: runMxPublish,
+  mxPublish: async (args, io) => {
+    const { runMxPublish } = await import('./cmd/mx/publish');
+    return runMxPublish(args, io);
+  },
   extensionsInstall: runExtensionsInstall,
   extensionsUninstall: runExtensionsUninstall,
   extensionsList: runExtensionsList,

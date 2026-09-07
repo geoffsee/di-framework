@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { $ as defaultShell } from 'bun';
-import { preparePublishManifest } from '../../../../scripts/internal-framework-deps';
+import { preparePublishManifest } from '../../scripts/internal-framework-deps';
 import type { CliIo, CommandResult } from '../../command';
 import { CommandFailure } from '../../command';
 
