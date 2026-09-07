@@ -154,6 +154,10 @@ export class HeadersPolyfill {
     }
   }
 
+  forEach(callback: (value: string, name: string, parent: HeadersPolyfill) => void): void {
+    for (const [name, value] of this.entries()) callback(value, name, this);
+  }
+
   [Symbol.iterator](): IterableIterator<[string, string]> {
     return this.entries();
   }

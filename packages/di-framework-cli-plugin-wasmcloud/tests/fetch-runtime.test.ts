@@ -121,6 +121,19 @@ describe('fetch runtime polyfills', () => {
     expect([...new HeadersPolyfill(headers).entries()]).toEqual([...headers]);
     expect([...new HeadersPolyfill([['x', 'y']]).entries()]).toEqual([['x', 'y']]);
     expect([...new HeadersPolyfill().entries()]).toEqual([]);
+    const visited: Array<[string, string, HeadersPolyfill]> = [];
+    headers.forEach((value, name, parent) => {
+      visited.push([value, name, parent]);
+    });
+    expect(visited).toEqual([
+      ['text/plain', 'accept', headers],
+      ['application/json', 'accept', headers],
+    ]);
+    const emptyVisits: string[] = [];
+    new HeadersPolyfill().forEach((value) => {
+      emptyVisits.push(value);
+    });
+    expect(emptyVisits).toEqual([]);
   });
 
   it('copies requests and reads JSON bodies', async () => {

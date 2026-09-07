@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test';
+import { HeadersPolyfill } from '../assets/fetch-runtime';
 
 type ApplicationHandler =
   | ((request: Request) => Response | Promise<Response>)
@@ -239,6 +240,31 @@ describe('http adapter', () => {
       collected.push(...chunk);
     }
     expect(new TextDecoder().decode(new Uint8Array(collected))).toBe('buffered');
+  });
+
+  it('encodes headers from a polyfill that only implements forEach via entries', async () => {
+    const headers = new HeadersPolyfill([
+      ['content-type', 'text/plain'],
+      ['x-from', 'polyfill'],
+    ]);
+    class PolyfillHeadersResponse extends Response {
+      constructor() {
+        super('polyfill-body', { status: 202 });
+      }
+      override get headers() {
+        return headers as unknown as Headers;
+      }
+    }
+    applicationState.current = () => new PolyfillHeadersResponse();
+    const outgoing = (await handler.handle(incoming({ method: { tag: 'get' } }))) as Outgoing;
+    expect(outgoing.statusCode).toBe(202);
+    const encoded = outgoing.headers as { entries: Array<[string, Uint8Array]> };
+    expect(encoded.entries.map(([name, value]) => [name, new TextDecoder().decode(value)])).toEqual(
+      [
+        ['content-type', 'text/plain'],
+        ['x-from', 'polyfill'],
+      ],
+    );
   });
 
   it('returns a JSON 500 when the application export is not a Response', async () => {
