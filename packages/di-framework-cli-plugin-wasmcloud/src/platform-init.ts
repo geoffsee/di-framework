@@ -92,11 +92,10 @@ export async function runWasmcloudPlatformInit(
 }
 
 export function createPlatformProjectName(workspaceRoot: string): string {
-  const slug = basename(workspaceRoot)
+  const normalized = basename(workspaceRoot)
     .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 28);
+    .replace(/[^a-z0-9-]+/g, '-');
+  const slug = normalized.split('-').filter(Boolean).join('-').slice(0, 28);
   const hash = createHash('sha256').update(workspaceRoot).digest('hex').slice(0, 10);
   return `di-framework-wasmcloud-${slug || 'workspace'}-${hash}`;
 }

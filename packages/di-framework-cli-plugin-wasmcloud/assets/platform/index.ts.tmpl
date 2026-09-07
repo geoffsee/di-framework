@@ -231,14 +231,14 @@ const runtimeShutdown = new command.local.Command(
     create: 'true',
     delete: [
       'set -eu;',
-      'kubectl --kubeconfig "$KUBECONFIG_FILE" --namespace "$NAMESPACE"',
+      'docker exec "$K0S_NAME" k0s kubectl --namespace "$NAMESPACE"',
       'delete deployment/hostgroup-default',
       '--ignore-not-found=true --wait=true --timeout=180s;',
-      'kubectl --kubeconfig "$KUBECONFIG_FILE" --namespace "$NAMESPACE"',
+      'docker exec "$K0S_NAME" k0s kubectl --namespace "$NAMESPACE"',
       'delete hosts.runtime.wasmcloud.dev --all',
       '--ignore-not-found=true --wait=true --timeout=180s',
     ].join(' '),
-    environment: { KUBECONFIG_FILE: kubeconfigFile, NAMESPACE: namespaceName },
+    environment: { K0S_NAME: k0sName, NAMESPACE: namespaceName },
   },
   { dependsOn: [wasmcloud, kubeconfigFileCommand] },
 );

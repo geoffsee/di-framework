@@ -70,4 +70,6 @@ curl -H 'Host: greeter' http://127.0.0.1:28180/
 
 Platform destroy removes only Docker and Kubernetes resources bearing this
 project/stack scope, along with the generated kubeconfig. It refuses to adopt
-or replace an already-existing Docker resource with the same name.
+or replace an already-existing Docker resource with the same name. Teardown
+uses the `kubectl` bundled in the scoped k0s container, so no host-side
+`kubectl` installation is needed for platform lifecycle commands.
