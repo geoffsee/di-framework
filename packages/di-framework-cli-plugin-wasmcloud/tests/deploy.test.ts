@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { runWasmcloudDeploy } from '../src/deploy';
-import { contentDigest, ociReference } from '../src/publish';
+import { contentDigest, ociReference, projectRelativePath } from '../src/publish';
 import {
   captureIo,
   fakeDeps,
@@ -26,22 +26,33 @@ describe('runWasmcloudDeploy', () => {
     expect(invocations.some((invocation) => invocation.command === 'oras')).toBe(true);
     expect(invocations.some((invocation) => invocation.args.includes('apply'))).toBe(true);
     const wasm = join(greeter, 'dist', 'greeter.wasm');
-    const digest = contentDigest(wasm);
+    const artifactDigest = contentDigest(wasm);
+    const deploymentDigest = String(result.data.deploymentDigest);
     expect(result.data).toMatchObject({
       application: 'greeter',
       target: 'development',
       namespace: 'wasmcloud',
-      image: `registry.example.com/team/greeter:sha256-${digest}`,
+      image: `registry.example.com/team/greeter:sha256-${deploymentDigest}`,
+      publishedImage: `registry.example.com/team/greeter:sha256-${deploymentDigest}`,
+      digest: artifactDigest,
       service: 'greeter',
     });
     expect(existsSync(join(greeter, '.di-framework', 'deploy', 'workload.yaml'))).toBe(true);
     const yaml = readFileSync(join(greeter, '.di-framework', 'deploy', 'workload.yaml'), 'utf8');
     expect(yaml).toContain('kind: WorkloadDeployment');
     expect(yaml).toContain('kind: Service');
+    expect(yaml).toContain('host: "greeter"');
     expect(yaml).not.toContain('apps');
-    expect(invocations.find((invocation) => invocation.command === 'oras')?.args).toContain(
-      `registry.example.com/team/greeter:sha256-${digest}`,
+    const oras = invocations.find(
+      (invocation) => invocation.command === 'oras' && invocation.args[0] === 'push',
     );
+    expect(oras?.args).toContain(`registry.example.com/team/greeter:sha256-${deploymentDigest}`);
+    expect(oras?.args).not.toContain('--plain-http');
+    expect(oras?.args).toContain(
+      '.di-framework/oci-config.json:application/vnd.wasm.config.v0+json',
+    );
+    expect(oras?.args).toContain('dist/greeter.wasm:application/wasm');
+    expect(oras?.args.some((arg) => arg.startsWith(`${greeter}/`))).toBe(false);
     expect(kubeconfig.length).toBeGreaterThan(0);
     expect(root).toBeTruthy();
   });
@@ -87,9 +98,128 @@ describe('runWasmcloudDeploy', () => {
     expect(result.data).toMatchObject({
       application: 'greeter',
       target: 'local',
-      registry: 'localhost:5000/di-framework',
+      registry: {
+        push: 'http://127.0.0.1:25000',
+        pull: 'di-framework-registry.wasmcloud.svc.cluster.local:5000',
+        insecure: true,
+      },
+      http: { url: 'http://127.0.0.1:28180', host: 'greeter' },
     });
     expect(root).toBeTruthy();
+  });
+
+  it('publishes to the push registry but deploys the equivalent pull reference over plain HTTP', async () => {
+    const { root, greeter, kubeconfig } = makeWorkspace();
+    writeFileSync(
+      join(root, 'di-framework.deploy.toml'),
+      `default-target = "split"
+
+[targets.split]
+kubeconfig = "${kubeconfig}"
+namespace = "wasmcloud"
+
+[targets.split.registry]
+push = "http://127.0.0.1:25000"
+pull = "di-framework-registry.wasmcloud.svc.cluster.local:5000"
+insecure = true
+`,
+    );
+    const invocations: RunnerInvocation[] = [];
+    const result = await runWasmcloudDeploy(
+      ['greeter'],
+      captureIo().io,
+      fakeDeps({ cwd: root, invocations }),
+    );
+
+    const oras = invocations.find(
+      (invocation) => invocation.command === 'oras' && invocation.args[0] === 'push',
+    );
+    expect(oras?.args).toContain('--plain-http');
+    expect(oras?.args).toContain(result.data.publishedImage as string);
+    expect(result.data.publishedImage).toStartWith('127.0.0.1:25000/greeter:sha256-');
+    expect(result.data.image).toStartWith(
+      'di-framework-registry.wasmcloud.svc.cluster.local:5000/greeter:sha256-',
+    );
+    expect(String(result.data.publishedImage).split('/greeter:')[1]).toBe(
+      String(result.data.image).split('/greeter:')[1],
+    );
+    const yaml = readFileSync(join(greeter, '.di-framework/deploy/workload.yaml'), 'utf8');
+    expect(yaml).toContain(result.data.image as string);
+    expect(yaml).not.toContain(result.data.publishedImage as string);
+  });
+
+  it('honors an explicit insecure registry without globally weakening secure targets', async () => {
+    const { root, kubeconfig } = makeWorkspace();
+    writeFileSync(
+      join(root, 'di-framework.deploy.toml'),
+      `[targets.insecure]
+kubeconfig = "${kubeconfig}"
+namespace = "wasmcloud"
+[targets.insecure.registry]
+push = "localhost:25000"
+pull = "registry.wasmcloud.svc.cluster.local:5000"
+insecure = true
+`,
+    );
+    const invocations: RunnerInvocation[] = [];
+    await runWasmcloudDeploy(
+      ['greeter', '--target', 'insecure'],
+      captureIo().io,
+      fakeDeps({ cwd: root, invocations }),
+    );
+    expect(
+      invocations.find(
+        (invocation) => invocation.command === 'oras' && invocation.args[0] === 'push',
+      )?.args,
+    ).toContain('--plain-http');
+  });
+
+  it('keeps the workload reference stable across unchanged nondeterministic builds', async () => {
+    const { greeter } = makeWorkspace();
+    const invocations: RunnerInvocation[] = [];
+    const deps = fakeDeps({
+      cwd: greeter,
+      invocations,
+      componentOutput: (build) => `component-build-${build}-${Math.random()}`,
+    });
+
+    const first = await runWasmcloudDeploy(['--target', 'development'], captureIo().io, deps);
+    const second = await runWasmcloudDeploy(['--target', 'development'], captureIo().io, deps);
+
+    expect(first.data.digest).not.toBe(second.data.digest);
+    expect(first.data.deploymentDigest).toBe(second.data.deploymentDigest);
+    expect(first.data.image).toBe(second.data.image);
+    const pushes = invocations.filter(
+      (invocation) => invocation.command === 'oras' && invocation.args[0] === 'push',
+    );
+    expect(pushes[0]?.args.find((arg) => arg.includes('/greeter:sha256-'))).toBe(
+      pushes[1]?.args.find((arg) => arg.includes('/greeter:sha256-')),
+    );
+  });
+
+  it('does not replace an existing canonical-input tag', async () => {
+    const { greeter } = makeWorkspace();
+    const invocations: RunnerInvocation[] = [];
+    await runWasmcloudDeploy(
+      ['--target', 'development'],
+      captureIo().io,
+      fakeDeps({
+        cwd: greeter,
+        invocations,
+        exitCodes: { 'oras manifest fetch': 0 },
+      }),
+    );
+
+    expect(
+      invocations.some(
+        (invocation) => invocation.command === 'oras' && invocation.args[0] === 'push',
+      ),
+    ).toBe(false);
+    expect(
+      invocations.some(
+        (invocation) => invocation.command === 'oras' && invocation.args[0] === 'manifest',
+      ),
+    ).toBe(true);
   });
 
   it('maps oras and kubectl failures to WASMCLOUD_TOOL_FAILED', async () => {
@@ -127,6 +257,15 @@ describe('runWasmcloudDeploy', () => {
     );
     expect(ociReference('http://localhost:5000', 'greeter', 'abc')).toBe(
       'localhost:5000/greeter:sha256-abc',
+    );
+  });
+
+  it('rejects OCI artifact paths outside the project root', () => {
+    expect(() => projectRelativePath('/workspace/project', '/workspace/project')).toThrow(
+      'OCI artifact path must be inside the project',
+    );
+    expect(() => projectRelativePath('/workspace/project', '/workspace/outside.wasm')).toThrow(
+      'OCI artifact path must be inside the project',
     );
   });
 });

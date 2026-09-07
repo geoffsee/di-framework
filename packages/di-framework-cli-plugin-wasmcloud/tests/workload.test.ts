@@ -4,9 +4,16 @@ import {
   applyWorkload,
   renderWorkloadManifest,
   WORKLOAD_DEPLOYMENT_RESOURCE,
+  WORKLOAD_REPLICA_SET_RESOURCE,
   waitForReady,
 } from '../src/workload';
 import { captureIo, fakeDeps, makeWorkspace, type RunnerInvocation } from './helpers';
+
+const REGISTRY = {
+  push: 'registry.example.com/team',
+  pull: 'registry.example.com/team',
+  insecure: false,
+};
 
 describe('workload manifests', () => {
   it('renders Service and WorkloadDeployment from the project name and image', () => {
@@ -18,7 +25,7 @@ describe('workload manifests', () => {
         target: 'development',
         kubeconfig: '/tmp/kube',
         namespace: 'wasmcloud',
-        registry: 'registry.example.com/team',
+        registry: REGISTRY,
       },
       'registry.example.com/team/greeter:sha256-abc',
     );
@@ -26,6 +33,8 @@ describe('workload manifests', () => {
     expect(yaml).toContain('kind: WorkloadDeployment');
     expect(yaml).toContain('name: greeter');
     expect(yaml).toContain('registry.example.com/team/greeter:sha256-abc');
+    expect(yaml).toContain('hostInterfaces:');
+    expect(yaml).toContain('host: "greeter"');
     expect(yaml).not.toContain('Pulumi');
   });
 
@@ -39,7 +48,7 @@ describe('workload manifests', () => {
           target: 'development',
           kubeconfig: '/tmp/kube',
           namespace: 'wasmcloud',
-          registry: 'registry.example.com/team',
+          registry: REGISTRY,
         },
         fakeDeps({
           cwd: greeter,
@@ -58,7 +67,7 @@ describe('workload manifests', () => {
         target: 'development',
         kubeconfig: '/tmp/kube',
         namespace: 'wasmcloud',
-        registry: 'registry.example.com/team',
+        registry: REGISTRY,
       },
       fakeDeps({
         cwd: greeter,
@@ -71,8 +80,50 @@ describe('workload manifests', () => {
     );
   });
 
+  it('accepts the runtime operator Ready condition', async () => {
+    const { greeter } = makeWorkspace();
+    await waitForReady(
+      loadProject(greeter),
+      {
+        target: 'development',
+        kubeconfig: '/tmp/kube',
+        namespace: 'wasmcloud',
+        registry: REGISTRY,
+      },
+      fakeDeps({
+        cwd: greeter,
+        capturedStdout: {
+          'kubectl get': JSON.stringify({
+            status: { conditions: [{ type: 'Ready', status: 'True' }] },
+          }),
+        },
+      }),
+    );
+  });
+
+  it('accepts legacy readyReplicas without readiness conditions', async () => {
+    const { greeter } = makeWorkspace();
+    await waitForReady(
+      loadProject(greeter),
+      {
+        target: 'development',
+        kubeconfig: '/tmp/kube',
+        namespace: 'wasmcloud',
+        registry: REGISTRY,
+      },
+      fakeDeps({
+        cwd: greeter,
+        capturedStdout: {
+          'kubectl get': JSON.stringify({ spec: { replicas: 2 }, status: { readyReplicas: 2 } }),
+        },
+      }),
+    );
+  });
+
   it('times out with WASMCLOUD_DEPLOYMENT_NOT_READY when the workload never becomes ready', async () => {
     const { greeter } = makeWorkspace();
+    const output = captureIo();
+    const invocations: RunnerInvocation[] = [];
     const project = loadProject(greeter);
     await expect(
       waitForReady(
@@ -81,14 +132,22 @@ describe('workload manifests', () => {
           target: 'development',
           kubeconfig: '/tmp/kube',
           namespace: 'wasmcloud',
-          registry: 'registry.example.com/team',
+          registry: REGISTRY,
         },
         fakeDeps({
           cwd: greeter,
+          invocations,
           capturedStdout: { 'kubectl get': '{}' },
         }),
+        output.io,
       ),
     ).rejects.toMatchObject({ code: 'WASMCLOUD_DEPLOYMENT_NOT_READY', exitCode: 3 });
+    expect(output.stderr.join('')).toContain('WorkloadDeployment');
+    expect(output.stderr.join('')).toContain('WorkloadReplicaSets');
+    expect(
+      invocations.some((invocation) => invocation.args.includes(WORKLOAD_REPLICA_SET_RESOURCE)),
+    ).toBe(true);
+    expect(invocations.some((invocation) => invocation.args.includes('logs'))).toBe(true);
   });
 
   it('applies the generated manifest through kubectl', async () => {
@@ -101,7 +160,7 @@ describe('workload manifests', () => {
         target: 'development',
         kubeconfig: '/tmp/kube',
         namespace: 'wasmcloud',
-        registry: 'registry.example.com/team',
+        registry: REGISTRY,
       },
       'registry.example.com/team/greeter:sha256-abc',
       captureIo().io,

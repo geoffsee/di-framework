@@ -1,5 +1,6 @@
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { createHash, type Hash } from 'node:crypto';
+import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 import { type CliIo, CommandFailure, type CommandResult } from '@di-framework/cli-extension';
 import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
 import { loadProject, type WasmcloudProject } from './project.js';
@@ -10,7 +11,9 @@ export const WASI_HTTP_VERSION = '0.2.12';
 
 export type BuildSummary = {
   application: string;
+  artifactDigest: string;
   component: string;
+  deploymentDigest: string;
   entry: string;
   profile: string;
 };
@@ -74,9 +77,19 @@ export async function buildComponent(
     throw toolFailed('jco componentize', componentize.exitCode);
   }
 
+  const deploymentDigest = canonicalBuildDigest(
+    bundledJavaScript,
+    generatedWit,
+    join(generatedDirectory, 'oci-config.json'),
+  );
+  const artifactDigest = createHash('sha256')
+    .update(readFileSync(project.outputPath))
+    .digest('hex');
   const summary: BuildSummary = {
     application: project.applicationName,
+    artifactDigest,
     component: relative(project.projectRoot, project.outputPath),
+    deploymentDigest,
     entry: relative(project.projectRoot, project.entryPath),
     profile: BUILD_PROFILE,
   };
@@ -87,6 +100,46 @@ export async function buildComponent(
 
   io.stdout.write(`Built ${summary.component}\n`);
   return summary;
+}
+
+/**
+ * Stable logical version for deployment. ComponentizeJS snapshots can contain
+ * nondeterministic engine bytes, so the rollout key is the canonical bundle,
+ * WIT, OCI configuration, and pinned build profile instead of the final bytes.
+ */
+export function canonicalBuildDigest(
+  bundledJavaScript: string,
+  witDirectory: string,
+  ociConfig: string,
+): string {
+  const hash = createHash('sha256');
+  addDigestEntry(hash, 'profile', `${BUILD_PROFILE}\n${WASI_HTTP_VERSION}`);
+  addDigestEntry(hash, 'bundle', readFileSync(bundledJavaScript));
+  addDigestEntry(hash, 'oci-config', readFileSync(ociConfig));
+  for (const file of listFiles(witDirectory)) {
+    const name = relative(witDirectory, file).split(sep).join('/');
+    addDigestEntry(hash, `wit/${name}`, readFileSync(file));
+  }
+  return hash.digest('hex');
+}
+
+function addDigestEntry(hash: Hash, name: string, content: string | Buffer): void {
+  const bytes = typeof content === 'string' ? Buffer.from(content) : content;
+  hash.update(`${name.length}:${name}:${bytes.length}:`);
+  hash.update(bytes);
+}
+
+function listFiles(root: string): string[] {
+  const files: string[] = [];
+  const walk = (directory: string) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.isFile()) files.push(path);
+    }
+  };
+  walk(root);
+  return files.sort();
 }
 
 export async function runWasmcloudBuild(

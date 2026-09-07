@@ -2,12 +2,13 @@ import { CommandFailure } from '@di-framework/cli-extension';
 import type { WasmcloudDeps } from './deps.js';
 import type { DeployManifest, DeployTarget, ExternalTarget, ManagedTarget } from './manifest.js';
 import { loadPlatformOutputs, type PlatformOutputs, resolvePlatformDirectory } from './platform.js';
+import { materializeRegistry, type RegistryLocation } from './registry.js';
 
 export type ClusterConnection = {
   target: string;
   kubeconfig: string;
   namespace: string;
-  registry: string;
+  registry: RegistryLocation;
   context?: string;
   endpoints?: PlatformOutputs['endpoints'];
   platformRoot?: string;
@@ -73,7 +74,7 @@ function resolveExternalConnection(target: ExternalTarget): ClusterConnection {
     target: target.name,
     kubeconfig: target.kubeconfig,
     namespace: target.namespace,
-    registry: target.registry,
+    registry: materializeRegistry(target.registry),
     context: target.context,
   };
 }

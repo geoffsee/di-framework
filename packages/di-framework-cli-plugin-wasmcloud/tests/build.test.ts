@@ -26,7 +26,9 @@ describe('buildComponent', () => {
     expect(JSON.parse(readFileSync(join(generated, 'build.json'), 'utf8'))).toEqual({
       schemaVersion: 1,
       application: 'Demo App',
+      artifactDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       component: join('dist', 'demo-app.wasm'),
+      deploymentDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       entry: join('src', 'app.ts'),
       profile: 'wasmcloud-http',
     });
@@ -49,12 +51,30 @@ describe('buildComponent', () => {
     });
     expect(summary).toEqual({
       application: 'Demo App',
+      artifactDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       component: join('dist', 'demo-app.wasm'),
+      deploymentDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       entry: join('src', 'app.ts'),
       profile: 'wasmcloud-http',
     });
     expect(output.stdout.join('')).toContain('Building Demo App');
     expect(output.stdout.join('')).toContain('Built dist/demo-app.wasm');
+  });
+
+  it('keeps the deployment version stable when componentizer bytes vary for identical inputs', async () => {
+    const root = makeProject();
+    const assets = makeAssets();
+    const deps = fakeDeps({
+      cwd: root,
+      assets,
+      componentOutput: (build) => `nondeterministic-component-${build}`,
+    });
+
+    const first = await buildComponent(loadProject(root), captureIo().io, deps);
+    const second = await buildComponent(loadProject(root), captureIo().io, deps);
+
+    expect(first.artifactDigest).not.toBe(second.artifactDigest);
+    expect(first.deploymentDigest).toBe(second.deploymentDigest);
   });
 
   it('maps bundler failures to WASMCLOUD_BUILD_FAILED', async () => {

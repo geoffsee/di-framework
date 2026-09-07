@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { CommandFailure } from '@di-framework/cli-extension';
 import { findUp } from './project.js';
+import type { RegistryInput } from './registry.js';
 import { parseToml, TomlParseError } from './toml.js';
 
 export const DEPLOY_MANIFEST_NAME = 'di-framework.deploy.toml';
@@ -27,7 +28,7 @@ export type ExternalTarget = {
   name: string;
   kubeconfig: string;
   namespace: string;
-  registry: string;
+  registry: RegistryInput;
   context?: string;
 };
 
@@ -208,7 +209,7 @@ function parseTarget(name: string, value: unknown, manifestPath: string): Deploy
   const kubeconfig = optionalString(value.kubeconfig, `targets.${name}.kubeconfig`, manifestPath);
   const context = optionalString(value.context, `targets.${name}.context`, manifestPath);
   const namespace = optionalString(value.namespace, `targets.${name}.namespace`, manifestPath);
-  const registry = optionalString(value.registry, `targets.${name}.registry`, manifestPath);
+  const registry = optionalRegistry(value.registry, `targets.${name}.registry`, manifestPath);
 
   const known = new Set(['platform', 'stack', 'kubeconfig', 'context', 'namespace', 'registry']);
   const unknown = Object.keys(value).filter((key) => !known.has(key));
@@ -264,7 +265,7 @@ function parseTarget(name: string, value: unknown, manifestPath: string): Deploy
       name,
       kubeconfig: kubeconfig as string,
       namespace: namespace as string,
-      registry: registry as string,
+      registry: registry as RegistryInput,
       context,
     };
   }
@@ -281,6 +282,56 @@ function optionalString(value: unknown, label: string, manifestPath: string): st
     manifestInvalid(`${label} must be a non-empty string`, { manifestPath, field: label });
   }
   return value;
+}
+
+function optionalRegistry(
+  value: unknown,
+  label: string,
+  manifestPath: string,
+): RegistryInput | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'string') return optionalString(value, label, manifestPath);
+  if (!isRecord(value)) {
+    manifestInvalid(`${label} must be a string or a table with push, pull, and insecure`, {
+      manifestPath,
+      field: label,
+    });
+  }
+  const push = optionalString(value.push, `${label}.push`, manifestPath);
+  const pull = optionalString(value.pull, `${label}.pull`, manifestPath);
+  const insecure = value.insecure;
+  const unknown = Object.keys(value).filter(
+    (key) => key !== 'push' && key !== 'pull' && key !== 'insecure',
+  );
+  if (unknown.length > 0) {
+    manifestInvalid(`${label} has unsupported fields: ${unknown.join(', ')}`, {
+      manifestPath,
+      field: label,
+      fields: unknown,
+    });
+  }
+  const missing = [
+    push === undefined ? 'push' : undefined,
+    pull === undefined ? 'pull' : undefined,
+  ].filter((field): field is string => field !== undefined);
+  if (missing.length > 0) {
+    manifestInvalid(`${label} requires push and pull. Missing: ${missing.join(', ')}.`, {
+      manifestPath,
+      field: label,
+      missing,
+    });
+  }
+  if (insecure !== undefined && typeof insecure !== 'boolean') {
+    manifestInvalid(`${label}.insecure must be a boolean when present`, {
+      manifestPath,
+      field: `${label}.insecure`,
+    });
+  }
+  return {
+    push: push as string,
+    pull: pull as string,
+    ...(insecure === undefined ? {} : { insecure }),
+  };
 }
 
 function optionalStringArray(

@@ -101,6 +101,49 @@ registry = "registry.example.com/\${TEAM}"
     );
   });
 
+  it('accepts separate registry push and pull locations with explicit transport', () => {
+    const manifest = parseDeployManifest(
+      '/workspace/di-framework.deploy.toml',
+      `[targets.local]
+kubeconfig = "/tmp/kubeconfig"
+namespace = "wasmcloud"
+
+[targets.local.registry]
+push = "http://127.0.0.1:25000"
+pull = "registry.wasmcloud.svc.cluster.local:5000"
+insecure = true
+`,
+      {},
+    );
+    expect(manifest.targets.local).toMatchObject({
+      registry: {
+        push: 'http://127.0.0.1:25000',
+        pull: 'registry.wasmcloud.svc.cluster.local:5000',
+        insecure: true,
+      },
+    });
+  });
+
+  it('rejects malformed structured registry fields', () => {
+    const path = '/workspace/di-framework.deploy.toml';
+    for (const registry of [
+      'registry = true',
+      `[targets.local.registry]\npush = "localhost:5000"\npull = "registry:5000"\nextra = "nope"`,
+      `[targets.local.registry]\npush = "localhost:5000"\npull = "registry:5000"\ninsecure = "yes"`,
+    ]) {
+      expectFailure(
+        () =>
+          parseDeployManifest(
+            path,
+            `[targets.local]\nkubeconfig = "/tmp/kubeconfig"\nnamespace = "wasmcloud"\n${registry}\n`,
+            {},
+          ),
+        'WASMCLOUD_DEPLOY_MANIFEST_INVALID',
+        2,
+      );
+    }
+  });
+
   it('rejects apps classifiers, mixed targets, and incomplete external targets', () => {
     const path = '/workspace/di-framework.deploy.toml';
     expectFailure(
@@ -130,6 +173,22 @@ registry = "registry.example.com/\${TEAM}"
     );
     expectFailure(
       () => parseDeployManifest(path, `[targets.empty]\n`, {}),
+      'WASMCLOUD_DEPLOY_MANIFEST_INVALID',
+      2,
+    );
+    expectFailure(
+      () =>
+        parseDeployManifest(
+          path,
+          `[targets.bad]
+kubeconfig = "/tmp/kube"
+namespace = "wasmcloud"
+[targets.bad.registry]
+push = "localhost:5000"
+insecure = true
+`,
+          {},
+        ),
       'WASMCLOUD_DEPLOY_MANIFEST_INVALID',
       2,
     );

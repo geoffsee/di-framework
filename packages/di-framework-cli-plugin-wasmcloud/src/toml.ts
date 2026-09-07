@@ -1,4 +1,4 @@
-/** Minimal TOML parser for `di-framework.deploy.toml` (tables, strings, string arrays). */
+/** Minimal TOML parser for `di-framework.deploy.toml`. */
 
 export class TomlParseError extends Error {
   constructor(
@@ -177,8 +177,10 @@ function parseValue(raw: string, lineNumber: number): unknown {
   if (raw.startsWith('[')) {
     return parseStringArray(raw, lineNumber);
   }
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
   throw new TomlParseError(
-    `Unsupported value "${raw}"; expected a quoted string or an array of strings`,
+    `Unsupported value "${raw}"; expected a quoted string, boolean, or an array of strings`,
     lineNumber,
   );
 }

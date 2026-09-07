@@ -14,4 +14,8 @@ stack = "dev"
 kubeconfig = "${KUBECONFIG}"
 context = "team-development"
 namespace = "wasmcloud"
-registry = "registry.example.com/team"
+
+[targets.development.registry]
+push = "https://registry.example.com/team"
+pull = "registry.internal.example.com/team"
+insecure = false

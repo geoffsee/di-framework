@@ -51,7 +51,11 @@ stack = "dev"
 kubeconfig = "${KUBECONFIG}"
 context = "team-development"
 namespace = "wasmcloud"
-registry = "registry.example.com/team"
+
+[targets.development.registry]
+push = "https://registry.example.com/team"
+pull = "registry.internal.example.com/team"
+insecure = false
 ```
 
 - `di-framework wasmcloud deploy` with no name uses the nearest `di-framework.config.json`.
@@ -74,9 +78,16 @@ di-framework wasmcloud platform deploy local --yes
 `platform init` writes `deploy/platform` and creates or updates `di-framework.deploy.toml` so
 `local` is a managed target (`platform = "deploy/platform"`, `stack = "dev"`). Existing files are
 left alone unless you pass `--force`. The command prints the exact start command when it finishes.
+Platform deploy runs the package-manager-neutral `pulumi install` command automatically, so the
+generated project works immediately in a blank consumer workspace without a root workspace entry
+or a manual install inside `deploy/platform`.
 
-The generated Pulumi project provisions only platform concerns. It must not contain application
-names, component builds, Services, or WorkloadDeployments.
+The generated Pulumi project provisions only platform concerns. It has workspace- and stack-scoped
+Docker names, a dedicated network, persistent k0s state/log volumes, pinned images and chart,
+readiness checks, and loopback-only high ports. It must not contain application names, component
+builds, application Services, or WorkloadDeployments. The defaults are Kubernetes `26443`, registry
+`25000`, and HTTP `28180`; set `apiPort`, `registryPort`, or `httpPort` with `pulumi config set` in
+`deploy/platform` to choose another distinct port from 1024 through 65535.
 
 The CLI reads a small output contract from `pulumi stack output --json`:
 
@@ -84,7 +95,7 @@ The CLI reads a small output contract from `pulumi stack output --json`:
 | --- | --- | --- |
 | `kubeconfig` | yes | kubeconfig YAML or a filesystem path |
 | `namespace` | yes | Kubernetes namespace for workloads |
-| `registry` | yes | OCI registry prefix |
+| `registry` | yes | legacy string shorthand, or `{ push, pull, insecure }` transport object |
 | `context` | no | kubectl context |
 | `endpoints.http` / `endpoints.kubernetes` / `endpoints.registry` | no | optional URLs |
 
@@ -96,6 +107,11 @@ di-framework wasmcloud platform destroy local --yes
 ```
 
 Application `destroy` never runs `pulumi destroy`.
+
+The generated local target publishes through its loopback registry NodePort and puts the equivalent
+in-cluster registry address in the WorkloadDeployment. Both references use the same repository and
+stable canonical-input tag. An `http://` push URL or `insecure = true` adds ORAS `--plain-http` only
+for that target; TLS remains the default everywhere else.
 
 ### Existing cluster
 
@@ -112,9 +128,20 @@ di-framework wasmcloud deploy greeter --target development
 For the selected project the extension:
 
 1. Builds the component.
-2. Publishes it with `oras` under an immutable content-derived reference (`<registry>/<wit-name>:sha256-<digest>`).
+2. Publishes it with `oras` from the project root using project-relative artifact paths and a stable
+   canonical-input reference (`<registry>/<wit-name>:sha256-<deployment-digest>`). The actual
+   component-byte digest is calculated and reported separately because ComponentizeJS snapshots may
+   vary byte-for-byte for identical inputs.
 3. Derives a wasmCloud `WorkloadDeployment` and Kubernetes `Service` (written under `.di-framework/deploy/`, not checked in).
-4. Applies them with `kubectl` and waits until the workload is ready.
+4. Configures `wasi:http/incoming-handler` with the project name as its host, applies the resources,
+   and waits for current `Ready=True` or compatible older readiness schemas.
+
+For the generated local platform the result reports the HTTP URL and required Host header. It is
+directly reachable without `kubectl port-forward`, for example:
+
+```sh
+curl -H 'Host: greeter' http://127.0.0.1:28180/
+```
 
 ## Demonstration layout
 
@@ -124,3 +151,15 @@ above.
 
 The manifest contract for extensions is documented in
 [`@di-framework/cli-extension`](https://www.npmjs.com/package/@di-framework/cli-extension).
+
+## Live integration test
+
+The opt-in test packs the CLI and extension dependencies, installs those tarballs in a blank
+temporary workspace, and runs the full platform/application lifecycle against Docker:
+
+```sh
+DI_FRAMEWORK_WASMCLOUD_LIVE=1 bun test packages/di-framework-cli-plugin-wasmcloud/tests/live-workflow.test.ts
+```
+
+It requires Docker, Pulumi, kubectl, ORAS, npm, Bun, and curl. The test selects unused loopback
+ports and removes its scoped platform resources in a `finally` cleanup.

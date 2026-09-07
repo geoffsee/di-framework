@@ -2,9 +2,19 @@ import { defineExtension } from '@di-framework/cli-extension';
 import { createWasmcloudCommand } from './command.js';
 
 export { parseAppCommandArgs, parsePlatformCommandArgs, parsePlatformInitArgs } from './args.js';
-export { BUILD_PROFILE, buildComponent, runWasmcloudBuild, WASI_HTTP_VERSION } from './build.js';
+export {
+  BUILD_PROFILE,
+  buildComponent,
+  canonicalBuildDigest,
+  runWasmcloudBuild,
+  WASI_HTTP_VERSION,
+} from './build.js';
 export { createWasmcloudCommand } from './command.js';
-export { runWasmcloudDeploy } from './deploy.js';
+export {
+  runWasmcloudDeploy,
+  type WasmcloudDeployData,
+  type WasmcloudDeployResult,
+} from './deploy.js';
 export {
   DEFAULT_DEPS,
   nodeCompatibilityPlugin,
@@ -34,7 +44,9 @@ export {
   runWasmcloudPlatformDestroy,
 } from './platform.js';
 export {
+  createPlatformProjectName,
   LOCAL_PLATFORM_PATH,
+  PLATFORM_PROJECT_TOKEN,
   PLATFORM_START_COMMAND,
   runWasmcloudPlatformInit,
 } from './platform-init.js';
@@ -46,12 +58,20 @@ export {
   resolveInside,
   type WasmcloudProject,
 } from './project.js';
-export { contentDigest, ociReference, publishComponent } from './publish.js';
+export { contentDigest, ociReference, projectRelativePath, publishComponent } from './publish.js';
 export { pulumiEnvironment, runPulumi } from './pulumi.js';
+export {
+  materializeRegistry,
+  type RegistryInput,
+  type RegistryLocation,
+  registryReferenceHost,
+  registryUsesPlainHttp,
+} from './registry.js';
 export { resolveConnection, resolveTarget } from './target.js';
 export {
   applyWorkload,
   deleteWorkload,
+  isReady,
   renderWorkloadManifest,
 } from './workload.js';
 

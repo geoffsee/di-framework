@@ -3,12 +3,14 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from '
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runWasmcloudPlatformDeploy } from '../src/platform';
 import {
+  createPlatformProjectName,
   PLATFORM_START_COMMAND,
   runWasmcloudPlatformInit,
   serializeDeployToml,
 } from '../src/platform-init';
-import { captureIo, fakeDeps } from './helpers';
+import { captureIo, fakeDeps, platformOutputJson, type RunnerInvocation } from './helpers';
 
 const ASSETS = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
 
@@ -23,18 +25,30 @@ describe('runWasmcloudPlatformInit', () => {
     );
 
     const platform = join(root, 'deploy', 'platform');
-    expect(readFileSync(join(platform, 'Pulumi.yaml'), 'utf8')).toContain(
-      'name: wasmcloud-platform',
-    );
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).toContain('k0s');
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).toContain('registry');
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).toContain('helm.v3.Release');
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).not.toContain('install-operator.sh');
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).not.toContain(
-      'kind: WorkloadDeployment',
-    );
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).not.toContain('greeter');
-    expect(readFileSync(join(platform, 'index.ts'), 'utf8')).not.toContain('apps');
+    const pulumi = readFileSync(join(platform, 'Pulumi.yaml'), 'utf8');
+    const program = readFileSync(join(platform, 'index.ts'), 'utf8');
+    expect(pulumi).toContain(`name: ${createPlatformProjectName(root)}`);
+    expect(pulumi).not.toContain('{{DI_FRAMEWORK_PLATFORM_PROJECT}}');
+    expect(program).toContain('k0s');
+    expect(program).toContain('registry');
+    expect(program).toContain('helm.v3.Release');
+    expect(program).toContain('new pulumi.Config()');
+    expect(program).toContain('--network');
+    expect(program).toContain('--tmpfs /run');
+    expect(program).toContain('--publish 127.0.0.1:');
+    expect(program).toContain('pull: `di-framework-registry.');
+    expect(program).toContain('delete: \'if [ -n "$KUBECONFIG_FILE"');
+    expect(program.match(/Logging\.None/g)).toHaveLength(2);
+    expect(program).toContain("'pulumi.com/skipAwait': 'true'");
+    expect(program).toContain("'runtime-shutdown'");
+    expect(program).toContain('delete deployment/hostgroup-default');
+    expect(program).not.toContain('workloaddeployments.runtime.wasmcloud.dev');
+    expect(program).not.toContain('networkInterfaces');
+    expect(program).not.toContain('install-operator.sh');
+    expect(program).not.toContain('kind: WorkloadDeployment');
+    expect(program).not.toContain('greeter');
+    expect(program).not.toContain('di-framework.config.json');
+    expect(readFileSync(join(platform, '.gitignore'), 'utf8')).toContain('.kubeconfig-*');
     expect(readFileSync(join(root, 'di-framework.deploy.toml'), 'utf8')).toContain(
       'default-target = "local"',
     );
@@ -47,6 +61,34 @@ describe('runWasmcloudPlatformInit', () => {
     });
     expect(result.text).toContain(PLATFORM_START_COMMAND);
     expect(output.stdout.join('')).toContain(PLATFORM_START_COMMAND);
+  });
+
+  it('can immediately run the printed deploy command with Pulumi installing dependencies', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'wasmcloud-init-deploy-'));
+    const initialized = await runWasmcloudPlatformInit(
+      [],
+      captureIo().io,
+      fakeDeps({ cwd: root, assets: ASSETS }),
+    );
+    const invocations: RunnerInvocation[] = [];
+    await runWasmcloudPlatformDeploy(
+      ['local', '--yes'],
+      captureIo().io,
+      fakeDeps({
+        cwd: root,
+        invocations,
+        capturedStdout: {
+          'pulumi stack output': platformOutputJson(join(root, 'deploy/platform/.kubeconfig-dev')),
+        },
+      }),
+    );
+
+    expect(initialized.data).toMatchObject({ startCommand: PLATFORM_START_COMMAND });
+    expect(invocations[0]).toMatchObject({
+      command: 'pulumi',
+      args: ['install'],
+      cwd: join(root, 'deploy', 'platform'),
+    });
   });
 
   it('preserves existing platform files and a conflicting local target without --force', async () => {
@@ -107,7 +149,7 @@ registry = "registry.example.com/team"
     );
 
     expect(readFileSync(join(root, 'deploy', 'platform', 'Pulumi.yaml'), 'utf8')).toContain(
-      'wasmcloud-platform',
+      'di-framework-wasmcloud-',
     );
     const manifest = readFileSync(join(root, 'di-framework.deploy.toml'), 'utf8');
     expect(manifest).toContain('default-target = "local"');
@@ -148,7 +190,7 @@ registry = "registry.example.com/team"
     mkdirSync(nested, { recursive: true });
     await runWasmcloudPlatformInit([], captureIo().io, fakeDeps({ cwd: nested, assets: ASSETS }));
     expect(readFileSync(join(root, 'deploy', 'platform', 'Pulumi.yaml'), 'utf8')).toContain(
-      'wasmcloud-platform',
+      'di-framework-wasmcloud-',
     );
   });
 
@@ -236,7 +278,11 @@ registry = "registry.example.com/team"
       'default-target': 'local',
       discovery: { include: ['a/**'], exclude: ['b/**'] },
       targets: {
-        zed: { kubeconfig: 'say "hi"', namespace: 'ns', registry: 'r' },
+        zed: {
+          kubeconfig: 'say "hi"',
+          namespace: 'ns',
+          registry: { push: 'http://127.0.0.1:25000', pull: 'registry:5000', insecure: true },
+        },
         local: { platform: 'deploy/platform', stack: 'dev' },
         skip: 1,
       },
@@ -245,5 +291,14 @@ registry = "registry.example.com/team"
     expect(rendered).toContain('kubeconfig = "say \\"hi\\""');
     expect(rendered).not.toContain('[targets.skip]');
     expect(rendered).toContain('include = ["a/**"]');
+    expect(rendered).toContain('[targets.zed.registry]');
+    expect(rendered).toContain('push = "http://127.0.0.1:25000"');
+    expect(rendered).toContain('insecure = true');
+  });
+
+  it('derives different Pulumi project identities for different consumer workspaces', () => {
+    expect(createPlatformProjectName('/tmp/consumer-one')).not.toBe(
+      createPlatformProjectName('/tmp/consumer-two'),
+    );
   });
 });
