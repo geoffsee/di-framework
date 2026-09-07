@@ -12,6 +12,7 @@ const HEALTHY = {
     pulumi: 'v3.261.0',
     docker: '27.0.3',
     kubectl: 'clientVersion:',
+    oras: 'oras version 1.2.0',
   },
 };
 
@@ -34,6 +35,7 @@ describe('runWasmcloudDoctor', () => {
       'Pulumi',
       'Docker',
       'kubectl',
+      'oras',
     ]);
     expect(checks.every((check) => check.ok)).toBe(true);
     expect(result.text).toContain('✓ Pulumi: v3.261.0');

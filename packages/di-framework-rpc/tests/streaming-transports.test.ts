@@ -111,7 +111,7 @@ describe('streaming across transports', () => {
       const webReq = new Request(url.toString(), {
         method: req.method,
         headers: req.headers as Record<string, string>,
-        body: req.method === 'POST' ? body : undefined,
+        body: req.method === 'POST' ? (body as BodyInit) : undefined,
       });
 
       const webRes = await handler(webReq);

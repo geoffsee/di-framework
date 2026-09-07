@@ -1,7 +1,7 @@
 import { expect } from 'bun:test';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { CliIo } from '@di-framework/cli-extension';
 import type { WasmcloudDeps } from '../src/deps';
 
@@ -10,7 +10,16 @@ export type RunnerInvocation = {
   args: string[];
   cwd: string;
   env?: Record<string, string | undefined>;
+  captured?: boolean;
 };
+
+export const READY_WORKLOAD_JSON = JSON.stringify({
+  spec: { replicas: 1 },
+  status: {
+    readyReplicas: 1,
+    conditions: [{ type: 'Available', status: 'True' }],
+  },
+});
 
 export function captureIo(): { stdout: string[]; stderr: string[]; io: CliIo } {
   const stdout: string[] = [];
@@ -49,6 +58,18 @@ export function makeAssets(): string {
   return root;
 }
 
+export function invocationKey(command: string, args: readonly string[]): string {
+  if (command === 'pulumi') {
+    return args.includes('output') ? 'pulumi stack output' : `pulumi ${args[0]}`;
+  }
+  if (command === 'kubectl') {
+    const verb = args.find((token) => ['apply', 'delete', 'get', 'wait'].includes(token));
+    return verb === undefined ? 'kubectl' : `kubectl ${verb}`;
+  }
+  if (command === 'oras') return 'oras push';
+  return args[1] ?? command;
+}
+
 export function fakeDeps(options: {
   invocations?: RunnerInvocation[];
   cwd: string;
@@ -56,26 +77,54 @@ export function fakeDeps(options: {
   env?: Record<string, string | undefined>;
   exitCodes?: Record<string, number>;
   captures?: Record<string, string | undefined>;
+  capturedStdout?: Record<string, string | undefined>;
   resolutions?: Record<string, string | undefined>;
   bundlerError?: Error;
   /** null = no node binary available. */
   nodeBinaryPath?: string | null;
 }): WasmcloudDeps {
   const invocations = options.invocations ?? [];
+  const run = async (
+    command: string,
+    args: readonly string[],
+    runOptions: { cwd: string; env?: Record<string, string | undefined> },
+    captured: boolean,
+  ) => {
+    invocations.push({
+      command,
+      args: [...args],
+      cwd: runOptions.cwd,
+      env: runOptions.env,
+      captured,
+    });
+    if (args.includes('componentize')) {
+      const outputIndex = args.indexOf('-o');
+      const outputPath = args[outputIndex + 1];
+      if (outputPath !== undefined) {
+        mkdirSync(dirname(outputPath), { recursive: true });
+        writeFileSync(outputPath, 'fake-wasm-component');
+      }
+    }
+    const key = invocationKey(command, args);
+    return {
+      exitCode: options.exitCodes?.[key] ?? 0,
+      stdout:
+        options.capturedStdout?.[key] ??
+        (command === 'kubectl' && args.includes('get') ? READY_WORKLOAD_JSON : ''),
+      stderr: '',
+    };
+  };
   return {
     runner: async (command, args, runOptions) => {
-      invocations.push({
-        command,
-        args: [...args],
-        cwd: runOptions.cwd,
-        env: runOptions.env,
-      });
-      const key = command === 'pulumi' ? `pulumi ${args[0]}` : (args[1] ?? command);
-      return { exitCode: options.exitCodes?.[key] ?? 0 };
+      const result = await run(command, args, runOptions, false);
+      return { exitCode: result.exitCode };
     },
+    runCaptured: async (command, args, runOptions) => run(command, args, runOptions, true),
+    wait: async () => undefined,
     capture: (command) => options.captures?.[command],
     bundler: async ({ outFile }) => {
       if (options.bundlerError) throw options.bundlerError;
+      mkdirSync(dirname(outFile), { recursive: true });
       writeFileSync(outFile, 'export const bundled = true;\n');
     },
     jcoCliPath: () => '/fake/jco.js',
@@ -86,6 +135,70 @@ export function fakeDeps(options: {
     env: options.env ?? {},
     cwd: () => options.cwd,
   };
+}
+
+/** Workspace with a deploy manifest, platform Pulumi project, and arbitrarily located apps. */
+export function makeWorkspace(
+  options: { manifest?: string; env?: Record<string, string | undefined> } = {},
+): {
+  root: string;
+  greeter: string;
+  echo: string;
+  kubeconfig: string;
+} {
+  const root = mkdtempSync(join(tmpdir(), 'wasmcloud-workspace-'));
+  const kubeconfig = join(root, 'kubeconfig.yaml');
+  writeFileSync(kubeconfig, 'apiVersion: v1\nkind: Config\n');
+  writeFileSync(
+    join(root, 'di-framework.deploy.toml'),
+    options.manifest ??
+      `default-target = "local"
+
+[targets.local]
+platform = "deploy/platform"
+stack = "dev"
+
+[targets.development]
+kubeconfig = "${kubeconfig}"
+context = "team-development"
+namespace = "wasmcloud"
+registry = "registry.example.com/team"
+`,
+  );
+  mkdirSync(join(root, 'deploy', 'platform'), { recursive: true });
+  writeFileSync(
+    join(root, 'deploy', 'platform', 'Pulumi.yaml'),
+    'name: wasmcloud-platform\nruntime: nodejs\n',
+  );
+  writeFileSync(
+    join(root, 'deploy', 'platform', 'index.ts'),
+    'export const kubeconfig = "unused";\n',
+  );
+
+  const greeter = join(root, 'services', 'greeter');
+  writeProject(greeter, 'greeter');
+  const echo = join(root, 'nested', 'deep', 'echo');
+  writeProject(echo, 'echo');
+  return { root, greeter, echo, kubeconfig };
+}
+
+export function writeProject(root: string, name: string): void {
+  mkdirSync(join(root, 'src'), { recursive: true });
+  writeFileSync(
+    join(root, 'di-framework.config.json'),
+    `${JSON.stringify({ name, entry: 'src/app.ts' })}\n`,
+  );
+  writeFileSync(join(root, 'package.json'), `${JSON.stringify({ name, version: '1.0.0' })}\n`);
+  writeFileSync(join(root, 'src', 'app.ts'), 'export default () => new Response("ok");\n');
+}
+
+export function platformOutputJson(kubeconfig: string): string {
+  return `${JSON.stringify({
+    kubeconfig,
+    namespace: 'wasmcloud',
+    registry: 'localhost:5000/di-framework',
+    endpoints: { http: 'http://127.0.0.1:80' },
+  })}\n`;
 }
 
 export function expectFailure(run: () => unknown, code: string, exitCode: number): void {

@@ -25,6 +25,7 @@ export async function runWasmcloudDoctor(
     check('Pulumi', deps.capture('pulumi', ['version'])),
     check('Docker', deps.capture('docker', ['version', '--format', '{{.Server.Version}}'])),
     check('kubectl', deps.capture('kubectl', ['version', '--client', '--output=yaml'])),
+    check('oras', deps.capture('oras', ['version'])),
   ];
   const failed = checks.some((entry) => !entry.ok);
   const lines = [

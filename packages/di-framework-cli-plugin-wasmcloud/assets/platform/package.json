@@ -1,0 +1,10 @@
+{
+  "name": "di-framework-wasmcloud-platform",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@pulumi/command": "^1",
+    "@pulumi/kubernetes": "^4",
+    "@pulumi/pulumi": "^3"
+  }
+}

@@ -378,7 +378,7 @@ export class S3BlobStorageAdapter implements BlobStorageAdapter {
     const response = await this.customFetch(url.toString(), {
       method: 'PUT',
       headers,
-      body: data,
+      body: data as BodyInit,
     });
 
     if (!response.ok) {
@@ -487,7 +487,7 @@ export class S3BlobStorageAdapter implements BlobStorageAdapter {
     const response = await this.customFetch(url.toString(), {
       method: 'PUT',
       headers,
-      body: partData,
+      body: partData as BodyInit,
     });
 
     if (!response.ok) {

@@ -238,7 +238,7 @@
     },
     "packages/di-framework-ai": {
       "name": "@di-framework/ai",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.30.0",
       },
@@ -259,7 +259,7 @@
     },
     "packages/di-framework-ai-utils": {
       "name": "@di-framework/ai-utils",
-      "version": "4.3.1",
+      "version": "5.2.6",
       "devDependencies": {
         "@di-framework/ai": "workspace:*",
         "@di-framework/core": "workspace:*",
@@ -282,7 +282,7 @@
     },
     "packages/di-framework-auth": {
       "name": "@di-framework/auth",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@di-framework/graphql": "workspace:*",
         "@di-framework/http": "workspace:*",
@@ -308,7 +308,7 @@
     },
     "packages/di-framework-authz": {
       "name": "@di-framework/authz",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@di-framework/auth": "workspace:*",
         "@di-framework/core": "workspace:*",
@@ -328,12 +328,12 @@
     },
     "packages/di-framework-cli": {
       "name": "@di-framework/cli",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "bin": {
         "di-framework": "./main.ts",
       },
       "dependencies": {
-        "@di-framework/cli-extension": "workspace:*",
+        "@di-framework/cli-extension": "^5",
         "@di-framework/codegen": "^5",
         "bun": "^1.3.14",
       },
@@ -346,14 +346,14 @@
     },
     "packages/di-framework-cli-extension": {
       "name": "@di-framework/cli-extension",
-      "version": "5.2.3",
+      "version": "5.2.6",
       "peerDependencies": {
         "typescript": "^5",
       },
     },
     "packages/di-framework-cli-plugin-wasmcloud": {
       "name": "@di-framework/cli-plugin-wasmcloud",
-      "version": "5.2.3",
+      "version": "5.2.6",
       "dependencies": {
         "@bytecodealliance/jco": "1.17.9",
         "@di-framework/cli-extension": "^5",
@@ -365,7 +365,7 @@
     },
     "packages/di-framework-cloudfoundry": {
       "name": "@di-framework/cloudfoundry",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "peerDependencies": {
         "@di-framework/core": "^5",
         "typescript": "^5",
@@ -373,7 +373,7 @@
     },
     "packages/di-framework-codegen": {
       "name": "@di-framework/codegen",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5",
@@ -385,7 +385,7 @@
     },
     "packages/di-framework-config": {
       "name": "@di-framework/config",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@types/bun": "latest",
         "smol-toml": "^1.4.2",
@@ -408,7 +408,7 @@
     },
     "packages/di-framework-core": {
       "name": "@di-framework/core",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "typescript": "^5",
       },
@@ -418,7 +418,7 @@
     },
     "packages/di-framework-events": {
       "name": "@di-framework/events",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@types/bun": "latest",
         "kafkajs": "^2.2.4",
@@ -438,7 +438,7 @@
     },
     "packages/di-framework-graphql": {
       "name": "@di-framework/graphql",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@types/bun": "latest",
         "graphql": "^17.0.2",
@@ -455,7 +455,7 @@
     },
     "packages/di-framework-http": {
       "name": "@di-framework/http",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "dependencies": {
         "itty-router": "^5.0.22",
       },
@@ -470,7 +470,7 @@
     },
     "packages/di-framework-repo": {
       "name": "@di-framework/repo",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "peerDependencies": {
         "@di-framework/core": "^5",
         "typescript": "^5",
@@ -478,7 +478,7 @@
     },
     "packages/di-framework-rpc": {
       "name": "@di-framework/rpc",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "devDependencies": {
         "@bufbuild/protobuf": "^2.13.0",
         "@connectrpc/connect": "^2.1.2",
@@ -503,7 +503,7 @@
     },
     "packages/di-framework-socket": {
       "name": "@di-framework/socket",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "dependencies": {
         "ws": "^8.18.3",
       },
@@ -519,7 +519,7 @@
     },
     "packages/di-framework-tsc": {
       "name": "@di-framework/tsc",
-      "version": "4.2.3",
+      "version": "5.2.6",
       "dependencies": {
         "ttsc": ">=0.25.0",
         "typescript": "^7.0.0",
@@ -1357,13 +1357,11 @@
 
     "@di-framework/ai-skills-scale-example/@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
 
-    "@di-framework/ai-utils/@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
+    "@di-framework/ai-utils/@types/bun": ["@types/bun@1.4.1", "", { "dependencies": { "bun-types": "1.4.1" } }, "sha512-0AVGiTXGajf1rgKom3N+c5L7CBxuoyyv1i44M0nX4UDK0G/fnRAMiri93nHuVPIb429KKtAgj7HatVmmOjeQLA=="],
 
     "@di-framework/auth/@types/bun": ["@types/bun@1.4.1", "", { "dependencies": { "bun-types": "1.4.1" } }, "sha512-0AVGiTXGajf1rgKom3N+c5L7CBxuoyyv1i44M0nX4UDK0G/fnRAMiri93nHuVPIb429KKtAgj7HatVmmOjeQLA=="],
 
-    "@di-framework/authz/@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
-
-    "@di-framework/cli/@di-framework/codegen": ["@di-framework/codegen@5.2.0", "", { "peerDependencies": { "@di-framework/core": "^4", "typescript": "^5" } }, "sha512-zan2skjsRyO5O5B7jyXSZ/QPka/jFJbuROh0nG4tJo0uHJnCLdFOk8G+KE9mQDTuqXKDdHetBEibwLi3EYI6Jw=="],
+    "@di-framework/authz/@types/bun": ["@types/bun@1.4.1", "", { "dependencies": { "bun-types": "1.4.1" } }, "sha512-0AVGiTXGajf1rgKom3N+c5L7CBxuoyyv1i44M0nX4UDK0G/fnRAMiri93nHuVPIb429KKtAgj7HatVmmOjeQLA=="],
 
     "@di-framework/cli/@types/bun": ["@types/bun@1.4.1", "", { "dependencies": { "bun-types": "1.4.1" } }, "sha512-0AVGiTXGajf1rgKom3N+c5L7CBxuoyyv1i44M0nX4UDK0G/fnRAMiri93nHuVPIb429KKtAgj7HatVmmOjeQLA=="],
 
@@ -1419,13 +1417,13 @@
 
     "@di-framework/ai-skills-scale-example/@types/bun/bun-types": ["bun-types@1.4.0", "", { "dependencies": { "@types/node": "*" } }, "sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q=="],
 
-    "@di-framework/ai-utils/@types/bun/bun-types": ["bun-types@1.4.0", "", { "dependencies": { "@types/node": "*" } }, "sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q=="],
+    "@di-framework/ai-utils/@types/bun/bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
 
     "@di-framework/ai/@types/bun/bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
 
     "@di-framework/auth/@types/bun/bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
 
-    "@di-framework/authz/@types/bun/bun-types": ["bun-types@1.4.0", "", { "dependencies": { "@types/node": "*" } }, "sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q=="],
+    "@di-framework/authz/@types/bun/bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
 
     "@di-framework/cli/@types/bun/bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
 

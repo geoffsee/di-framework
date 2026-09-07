@@ -5,6 +5,8 @@ import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
 import { runWasmcloudDestroy } from './destroy.js';
 import { runWasmcloudDev } from './dev.js';
 import { runWasmcloudDoctor } from './doctor.js';
+import { runWasmcloudPlatformDeploy, runWasmcloudPlatformDestroy } from './platform.js';
+import { runWasmcloudPlatformInit } from './platform-init.js';
 
 export function createWasmcloudCommand(deps: WasmcloudDeps = DEFAULT_DEPS): CommandNode {
   return {
@@ -25,16 +27,51 @@ export function createWasmcloudCommand(deps: WasmcloudDeps = DEFAULT_DEPS): Comm
         run: ({ args, io }) => runWasmcloudDev(args, io, deps),
       },
       deploy: {
-        description: 'Build, then deploy via the Pulumi program above the project',
-        usage: 'di-framework wasmcloud deploy [--yes]',
-        options: ['--yes  Skip the Pulumi confirmation prompt'],
+        description:
+          'Build, publish, and apply a wasmCloud WorkloadDeployment for a project in di-framework.deploy.toml',
+        usage: 'di-framework wasmcloud deploy [name] [--target <name>] [--yes]',
+        options: [
+          '--target <name>  Deployment target from di-framework.deploy.toml (default: default-target)',
+          '--yes  Accepted for compatibility; application deploy does not prompt',
+        ],
         run: ({ args, io }) => runWasmcloudDeploy(args, io, deps),
       },
       destroy: {
-        description: 'Destroy the deployed Pulumi stack',
-        usage: 'di-framework wasmcloud destroy [--yes]',
-        options: ['--yes  Skip the Pulumi confirmation prompt'],
+        description:
+          'Remove the generated WorkloadDeployment and Service for a project; does not destroy the platform',
+        usage: 'di-framework wasmcloud destroy [name] [--target <name>] [--yes]',
+        options: [
+          '--target <name>  Deployment target from di-framework.deploy.toml (default: default-target)',
+          '--yes  Accepted for compatibility; application destroy does not prompt',
+        ],
         run: ({ args, io }) => runWasmcloudDestroy(args, io, deps),
+      },
+      platform: {
+        description: 'Initialize, provision, or tear down a managed wasmCloud platform target',
+        children: {
+          init: {
+            description:
+              'Generate deploy/platform from wasmCloud templates and register it as the default local target',
+            usage: 'di-framework wasmcloud platform init [--force]',
+            options: [
+              '--force, -f  Overwrite existing platform files and the local target in di-framework.deploy.toml',
+            ],
+            run: ({ args, io }) => runWasmcloudPlatformInit(args, io, deps),
+          },
+          deploy: {
+            description:
+              'Run pulumi up for a managed target in di-framework.deploy.toml (k0s, registry, operator)',
+            usage: 'di-framework wasmcloud platform deploy <target> [--yes]',
+            options: ['--yes  Skip the Pulumi confirmation prompt'],
+            run: ({ args, io }) => runWasmcloudPlatformDeploy(args, io, deps),
+          },
+          destroy: {
+            description: 'Run pulumi destroy for a managed platform target only',
+            usage: 'di-framework wasmcloud platform destroy <target> [--yes]',
+            options: ['--yes  Skip the Pulumi confirmation prompt'],
+            run: ({ args, io }) => runWasmcloudPlatformDestroy(args, io, deps),
+          },
+        },
       },
       doctor: {
         description: 'Check the project and local toolchain for wasmCloud readiness',

@@ -1,13 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import {
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -90,7 +83,10 @@ describe('packed CLI artifact', () => {
     for (const [name, source] of Object.entries(dependencySources)) {
       symlinkSync(source, join(installedScope, name));
     }
-    symlinkSync(join(REPO_ROOT, 'node_modules', 'typescript'), join(projectRoot, 'node_modules', 'typescript'));
+    symlinkSync(
+      join(REPO_ROOT, 'node_modules', 'typescript'),
+      join(projectRoot, 'node_modules', 'typescript'),
+    );
     writeWasmcloudFixture(projectRoot);
 
     const run = (...args: string[]) =>

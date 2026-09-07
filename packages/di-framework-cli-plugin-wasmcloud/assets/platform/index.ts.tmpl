@@ -1,0 +1,94 @@
+/**
+ * Local wasmCloud platform. Provisions k0s, a local OCI registry, and the
+ * wasmCloud operator. Application WorkloadDeployments and Services are out of
+ * scope — the CLI derives those from di-framework.config.json.
+ *
+ * Stack outputs (CLI contract): kubeconfig, namespace, registry, endpoints.
+ */
+import * as command from '@pulumi/command';
+import * as k8s from '@pulumi/kubernetes';
+
+const namespaceName = 'wasmcloud';
+const registryHost = 'localhost:5000';
+const k0sName = 'di-framework-wasmcloud-k0s';
+const registryName = 'di-framework-wasmcloud-registry';
+
+const k0s = new command.local.Command('k0s', {
+  create: [
+    'docker rm -f',
+    k0sName,
+    '>/dev/null 2>&1 || true;',
+    'docker run -d --name',
+    k0sName,
+    '--hostname k0s --privileged',
+    `-v ${k0sName}-data:/var/lib/k0s`,
+    '-p 6443:6443 -p 80:80',
+    'k0sproject/k0s',
+  ].join(' '),
+  delete: `docker rm -f ${k0sName}`,
+});
+
+const registryContainer = new command.local.Command('oci-registry', {
+  create: [
+    'docker rm -f',
+    registryName,
+    '>/dev/null 2>&1 || true;',
+    'docker run -d --name',
+    registryName,
+    '-p 5000:5000',
+    'registry:2',
+  ].join(' '),
+  delete: `docker rm -f ${registryName}`,
+});
+
+const kubeconfigCommand = new command.local.Command(
+  'kubeconfig',
+  {
+    create: [
+      `until docker exec ${k0sName} k0s kubeconfig admin >/dev/null 2>&1; do sleep 2; done;`,
+      `docker exec ${k0sName} k0s kubeconfig admin`,
+    ].join(' '),
+  },
+  { dependsOn: [k0s] },
+);
+
+/** Host-reachable API server; the in-container kubeconfig may name the k0s hostname. */
+const kubeconfig = kubeconfigCommand.stdout.apply((raw) =>
+  raw.replace(/https:\/\/[^:\s]+:6443/g, 'https://127.0.0.1:6443'),
+);
+
+const provider = new k8s.Provider(
+  'k0s',
+  {
+    kubeconfig,
+    enableServerSideApply: true,
+  },
+  { dependsOn: [kubeconfigCommand, registryContainer] },
+);
+
+const namespaceResource = new k8s.core.v1.Namespace(
+  'wasmcloud',
+  { metadata: { name: namespaceName } },
+  { provider },
+);
+
+new k8s.helm.v3.Release(
+  'wasmcloud-operator',
+  {
+    chart: 'oci://ghcr.io/wasmcloud/charts/wasmcloud',
+    namespace: namespaceName,
+    createNamespace: false,
+    timeout: 180,
+    waitForJobs: true,
+  },
+  { provider, dependsOn: [namespaceResource] },
+);
+
+export { kubeconfig };
+export const namespace = namespaceName;
+export const registry = registryHost;
+export const endpoints = {
+  http: 'http://127.0.0.1',
+  kubernetes: 'https://127.0.0.1:6443',
+  registry: registryHost,
+};

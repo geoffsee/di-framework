@@ -35,6 +35,26 @@ describe('DEFAULT_DEPS', () => {
     expect(DEFAULT_DEPS.capture(process.execPath, ['-e', 'process.exit(1)'])).toBeUndefined();
   });
 
+  it('captures stdout, stderr, and the exit code of a child process', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'wasmcloud-deps-capture-'));
+    const captured = await DEFAULT_DEPS.runCaptured(
+      process.execPath,
+      ['-e', 'process.stdout.write("out"); process.stderr.write("err"); process.exit(4)'],
+      { cwd },
+    );
+    expect(captured.exitCode).toBe(4);
+    expect(captured.stdout).toBe('out');
+    expect(captured.stderr).toBe('err');
+
+    const withEnv = await DEFAULT_DEPS.runCaptured(
+      process.execPath,
+      ['-e', 'process.stdout.write(process.env.WASM_CLOUD_DEPS_TEST ?? "")'],
+      { cwd, env: { ...process.env, WASM_CLOUD_DEPS_TEST: 'from-env' } },
+    );
+    expect(withEnv.stdout).toBe('from-env');
+    await DEFAULT_DEPS.wait(1);
+  });
+
   it('bundles an entry behind an adapter with the compatibility plugin', async () => {
     const root = mkdtempSync(join(tmpdir(), 'wasmcloud-bundle-'));
     const adapterPath = join(root, 'adapter.ts');

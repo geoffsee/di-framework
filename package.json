@@ -1,6 +1,6 @@
 {
   "name": "di-framework",
-  "version": "5.2.5",
+  "version": "5.2.6",
   "module": "build.ts",
   "type": "module",
   "author": "@di-framework Contributors",
@@ -25,7 +25,7 @@
     "postinstall": "git config core.hooksPath .githooks && bun link-cli && bun run build && echo 'di-framework init | build | check  (mx: maintainers)'",
     "tsc": "tsc",
     "lint": "biome check .",
-    "typecheck": "bun x tsc -b --noEmit",
+    "typecheck": "bun x tsc --noEmit",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "release:patch": "gh workflow run auto-tag.yml -f bump=patch"
