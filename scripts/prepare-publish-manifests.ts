@@ -8,7 +8,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PACKAGES } from '../packages/di-framework-cli/cmd/mx/build';
-import { preparePublishManifest, validateInternalFrameworkDeps } from './internal-framework-deps';
+import {
+  preparePublishManifest,
+  validateInternalFrameworkDeps,
+} from '../packages/di-framework-cli/scripts/internal-framework-deps';
 
 export function prepareAllPublishManifests(workspaceRoot = process.cwd()): {
   releaseVersion: string;
