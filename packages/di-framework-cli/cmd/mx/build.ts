@@ -8,6 +8,28 @@ function isErrno(err: unknown, code: string): boolean {
   return typeof err === 'object' && err !== null && 'code' in err && err.code === code;
 }
 
+export function shellText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value instanceof Uint8Array) return new TextDecoder().decode(value);
+  return '';
+}
+
+export function buildFailure(pkgDir: string, err: unknown): CommandFailure {
+  const stderr =
+    typeof err === 'object' && err !== null && 'stderr' in err ? shellText(err.stderr) : '';
+  const stdout =
+    typeof err === 'object' && err !== null && 'stdout' in err ? shellText(err.stdout) : '';
+  const detail = (
+    stderr.trim() ||
+    stdout.trim() ||
+    (err instanceof Error ? err.message : String(err))
+  ).trim();
+  return new CommandFailure('BUILD_FAILED', `Build failed for ${pkgDir}\n${detail}`, 1, {
+    package: pkgDir,
+    cause: detail,
+  });
+}
+
 export type MxBuildOptions = {
   /** Copy the workspace root version into each package.json. Off by default so install/CI compile does not dirty trees. */
   syncVersions?: boolean;
@@ -84,15 +106,21 @@ export async function build(
       }
     }
 
-    // 1. Clean dist
+    // Clean dist and leftover incremental caches. `tsc` writes
+    // `tsconfig.build.tsbuildinfo` next to the config when rootDir is `src`,
+    // so deleting dist alone leaves a cache that skips emit on the next run.
     await $`rm -rf ${join(fullPath, 'dist')}`.quiet();
+    await $`rm -f ${join(fullPath, 'tsconfig.build.tsbuildinfo')} ${join(fullPath, 'tsconfig.dist.tsbuildinfo')} ${join(fullPath, 'tsconfig.tsbuildinfo')}`.quiet();
 
-    // 2. Run build
     io.stdout.write('  Running build...\n');
-    if (existsSync(join(fullPath, 'tsconfig.build.json'))) {
-      await $`cd ${fullPath} && bun x tsc -p tsconfig.build.json`.quiet();
-    } else {
-      await $`cd ${fullPath} && bun run build`.quiet();
+    try {
+      if (existsSync(join(fullPath, 'tsconfig.build.json'))) {
+        await $`cd ${fullPath} && bun x tsc -p tsconfig.build.json --incremental false`.quiet();
+      } else {
+        await $`cd ${fullPath} && bun run build`.quiet();
+      }
+    } catch (err) {
+      throw buildFailure(pkgDir, err);
     }
 
     io.stdout.write(`  ✅ Finished building ${pkgDir}\n`);

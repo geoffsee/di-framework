@@ -1,24 +1,36 @@
 import type { CliIo, CommandResult } from '@di-framework/cli-extension';
+import { parseAppCommandArgs } from './args.js';
 import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
-import { loadProject } from './project.js';
-import { findInfrastructureRoot, parseYesArgs, pulumiStack, runPulumi } from './pulumi.js';
+import { resolveApplication } from './discovery.js';
+import { loadDeployManifest } from './manifest.js';
+import { resolveConnection, resolveTarget } from './target.js';
+import { deleteWorkload, deploymentResourceName } from './workload.js';
 
 export async function runWasmcloudDestroy(
   args: readonly string[],
   io: CliIo,
   deps: WasmcloudDeps = DEFAULT_DEPS,
 ): Promise<CommandResult> {
-  const { yes } = parseYesArgs(args, 'wasmcloud destroy');
-  const project = loadProject(deps.cwd());
-  const infrastructureRoot = findInfrastructureRoot(project.projectRoot);
-  const stack = pulumiStack(deps.env);
-
-  io.stdout.write(`Destroying stack ${stack}...\n`);
-  await runPulumi(deps, ['stack', 'select', stack], infrastructureRoot);
-  await runPulumi(deps, ['destroy', ...(yes ? ['--yes'] : [])], infrastructureRoot);
+  const options = parseAppCommandArgs(args, 'wasmcloud destroy');
+  const manifest = loadDeployManifest(deps.cwd(), deps.env);
+  const target = resolveTarget(manifest, options.target);
+  const project = resolveApplication(
+    deps.cwd(),
+    options.name,
+    manifest.workspaceRoot,
+    manifest.discovery,
+  );
+  const connection = await resolveConnection(target, manifest.workspaceRoot, manifest.path, deps);
+  await deleteWorkload(project, connection, io, deps);
+  const service = deploymentResourceName(project);
 
   return {
-    data: { application: project.applicationName, infrastructureRoot, stack },
-    text: `Destroyed stack ${stack}.`,
+    data: {
+      application: project.applicationName,
+      target: connection.target,
+      namespace: connection.namespace,
+      service,
+    },
+    text: `Removed ${project.applicationName} from ${connection.target} (namespace ${connection.namespace}).`,
   };
 }

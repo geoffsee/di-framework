@@ -1,6 +1,6 @@
 {
   "name": "@di-framework/authz",
-  "version": "4.2.3",
+  "version": "5.2.6",
   "description": "Declarative resource authorization policies for di-framework",
   "type": "module",
   "main": "./dist/index.js",

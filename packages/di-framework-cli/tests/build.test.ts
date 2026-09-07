@@ -134,6 +134,69 @@ describe('build command', () => {
   });
 
   describe('build()', () => {
+    it('formats shell output and wraps package build failures', async () => {
+      const { buildFailure, shellText } = await import('../cmd/mx/build');
+      expect(shellText('plain')).toBe('plain');
+      expect(shellText(new TextEncoder().encode('bytes'))).toBe('bytes');
+      expect(shellText(undefined)).toBe('');
+
+      const fromStderr = buildFailure('packages/demo', { stderr: 'tsc failed\n' });
+      expect(fromStderr).toMatchObject({
+        code: 'BUILD_FAILED',
+        exitCode: 1,
+        details: { package: 'packages/demo', cause: 'tsc failed' },
+      });
+      expect(fromStderr.message).toContain('packages/demo');
+      expect(fromStderr.message).toContain('tsc failed');
+
+      const fromStdout = buildFailure('packages/demo', { stdout: Buffer.from('compiled? no\n') });
+      expect(fromStdout.details).toMatchObject({ cause: 'compiled? no' });
+
+      const fromError = buildFailure('packages/demo', new Error('boom'));
+      expect(fromError.details).toMatchObject({ cause: 'boom' });
+
+      const fromValue = buildFailure('packages/demo', 7);
+      expect(fromValue.details).toMatchObject({ cause: '7' });
+    });
+
+    it('wraps a failing package build with BUILD_FAILED', async () => {
+      const root = await makeFakeWorkspace();
+      temps.push(root);
+      const failing = join(root, PACKAGES[1]!);
+      await Bun.write(
+        join(failing, 'package.json'),
+        `${JSON.stringify({
+          name: '@test/failing',
+          version: '0.0.0',
+          scripts: { build: 'echo build-went-wrong >&2 && exit 2' },
+        })}\n`,
+      );
+
+      const { build } = await import('../cmd/mx/build');
+      await expect(build({ workspaceRoot: root }, captureIo().io)).rejects.toMatchObject({
+        code: 'BUILD_FAILED',
+        exitCode: 1,
+      });
+    }, 30_000);
+
+    it('cleans stale tsc incremental caches so dist is re-emitted', async () => {
+      const root = await makeFakeWorkspace();
+      temps.push(root);
+      const first = join(root, PACKAGES[0]!);
+      mkdirSync(join(first, 'dist'), { recursive: true });
+      await Bun.write(join(first, 'dist', 'stale.txt'), 'gone');
+      await Bun.write(join(first, 'tsconfig.build.tsbuildinfo'), 'stale-cache');
+      await Bun.write(join(first, 'tsconfig.tsbuildinfo'), 'stale-cache');
+
+      const { build } = await import('../cmd/mx/build');
+      await build({ workspaceRoot: root }, captureIo().io);
+
+      expect(await Bun.file(join(first, 'tsconfig.build.tsbuildinfo')).exists()).toBe(false);
+      expect(await Bun.file(join(first, 'tsconfig.tsbuildinfo')).exists()).toBe(false);
+      expect(await Bun.file(join(first, 'dist', 'stale.txt')).exists()).toBe(false);
+      expect(await Bun.file(join(first, 'dist', 'index.js')).exists()).toBe(true);
+    }, 30_000);
+
     it('cleans dist and builds each package without rewriting versions', async () => {
       const root = await makeFakeWorkspace();
       temps.push(root);

@@ -2,11 +2,11 @@ import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { getWorkspacePackages } from './coverage-mapping';
 import {
   frameworkInternalRange,
   validateInternalFrameworkDeps,
 } from '../packages/di-framework-cli/scripts/internal-framework-deps';
+import { getWorkspacePackages } from './coverage-mapping';
 
 interface PackedFile {
   path: string;

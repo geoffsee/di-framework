@@ -1,0 +1,6 @@
+name: wasmcloud-platform
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Local wasmCloud platform — k0s, OCI registry, and the wasmCloud operator. Does not deploy applications.

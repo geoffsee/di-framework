@@ -40,3 +40,6 @@ lcov
 references
 !examples/**/.claude/skills/**/references/
 /.claude/
+
+# di-framework generated assets
+.di-framework

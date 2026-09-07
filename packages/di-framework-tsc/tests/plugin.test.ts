@@ -21,7 +21,6 @@ describe('@di-framework/tsc plugin entry', () => {
   });
 
   it('declares package metadata expected by the monorepo', async () => {
-    // @ts-expect-error - Property 'json' does not exist on type 'BunFile'.
     const pkg = (await Bun.file(join(pkgRoot, 'package.json')).json()) as {
       name: string;
       main: string;

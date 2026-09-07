@@ -1,6 +1,6 @@
 {
   "name": "@di-framework/cli-plugin-wasmcloud",
-  "version": "5.2.3",
+  "version": "5.2.6",
   "description": "di-framework CLI extension that builds, serves, and deploys DI Framework apps as wasmCloud WebAssembly components.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,7 +27,7 @@
   ],
   "scripts": {
     "test": "bun test",
-    "build": "rm -rf dist && bun x tsc -p tsconfig.dist.json && bun build assets/http-adapter.ts --no-bundle --outfile dist/assets/http-adapter.js && cp -R assets/wit dist/assets/wit"
+    "build": "rm -rf dist && bun x tsc -p tsconfig.dist.json && bun build assets/http-adapter.ts --no-bundle --outfile dist/assets/http-adapter.js && cp -R assets/wit dist/assets/wit && cp -R assets/platform dist/assets/platform"
   },
   "exports": {
     ".": {

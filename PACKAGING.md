@@ -15,7 +15,7 @@ semver ranges rather than monorepo-only `workspace:` protocols.
 | `ai` | `src`, README | intentional TypeScript source package |
 | `cli` | `main.ts`, `command.ts`, `cmd`, `extensions`, `scripts`, README | intentional Bun source CLI |
 | `cli-extension` | `dist`, `src`, README | runtime with a TypeScript `bun` export condition |
-| `cli-plugin-wasmcloud` | `dist`, README | runtime (CLI extension; `dist/assets` carries the transpiled adapter and WIT files) |
+| `cli-plugin-wasmcloud` | `dist`, README | runtime (CLI extension; `dist/assets` carries the transpiled adapter, WIT files, and platform templates) |
 | `tsc` | `bin`, `plugin.cjs`, `plugin`, README, licenses | compiler plugin and Go sidecars |
 
 Runtime source maps are not published, so tarballs do not duplicate

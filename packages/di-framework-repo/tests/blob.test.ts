@@ -5,11 +5,11 @@ import {
   type BlobMetadata,
   type BlobObject,
   type BlobStorageAdapter,
-  InMemoryBlobStorageAdapter,
-  S3BlobStorageAdapter,
   bodyToUint8Array,
   computeEtag,
   createBlobObject,
+  InMemoryBlobStorageAdapter,
+  S3BlobStorageAdapter,
   uint8ArrayToStream,
 } from '../src/index.js';
 
@@ -263,7 +263,7 @@ describe('S3BlobStorageAdapter', () => {
         if (!entry) {
           return new Response('Not Found', { status: 404 });
         }
-        return new Response(entry.body, { status: 200, headers: entry.headers });
+        return new Response(entry.body as BodyInit, { status: 200, headers: entry.headers });
       }
 
       if (method === 'PUT') {

@@ -13,19 +13,45 @@ describe('extension manifest', () => {
       'dev',
       'deploy',
       'destroy',
+      'platform',
       'doctor',
+    ]);
+    expect(Object.keys(manifest.command.children?.platform?.children ?? {})).toEqual([
+      'init',
+      'deploy',
+      'destroy',
     ]);
   });
 
   it('threads injected dependencies through every leaf', async () => {
     const command = createWasmcloudCommand(fakeDeps({ cwd: '/nowhere' }));
-    for (const [name, child] of Object.entries(command.children ?? {})) {
-      expect(child.run).toBeDefined();
-      // Each leaf parses arguments first; an unknown flag proves delegation without
-      // touching a real project or toolchain.
+    const leaves: Array<{ path: string; run: NonNullable<(typeof command)['run']> }> = [];
+    const walk = (node: typeof command, prefix: string[]) => {
+      for (const [name, child] of Object.entries(node.children ?? {})) {
+        const path = [...prefix, name];
+        if (child.run) leaves.push({ path: path.join(' '), run: child.run });
+        walk(child, path);
+      }
+    };
+    walk(command, []);
+    expect(leaves.map((leaf) => leaf.path)).toEqual([
+      'build',
+      'dev',
+      'deploy',
+      'destroy',
+      'platform init',
+      'platform deploy',
+      'platform destroy',
+      'doctor',
+    ]);
+    for (const leaf of leaves) {
       await expect(
         Promise.resolve(
-          child.run?.({ args: ['--bogus'], command: ['wasmcloud', name], io: captureIo().io }),
+          leaf.run({
+            args: ['--bogus'],
+            command: ['wasmcloud', ...leaf.path.split(' ')],
+            io: captureIo().io,
+          }),
         ),
       ).rejects.toMatchObject({ code: 'INVALID_USAGE', exitCode: 2 });
     }

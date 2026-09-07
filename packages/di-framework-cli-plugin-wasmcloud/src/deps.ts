@@ -5,11 +5,28 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { rolldown } from 'rolldown';
 
+export type ProcessRunOptions = {
+  cwd: string;
+  env?: Record<string, string | undefined>;
+};
+
 export type ProcessRunner = (
   command: string,
   args: readonly string[],
-  options: { cwd: string; env?: Record<string, string | undefined> },
+  options: ProcessRunOptions,
 ) => Promise<{ exitCode: number }>;
+
+export type CapturedProcess = {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+};
+
+export type CapturedRunner = (
+  command: string,
+  args: readonly string[],
+  options: ProcessRunOptions,
+) => Promise<CapturedProcess>;
 
 /** First output line of a probe command, or undefined when it is unavailable. */
 export type CaptureRunner = (command: string, args: readonly string[]) => string | undefined;
@@ -26,6 +43,9 @@ export type Bundler = (options: BundleOptions) => Promise<void>;
 export type WasmcloudDeps = {
   runner: ProcessRunner;
   capture: CaptureRunner;
+  /** Captures stdout/stderr for tools whose output the CLI must parse. */
+  runCaptured: CapturedRunner;
+  wait(ms: number): Promise<void>;
   bundler: Bundler;
   jcoCliPath(): string;
   /** jco needs real Node.js; it uses node internals Bun does not implement. */
@@ -92,6 +112,19 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
     if (result.error || result.status !== 0) return undefined;
     return (result.stdout || result.stderr).trim().split('\n')[0];
   },
+  runCaptured: async (command, args, options) => {
+    const child = Bun.spawn([command, ...args], {
+      cwd: options.cwd,
+      env: options.env ?? process.env,
+      stdin: 'ignore',
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    const stdout = await new Response(child.stdout).text();
+    const stderr = await new Response(child.stderr).text();
+    return { exitCode: await child.exited, stdout, stderr };
+  },
+  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   bundler: async ({ adapterPath, entryPath, outFile }) => {
     const bundle = await rolldown({
       input: adapterPath,
