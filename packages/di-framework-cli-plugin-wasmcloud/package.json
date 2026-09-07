@@ -38,7 +38,7 @@
     }
   },
   "dependencies": {
-    "@bytecodealliance/jco": "1.17.9",
+    "@bytecodealliance/jco": "1.32.1",
     "@di-framework/cli-extension": "^5",
     "rolldown": "1.2.7"
   },
