@@ -41,6 +41,8 @@ describe('runWasmcloudPlatformInit', () => {
     expect(program.match(/Logging\.None/g)).toHaveLength(2);
     expect(program).toContain("'pulumi.com/skipAwait': 'true'");
     expect(program).toContain("'runtime-shutdown'");
+    expect(program).toContain('docker exec "$K0S_NAME" k0s kubectl');
+    expect(program).not.toContain('kubectl --kubeconfig "$KUBECONFIG_FILE"');
     expect(program).toContain('delete deployment/hostgroup-default');
     expect(program).not.toContain('workloaddeployments.runtime.wasmcloud.dev');
     expect(program).not.toContain('networkInterfaces');
@@ -299,6 +301,9 @@ registry = "registry.example.com/team"
   it('derives different Pulumi project identities for different consumer workspaces', () => {
     expect(createPlatformProjectName('/tmp/consumer-one')).not.toBe(
       createPlatformProjectName('/tmp/consumer-two'),
+    );
+    expect(createPlatformProjectName(`/tmp/${'-'.repeat(10_000)}consumer`)).toMatch(
+      /^di-framework-wasmcloud-consumer-[a-f0-9]{10}$/,
     );
   });
 });
