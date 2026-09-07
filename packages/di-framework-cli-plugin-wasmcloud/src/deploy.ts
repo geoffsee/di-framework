@@ -5,14 +5,34 @@ import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
 import { resolveApplication } from './discovery.js';
 import { loadDeployManifest } from './manifest.js';
 import { publishComponent } from './publish.js';
+import type { RegistryLocation } from './registry.js';
 import { resolveConnection, resolveTarget } from './target.js';
 import { applyWorkload, deploymentResourceName } from './workload.js';
+
+export type WasmcloudDeployData = {
+  application: string;
+  target: string;
+  namespace: string;
+  registry: RegistryLocation;
+  image: string;
+  publishedImage: string;
+  digest: string;
+  deploymentDigest: string;
+  service: string;
+  http?: { url: string; host: string };
+  endpoints?: Record<string, string>;
+};
+
+export type WasmcloudDeployResult = Omit<CommandResult, 'data' | 'text'> & {
+  data: WasmcloudDeployData;
+  text: string;
+};
 
 export async function runWasmcloudDeploy(
   args: readonly string[],
   io: CliIo,
   deps: WasmcloudDeps = DEFAULT_DEPS,
-): Promise<CommandResult> {
+): Promise<WasmcloudDeployResult> {
   const options = parseAppCommandArgs(args, 'wasmcloud deploy');
   const manifest = loadDeployManifest(deps.cwd(), deps.env);
   const target = resolveTarget(manifest, options.target);
@@ -22,12 +42,12 @@ export async function runWasmcloudDeploy(
     manifest.workspaceRoot,
     manifest.discovery,
   );
-  await buildComponent(project, io, deps);
+  const build = await buildComponent(project, io, deps);
   const connection = await resolveConnection(target, manifest.workspaceRoot, manifest.path, deps);
 
   io.stdout.write(`Deploying ${project.applicationName} to target ${connection.target}...\n`);
-  const image = await publishComponent(project, connection, io, deps);
-  await applyWorkload(project, connection, image.reference, io, deps);
+  const image = await publishComponent(project, connection, io, deps, build.deploymentDigest);
+  await applyWorkload(project, connection, image.pullReference, io, deps);
   const service = deploymentResourceName(project);
 
   return {
@@ -36,11 +56,20 @@ export async function runWasmcloudDeploy(
       target: connection.target,
       namespace: connection.namespace,
       registry: connection.registry,
-      image: image.reference,
-      digest: image.digest,
+      image: image.pullReference,
+      publishedImage: image.pushReference,
+      digest: image.artifactDigest,
+      deploymentDigest: image.digest,
       service,
+      ...(connection.endpoints?.http === undefined
+        ? {}
+        : { http: { url: connection.endpoints.http, host: project.applicationName } }),
       ...(connection.endpoints === undefined ? {} : { endpoints: connection.endpoints }),
     },
-    text: `Deployed ${project.applicationName} to ${connection.target} (namespace ${connection.namespace}, ${image.reference}).`,
+    text: `Deployed ${project.applicationName} to ${connection.target} (namespace ${connection.namespace}, ${image.pullReference}).${
+      connection.endpoints?.http === undefined
+        ? ''
+        : ` HTTP: ${connection.endpoints.http} with Host: ${project.applicationName}`
+    }`,
   };
 }

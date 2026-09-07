@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import {
   closeSync,
   constants,
@@ -10,7 +11,7 @@ import {
   writeFileSync,
   writeSync,
 } from 'node:fs';
-import { dirname, join, relative, sep } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import { type CliIo, CommandFailure, type CommandResult } from '@di-framework/cli-extension';
 import { parsePlatformInitArgs } from './args.js';
 import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
@@ -21,6 +22,7 @@ export const LOCAL_PLATFORM_PATH = 'deploy/platform';
 export const LOCAL_TARGET_NAME = 'local';
 export const LOCAL_STACK_NAME = 'dev';
 export const PLATFORM_START_COMMAND = 'di-framework wasmcloud platform deploy local --yes';
+export const PLATFORM_PROJECT_TOKEN = '{{DI_FRAMEWORK_PLATFORM_PROJECT}}';
 
 const LOCAL_TARGET_FIELDS = {
   platform: LOCAL_PLATFORM_PATH,
@@ -35,7 +37,10 @@ export async function runWasmcloudPlatformInit(
   const { force } = parsePlatformInitArgs(args);
   const workspaceRoot = resolveWorkspaceRoot(deps.cwd());
   const templateRoot = join(deps.assetsDirectory(), 'platform');
-  if (!existsSync(join(templateRoot, 'Pulumi.yaml'))) {
+  if (
+    !existsSync(join(templateRoot, 'Pulumi.yaml')) &&
+    !existsSync(join(templateRoot, 'Pulumi.yaml.tmpl'))
+  ) {
     throw new CommandFailure(
       'WASMCLOUD_PLATFORM_TEMPLATE_NOT_FOUND',
       `wasmCloud platform templates were not found at ${templateRoot}. Rebuild @di-framework/cli-plugin-wasmcloud so dist/assets/platform is installed.`,
@@ -50,10 +55,14 @@ export async function runWasmcloudPlatformInit(
 
   const written: string[] = [];
   const skipped: string[] = [];
+  const platformProject = createPlatformProjectName(workspaceRoot);
   for (const relativePath of listTemplateFiles(templateRoot)) {
     const destination = join(platformRoot, ...destinationRelativePath(relativePath).split('/'));
     mkdirSync(dirname(destination), { recursive: true });
-    const content = readFileSync(join(templateRoot, ...relativePath.split('/')));
+    const content = renderTemplate(
+      readFileSync(join(templateRoot, ...relativePath.split('/'))),
+      platformProject,
+    );
     const writtenName = destinationRelativePath(relativePath);
     if (writeFilePreserving(destination, content, force, io)) written.push(writtenName);
     else skipped.push(writtenName);
@@ -80,6 +89,21 @@ export async function runWasmcloudPlatformInit(
     },
     text: `Initialized local platform at ${LOCAL_PLATFORM_PATH}. Start it with:\n${PLATFORM_START_COMMAND}`,
   };
+}
+
+export function createPlatformProjectName(workspaceRoot: string): string {
+  const slug = basename(workspaceRoot)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 28);
+  const hash = createHash('sha256').update(workspaceRoot).digest('hex').slice(0, 10);
+  return `di-framework-wasmcloud-${slug || 'workspace'}-${hash}`;
+}
+
+function renderTemplate(content: Buffer, platformProject: string): Buffer {
+  const source = content.toString('utf8');
+  return Buffer.from(source.replaceAll(PLATFORM_PROJECT_TOKEN, platformProject));
 }
 
 export function resolveWorkspaceRoot(startDirectory: string): string {
@@ -262,6 +286,7 @@ export function serializeDeployToml(document: Record<string, unknown>): string {
     if (!isRecord(table)) continue;
     lines.push('', `[targets.${name}]`);
     emitTableFields(lines, table);
+    emitNestedTables(lines, `targets.${name}`, table);
   }
 
   lines.push('');
@@ -282,7 +307,19 @@ function emitTableFields(lines: string[], table: Record<string, unknown>): void 
     }
     if (Array.isArray(value) && value.every((entry) => typeof entry === 'string')) {
       lines.push(`${key} = [${value.map((entry) => tomlString(entry)).join(', ')}]`);
+      continue;
     }
+    if (typeof value === 'boolean') lines.push(`${key} = ${value}`);
+  }
+}
+
+function emitNestedTables(lines: string[], prefix: string, table: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(table)) {
+    if (!isRecord(value)) continue;
+    const nestedPrefix = `${prefix}.${key}`;
+    lines.push('', `[${nestedPrefix}]`);
+    emitTableFields(lines, value);
+    emitNestedTables(lines, nestedPrefix, value);
   }
 }
 

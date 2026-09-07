@@ -16,6 +16,7 @@ nested/deep/echo/         another project, nested wherever it fits
 di-framework wasmcloud platform init
 di-framework wasmcloud platform deploy local --yes
 di-framework wasmcloud deploy greeter
+# Then request http://127.0.0.1:28180 with `Host: greeter`.
 di-framework wasmcloud destroy greeter
 di-framework wasmcloud platform destroy local --yes
 ```

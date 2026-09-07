@@ -30,6 +30,12 @@ namespace = "wasmcloud"
     });
   });
 
+  it('parses booleans used by registry transport configuration', () => {
+    expect(parseToml('[target.registry]\ninsecure = true\nsecure = false\n')).toEqual({
+      target: { registry: { insecure: true, secure: false } },
+    });
+  });
+
   it('rejects malformed documents with a line number', () => {
     expect(() => parseToml('default-target = local')).toThrow(TomlParseError);
     try {

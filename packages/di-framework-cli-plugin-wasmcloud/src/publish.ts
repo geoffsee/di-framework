@@ -1,14 +1,18 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { isAbsolute, join, relative, sep } from 'node:path';
 import type { CliIo } from '@di-framework/cli-extension';
 import type { WasmcloudDeps } from './deps.js';
 import type { WasmcloudProject } from './project.js';
+import { registryReferenceHost, registryUsesPlainHttp } from './registry.js';
 import { toolFailed } from './support.js';
 import type { ClusterConnection } from './target.js';
 
 export type PublishedImage = {
+  artifactDigest: string;
   digest: string;
+  pullReference: string;
+  pushReference: string;
   reference: string;
 };
 
@@ -17,16 +21,7 @@ export function contentDigest(filePath: string): string {
 }
 
 export function ociReference(registry: string, repository: string, digest: string): string {
-  return `${normalizeRegistryHost(registry)}/${repository}:sha256-${digest}`;
-}
-
-function normalizeRegistryHost(registry: string): string {
-  let host = registry;
-  const lower = host.toLowerCase();
-  if (lower.startsWith('https://')) host = host.slice('https://'.length);
-  else if (lower.startsWith('http://')) host = host.slice('http://'.length);
-  while (host.endsWith('/')) host = host.slice(0, -1);
-  return host;
+  return `${registryReferenceHost(registry)}/${repository}:sha256-${digest}`;
 }
 
 export async function publishComponent(
@@ -34,26 +29,59 @@ export async function publishComponent(
   connection: ClusterConnection,
   io: CliIo,
   deps: WasmcloudDeps,
+  deploymentDigest: string,
 ): Promise<PublishedImage> {
-  const digest = contentDigest(project.outputPath);
-  const reference = ociReference(connection.registry, project.witName, digest);
+  const artifactDigest = contentDigest(project.outputPath);
+  const pushReference = ociReference(connection.registry.push, project.witName, deploymentDigest);
+  const pullReference = ociReference(connection.registry.pull, project.witName, deploymentDigest);
   const configPath = join(project.projectRoot, '.di-framework', 'oci-config.json');
-  io.stdout.write(
-    `Publishing ${relative(project.projectRoot, project.outputPath)} as ${reference}...\n`,
+  const componentPath = projectRelativePath(project.projectRoot, project.outputPath);
+  const projectConfigPath = projectRelativePath(project.projectRoot, configPath);
+  io.stdout.write(`Publishing ${componentPath} as ${pushReference}...\n`);
+  const transportArgs = registryUsesPlainHttp(connection.registry) ? ['--plain-http'] : [];
+  const existing = await deps.runCaptured(
+    'oras',
+    ['manifest', 'fetch', ...transportArgs, '--descriptor', pushReference],
+    { cwd: project.projectRoot },
   );
+  if (existing.exitCode === 0) {
+    io.stdout.write(`OCI tag ${pushReference} already exists; keeping it immutable.\n`);
+    return {
+      artifactDigest,
+      digest: deploymentDigest,
+      pullReference,
+      pushReference,
+      reference: pushReference,
+    };
+  }
   const pushed = await deps.runner(
     'oras',
     [
       'push',
+      ...transportArgs,
       '--config',
-      `${configPath}:application/vnd.wasm.config.v0+json`,
-      reference,
-      `${project.outputPath}:application/wasm`,
+      `${projectConfigPath}:application/vnd.wasm.config.v0+json`,
+      pushReference,
+      `${componentPath}:application/wasm`,
     ],
     { cwd: project.projectRoot },
   );
   if (pushed.exitCode !== 0) {
     throw toolFailed('oras push', pushed.exitCode);
   }
-  return { digest, reference };
+  return {
+    artifactDigest,
+    digest: deploymentDigest,
+    pullReference,
+    pushReference,
+    reference: pushReference,
+  };
+}
+
+export function projectRelativePath(projectRoot: string, path: string): string {
+  const value = relative(projectRoot, path);
+  if (value === '' || value === '..' || value.startsWith(`..${sep}`) || isAbsolute(value)) {
+    throw new Error(`OCI artifact path must be inside the project: ${path}`);
+  }
+  return value.split(sep).join('/');
 }

@@ -3,8 +3,8 @@
   "private": true,
   "main": "index.ts",
   "dependencies": {
-    "@pulumi/command": "^1",
-    "@pulumi/kubernetes": "^4",
-    "@pulumi/pulumi": "^3"
+    "@pulumi/command": "1.2.1",
+    "@pulumi/kubernetes": "4.34.0",
+    "@pulumi/pulumi": "3.261.0"
   }
 }

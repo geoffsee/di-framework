@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join, resolve } from 'node:path';
 import type { CliIo, CommandResult } from '@di-framework/cli-extension';
 import { CommandFailure } from '@di-framework/cli-extension';
 import { parsePlatformCommandArgs } from './args.js';
@@ -7,8 +7,9 @@ import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
 import { loadDeployManifest, type ManagedTarget } from './manifest.js';
 import { resolveInsideRoot } from './paths.js';
 import { pulumiEnvironment, runPulumi } from './pulumi.js';
+import { materializeRegistry, type RegistryInput, type RegistryLocation } from './registry.js';
 
-export const PLATFORM_OUTPUT_SCHEMA_VERSION = 1;
+export const PLATFORM_OUTPUT_SCHEMA_VERSION = 2;
 
 export type PlatformEndpoints = {
   http?: string;
@@ -20,7 +21,7 @@ export type PlatformOutputs = {
   schemaVersion: typeof PLATFORM_OUTPUT_SCHEMA_VERSION;
   kubeconfig: string;
   namespace: string;
-  registry: string;
+  registry: RegistryLocation;
   context?: string;
   endpoints?: PlatformEndpoints;
 };
@@ -33,6 +34,8 @@ export async function runWasmcloudPlatformDeploy(
   const options = parsePlatformCommandArgs(args, 'wasmcloud platform deploy');
   const { target, platformRoot, stack } = loadManagedPlatform(deps, options.target);
   io.stdout.write(`Deploying platform target ${target.name} (stack ${stack})...\n`);
+  io.stdout.write('Installing generated Pulumi project dependencies...\n');
+  await runPulumi(deps, ['install'], platformRoot);
   await runPulumi(deps, ['stack', 'select', stack, '--create'], platformRoot);
   await runPulumi(deps, ['up', ...(options.yes ? ['--yes'] : [])], platformRoot);
   const outputs = await loadPlatformOutputs(deps, platformRoot, stack, target.name);
@@ -43,8 +46,13 @@ export async function runWasmcloudPlatformDeploy(
       platformRoot,
       namespace: outputs.namespace,
       registry: outputs.registry,
+      ...(outputs.endpoints === undefined ? {} : { endpoints: outputs.endpoints }),
     },
-    text: `Platform target ${target.name} is up (stack ${stack}).`,
+    text: `Platform target ${target.name} is up (stack ${stack}).${
+      outputs.endpoints?.http === undefined
+        ? ''
+        : ` HTTP entrypoint: ${outputs.endpoints.http} (send the deployed project's configured name as the Host header).`
+    }`,
   };
 }
 
@@ -56,6 +64,7 @@ export async function runWasmcloudPlatformDestroy(
   const options = parsePlatformCommandArgs(args, 'wasmcloud platform destroy');
   const { target, platformRoot, stack } = loadManagedPlatform(deps, options.target);
   io.stdout.write(`Destroying platform target ${target.name} (stack ${stack})...\n`);
+  await runPulumi(deps, ['install'], platformRoot);
   await runPulumi(deps, ['stack', 'select', stack], platformRoot);
   await runPulumi(deps, ['destroy', ...(options.yes ? ['--yes'] : [])], platformRoot);
   return {
@@ -73,7 +82,7 @@ export async function loadPlatformOutputs(
   await runPulumi(deps, ['stack', 'select', stack], platformRoot);
   const result = await deps.runCaptured('pulumi', ['stack', 'output', '--json'], {
     cwd: platformRoot,
-    env: pulumiEnvironment(deps.env),
+    env: pulumiEnvironment(deps.env, platformRoot),
   });
   if (result.exitCode !== 0) {
     throw new CommandFailure(
@@ -154,9 +163,20 @@ function materializeOutputs(
     throw invalidOutputs(targetName, 'stack outputs must be a JSON object');
   }
 
+  if (
+    raw.schemaVersion !== undefined &&
+    raw.schemaVersion !== 1 &&
+    raw.schemaVersion !== PLATFORM_OUTPUT_SCHEMA_VERSION
+  ) {
+    throw invalidOutputs(
+      targetName,
+      `unsupported schemaVersion ${JSON.stringify(raw.schemaVersion)}; expected ${PLATFORM_OUTPUT_SCHEMA_VERSION}`,
+    );
+  }
+
   const kubeconfig = requiredString(raw.kubeconfig, 'kubeconfig', targetName);
   const namespace = requiredString(raw.namespace, 'namespace', targetName);
-  const registry = requiredString(raw.registry, 'registry', targetName);
+  const registry = parseRegistry(raw.registry, targetName);
   const context =
     raw.context === undefined ? undefined : requiredString(raw.context, 'context', targetName);
   const endpoints = parseEndpoints(raw.endpoints, targetName);
@@ -166,7 +186,12 @@ function materializeOutputs(
     const generated = join(platformRoot, '.di-framework');
     mkdirSync(generated, { recursive: true });
     kubeconfigPath = join(generated, 'kubeconfig.yaml');
-    writeFileSync(kubeconfigPath, kubeconfig.endsWith('\n') ? kubeconfig : `${kubeconfig}\n`);
+    writeFileSync(kubeconfigPath, kubeconfig.endsWith('\n') ? kubeconfig : `${kubeconfig}\n`, {
+      mode: 0o600,
+    });
+    chmodSync(kubeconfigPath, 0o600);
+  } else if (!isAbsolute(kubeconfigPath)) {
+    kubeconfigPath = resolve(platformRoot, kubeconfigPath);
   }
 
   return {
@@ -177,6 +202,30 @@ function materializeOutputs(
     context,
     endpoints,
   };
+}
+
+function parseRegistry(value: unknown, targetName: string): RegistryLocation {
+  if (typeof value === 'string') {
+    return materializeRegistry(requiredString(value, 'registry', targetName));
+  }
+  if (!isRecord(value)) {
+    throw invalidOutputs(
+      targetName,
+      '"registry" must be a string shorthand or an object with push, pull, and insecure',
+    );
+  }
+  const push = requiredString(value.push, 'registry.push', targetName);
+  const pull = requiredString(value.pull, 'registry.pull', targetName);
+  if (typeof value.insecure !== 'boolean') {
+    throw invalidOutputs(targetName, '"registry.insecure" must be a boolean');
+  }
+  const unknown = Object.keys(value).filter(
+    (key) => key !== 'push' && key !== 'pull' && key !== 'insecure',
+  );
+  if (unknown.length > 0) {
+    throw invalidOutputs(targetName, `"registry" has unsupported fields: ${unknown.join(', ')}`);
+  }
+  return materializeRegistry({ push, pull, insecure: value.insecure } satisfies RegistryInput);
 }
 
 function parseEndpoints(value: unknown, targetName: string): PlatformEndpoints | undefined {

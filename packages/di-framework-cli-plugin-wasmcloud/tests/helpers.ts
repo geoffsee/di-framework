@@ -66,7 +66,7 @@ export function invocationKey(command: string, args: readonly string[]): string 
     const verb = args.find((token) => ['apply', 'delete', 'get', 'wait'].includes(token));
     return verb === undefined ? 'kubectl' : `kubectl ${verb}`;
   }
-  if (command === 'oras') return 'oras push';
+  if (command === 'oras') return args[0] === 'push' ? 'oras push' : 'oras manifest fetch';
   return args[1] ?? command;
 }
 
@@ -80,10 +80,12 @@ export function fakeDeps(options: {
   capturedStdout?: Record<string, string | undefined>;
   resolutions?: Record<string, string | undefined>;
   bundlerError?: Error;
+  componentOutput?: (buildNumber: number) => string;
   /** null = no node binary available. */
   nodeBinaryPath?: string | null;
 }): WasmcloudDeps {
   const invocations = options.invocations ?? [];
+  let componentBuilds = 0;
   const run = async (
     command: string,
     args: readonly string[],
@@ -102,12 +104,16 @@ export function fakeDeps(options: {
       const outputPath = args[outputIndex + 1];
       if (outputPath !== undefined) {
         mkdirSync(dirname(outputPath), { recursive: true });
-        writeFileSync(outputPath, 'fake-wasm-component');
+        componentBuilds += 1;
+        writeFileSync(
+          outputPath,
+          options.componentOutput?.(componentBuilds) ?? 'fake-wasm-component',
+        );
       }
     }
     const key = invocationKey(command, args);
     return {
-      exitCode: options.exitCodes?.[key] ?? 0,
+      exitCode: options.exitCodes?.[key] ?? (command === 'oras' && args[0] === 'manifest' ? 1 : 0),
       stdout:
         options.capturedStdout?.[key] ??
         (command === 'kubectl' && args.includes('get') ? READY_WORKLOAD_JSON : ''),
@@ -194,10 +200,15 @@ export function writeProject(root: string, name: string): void {
 
 export function platformOutputJson(kubeconfig: string): string {
   return `${JSON.stringify({
+    schemaVersion: 2,
     kubeconfig,
     namespace: 'wasmcloud',
-    registry: 'localhost:5000/di-framework',
-    endpoints: { http: 'http://127.0.0.1:80' },
+    registry: {
+      push: 'http://127.0.0.1:25000',
+      pull: 'di-framework-registry.wasmcloud.svc.cluster.local:5000',
+      insecure: true,
+    },
+    endpoints: { http: 'http://127.0.0.1:28180' },
   })}\n`;
 }
 

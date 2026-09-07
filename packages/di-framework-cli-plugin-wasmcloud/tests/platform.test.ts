@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadDeployManifest } from '../src/manifest';
 import {
@@ -58,18 +58,23 @@ describe('runWasmcloudPlatformDeploy', () => {
     );
     const pulumi = invocations.filter((invocation) => invocation.command === 'pulumi');
     expect(pulumi.map((invocation) => invocation.args)).toEqual([
+      ['install'],
       ['stack', 'select', 'dev', '--create'],
       ['up', '--yes'],
       ['stack', 'select', 'dev'],
       ['stack', 'output', '--json'],
     ]);
     expect(pulumi[0]?.cwd).toBe(join(root, 'deploy', 'platform'));
-    expect(pulumi[0]?.env?.PULUMI_BACKEND_URL).toBe('file://~');
+    expect(pulumi[0]?.env?.PULUMI_BACKEND_URL).toContain('/deploy/platform/.pulumi-state');
     expect(result.data).toMatchObject({
       target: 'local',
       stack: 'dev',
       namespace: 'wasmcloud',
-      registry: 'localhost:5000/di-framework',
+      registry: {
+        push: 'http://127.0.0.1:25000',
+        pull: 'di-framework-registry.wasmcloud.svc.cluster.local:5000',
+        insecure: true,
+      },
     });
   });
 
@@ -158,6 +163,28 @@ describe('runWasmcloudPlatformDeploy', () => {
         'local',
       ),
     ).rejects.toMatchObject({ code: 'WASMCLOUD_PLATFORM_OUTPUT_INVALID', exitCode: 2 });
+
+    for (const output of [
+      {
+        schemaVersion: 99,
+        kubeconfig: '/tmp/kube',
+        namespace: 'wasmcloud',
+        registry: 'localhost:5000',
+      },
+      { kubeconfig: '/tmp/kube', namespace: 'wasmcloud', registry: null },
+    ]) {
+      await expect(
+        loadPlatformOutputs(
+          fakeDeps({
+            cwd: healthy.root,
+            capturedStdout: { 'pulumi stack output': JSON.stringify(output) },
+          }),
+          join(healthy.root, 'deploy', 'platform'),
+          'dev',
+          'local',
+        ),
+      ).rejects.toMatchObject({ code: 'WASMCLOUD_PLATFORM_OUTPUT_INVALID', exitCode: 2 });
+    }
   });
 
   it('writes inline kubeconfig YAML and keeps optional output fields', async () => {
@@ -186,12 +213,73 @@ describe('runWasmcloudPlatformDeploy', () => {
     );
     expect(outputs.kubeconfig).toBe(join(platformRoot, '.di-framework', 'kubeconfig.yaml'));
     expect(readFileSync(outputs.kubeconfig, 'utf8')).toBe('apiVersion: v1\nkind: Config\n');
+    expect(statSync(outputs.kubeconfig).mode & 0o777).toBe(0o600);
+    expect(outputs.registry).toEqual({
+      push: 'localhost:5000',
+      pull: 'localhost:5000',
+      insecure: false,
+    });
     expect(outputs.context).toBe('k0s');
     expect(outputs.endpoints).toEqual({
       http: 'http://127.0.0.1',
       kubernetes: 'https://127.0.0.1:6443',
       registry: 'localhost:5000',
     });
+  });
+
+  it('validates and preserves separate registry transport endpoints', async () => {
+    const { root } = makeWorkspace();
+    const platformRoot = join(root, 'deploy', 'platform');
+    const outputs = await loadPlatformOutputs(
+      fakeDeps({
+        cwd: root,
+        capturedStdout: {
+          'pulumi stack output': JSON.stringify({
+            schemaVersion: 2,
+            kubeconfig: '.kubeconfig-dev',
+            namespace: 'wasmcloud',
+            registry: {
+              push: 'http://127.0.0.1:25000',
+              pull: 'di-framework-registry.wasmcloud.svc.cluster.local:5000',
+              insecure: true,
+            },
+          }),
+        },
+      }),
+      platformRoot,
+      'dev',
+      'local',
+    );
+    expect(outputs.kubeconfig).toBe(join(platformRoot, '.kubeconfig-dev'));
+    expect(outputs.registry).toEqual({
+      push: 'http://127.0.0.1:25000',
+      pull: 'di-framework-registry.wasmcloud.svc.cluster.local:5000',
+      insecure: true,
+    });
+
+    for (const registry of [
+      { push: 'localhost:5000', pull: 'registry:5000' },
+      { push: 'localhost:5000', pull: 'registry:5000', insecure: 'yes' },
+      { push: 'localhost:5000', pull: 'registry:5000', insecure: false, extra: 'no' },
+    ]) {
+      await expect(
+        loadPlatformOutputs(
+          fakeDeps({
+            cwd: root,
+            capturedStdout: {
+              'pulumi stack output': JSON.stringify({
+                kubeconfig: '/tmp/kube',
+                namespace: 'wasmcloud',
+                registry,
+              }),
+            },
+          }),
+          platformRoot,
+          'dev',
+          'local',
+        ),
+      ).rejects.toMatchObject({ code: 'WASMCLOUD_PLATFORM_OUTPUT_INVALID', exitCode: 2 });
+    }
   });
 
   it('rejects a platform path that escapes the workspace', async () => {
@@ -223,6 +311,7 @@ describe('runWasmcloudPlatformDestroy', () => {
       fakeDeps({ cwd: root, invocations }),
     );
     expect(invocations.map((invocation) => invocation.args)).toEqual([
+      ['install'],
       ['stack', 'select', 'dev'],
       ['destroy', '--yes'],
     ]);
