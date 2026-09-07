@@ -1,14 +1,14 @@
 # @di-framework/cli-plugin-wasmcloud
 
 di-framework CLI extension for targeting [wasmCloud](https://wasmcloud.com): build a DI Framework
-HTTP app into a WASI 0.2 WebAssembly component, serve it locally, and deploy it from a workspace
+HTTP app into a WASI 0.3 WebAssembly component, serve it locally, and deploy it from a workspace
 manifest.
 
 ```bash
 di-framework extensions install wasmcloud
 
 di-framework wasmcloud build                         # bundle + jco componentize → dist/<name>.wasm
-di-framework wasmcloud dev                           # build, then `jco serve` locally
+di-framework wasmcloud dev                           # build, then serve locally (wasmtime by default)
 di-framework wasmcloud deploy                        # nearest project, default target
 di-framework wasmcloud deploy greeter                # named project anywhere in the workspace
 di-framework wasmcloud deploy greeter --target development
@@ -30,9 +30,14 @@ A component project is marked by `di-framework.config.json`:
 ```
 
 The configured `name` is the only project identity. The extension owns the WebAssembly/WASI
-boundary: it bundles the entry behind a WASI-HTTP ↔ Web Fetch adapter with vendored WASI 0.2.12
-WIT definitions, then componentizes with `jco`. Build state lives in the disposable
-`.di-framework/` directory.
+boundary: it records WIT requirements (the HTTP adapter exports `wasi:http/handler@0.3.0` today),
+generates one world and a `wit.lock.json` from that graph, bundles the entry behind a WASI-HTTP ↔
+Web Fetch adapter, and componentizes with `jco --backend qjs`. Build state lives in the disposable
+`.di-framework/` directory. Package versions are independent of the component-model preview: a WASI
+0.3 guest may still import `wasmcloud:*` packages at their own versions.
+
+Local `wasmcloud dev` uses `wasmtime serve` when wasmtime 46+ is on PATH, then `wash dev`, then
+`jco serve`. Set `DI_FRAMEWORK_WASMCLOUD_DEV_RUNNER` to `wasmtime`, `wash`, or `jco` to pin one.
 
 ## Deployment manifest
 
@@ -133,7 +138,7 @@ For the selected project the extension:
    component-byte digest is calculated and reported separately because ComponentizeJS snapshots may
    vary byte-for-byte for identical inputs.
 3. Derives a wasmCloud `WorkloadDeployment` and Kubernetes `Service` (written under `.di-framework/deploy/`, not checked in).
-4. Configures `wasi:http/incoming-handler` with the project name as its host, applies the resources,
+4. Configures `wasi:http/handler@0.3.0` with the project name as its host, applies the resources,
    and waits for current `Ready=True` or compatible older readiness schemas.
 
 For the generated local platform the result reports the HTTP URL and required Host header. It is

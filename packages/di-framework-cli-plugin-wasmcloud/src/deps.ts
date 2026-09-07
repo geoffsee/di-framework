@@ -39,6 +39,9 @@ export type BundleOptions = {
 
 export type Bundler = (options: BundleOptions) => Promise<void>;
 
+/** Component imports are WIT specifiers, not npm packages. */
+export const COMPONENT_IMPORT_EXTERNAL = /^(wasi|wasmcloud):/;
+
 /** Every process, filesystem-adjacent, and toolchain boundary the commands touch. */
 export type WasmcloudDeps = {
   runner: ProcessRunner;
@@ -50,6 +53,9 @@ export type WasmcloudDeps = {
   jcoCliPath(): string;
   /** jco needs real Node.js; it uses node internals Bun does not implement. */
   nodeBinaryPath(): string | undefined;
+  /** wasmtime serve hosts WASI 0.3 HTTP components locally. */
+  wasmtimeBinaryPath(): string | undefined;
+  washBinaryPath(): string | undefined;
   assetsDirectory(): string;
   resolveFromProject(projectRoot: string, specifier: string): string | undefined;
   env: Record<string, string | undefined>;
@@ -89,8 +95,12 @@ export function findJcoEntry(startDirectory: string): string | undefined {
   let previous = '';
   let current = startDirectory;
   while (current !== previous) {
-    const candidate = join(current, 'node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js');
-    if (existsSync(candidate)) return candidate;
+    const candidates = [
+      join(current, 'node_modules', '@bytecodealliance', 'jco', 'dist', 'jco.js'),
+      join(current, 'node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js'),
+    ];
+    const candidate = candidates.find((path) => existsSync(path));
+    if (candidate !== undefined) return candidate;
     previous = current;
     current = dirname(current);
   }
@@ -128,7 +138,7 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
   bundler: async ({ adapterPath, entryPath, outFile }) => {
     const bundle = await rolldown({
       input: adapterPath,
-      external: /^wasi:.*/,
+      external: COMPONENT_IMPORT_EXTERNAL,
       plugins: [nodeCompatibilityPlugin(entryPath)],
       treeshake: { moduleSideEffects: false },
     });
@@ -142,6 +152,8 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
     findJcoEntry(packageRoot) ??
     join(dirname(fileURLToPath(import.meta.resolve('@bytecodealliance/jco'))), 'jco.js'),
   nodeBinaryPath: () => Bun.which('node') ?? undefined,
+  wasmtimeBinaryPath: () => Bun.which('wasmtime') ?? undefined,
+  washBinaryPath: () => Bun.which('wash') ?? undefined,
   // Assets ship transpiled under dist/assets; src and dist are siblings of it.
   assetsDirectory: () => join(packageRoot, 'dist', 'assets'),
   resolveFromProject: (projectRoot, specifier) => {

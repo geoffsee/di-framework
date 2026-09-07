@@ -27,7 +27,7 @@
   ],
   "scripts": {
     "test": "bun test",
-    "build": "rm -rf dist && bun x tsc -p tsconfig.dist.json && bun build assets/http-adapter.ts --no-bundle --outfile dist/assets/http-adapter.js && cp -R assets/wit dist/assets/wit && cp -R assets/platform dist/assets/platform"
+    "build": "rm -rf dist && bun x tsc -p tsconfig.dist.json && bun build assets/http-adapter.ts --outfile dist/assets/http-adapter.js --packages bundle --external 'wasi:*' --external 'wasmcloud:*' && cp -R assets/wit dist/assets/wit && cp -R assets/platform dist/assets/platform"
   },
   "exports": {
     ".": {
@@ -38,7 +38,7 @@
     }
   },
   "dependencies": {
-    "@bytecodealliance/jco": "1.17.9",
+    "@bytecodealliance/jco": "1.32.1",
     "@di-framework/cli-extension": "^5",
     "rolldown": "1.2.7"
   },

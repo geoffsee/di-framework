@@ -1,8 +1,9 @@
 import type { CliIo, CommandResult } from '@di-framework/cli-extension';
 import { buildComponent } from './build.js';
 import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
+import { resolveDevRunner } from './dev-runner.js';
 import { loadProject } from './project.js';
-import { invalidUsage, readOptionValue, requireNodeBinary, toolFailed } from './support.js';
+import { invalidUsage, readOptionValue, toolFailed } from './support.js';
 
 export type DevOptions = { host: string; port: string };
 
@@ -35,25 +36,27 @@ export async function runWasmcloudDev(
   const options = parseDevArgs(args);
   const project = loadProject(deps.cwd());
   await buildComponent(project, io, deps);
-  io.stdout.write(`Serving on http://${options.host}:${options.port}\n`);
+  const runner = resolveDevRunner(deps);
+  io.stdout.write(`Serving on http://${options.host}:${options.port} (${runner.kind})\n`);
   const served = await deps.runner(
-    requireNodeBinary(deps.nodeBinaryPath()),
-    [
-      deps.jcoCliPath(),
-      'serve',
-      project.outputPath,
-      '--host',
-      options.host,
-      '--port',
-      options.port,
-    ],
+    runner.command,
+    runner.args({
+      componentPath: project.outputPath,
+      host: options.host,
+      port: options.port,
+    }),
     { cwd: project.projectRoot },
   );
   if (served.exitCode !== 0) {
-    throw toolFailed('jco serve', served.exitCode);
+    throw toolFailed(`${runner.kind} serve`, served.exitCode);
   }
   return {
-    data: { application: project.applicationName, host: options.host, port: options.port },
+    data: {
+      application: project.applicationName,
+      host: options.host,
+      port: options.port,
+      runner: runner.kind,
+    },
     text: 'Dev server stopped.',
   };
 }

@@ -36,6 +36,7 @@ describe('runWasmcloudDoctor', () => {
       'Docker',
       'kubectl',
       'oras',
+      'dev runner',
     ]);
     expect(checks.every((check) => check.ok)).toBe(true);
     expect(result.text).toContain('✓ Pulumi: v3.261.0');
@@ -58,5 +59,23 @@ describe('runWasmcloudDoctor', () => {
     await expect(
       runWasmcloudDoctor(['--fix'], captureIo().io, fakeDeps({ cwd: '/nowhere' })),
     ).rejects.toMatchObject({ code: 'INVALID_USAGE', exitCode: 2 });
+  });
+
+  it('reports a missing dev runner without failing the rest of the probe', async () => {
+    const root = makeProject();
+    const result = await runWasmcloudDoctor(
+      [],
+      captureIo().io,
+      fakeDeps({
+        cwd: root,
+        ...HEALTHY,
+        wasmtimeBinaryPath: null,
+        washBinaryPath: null,
+        nodeBinaryPath: null,
+      }),
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.text).toContain('✗ dev runner is unavailable');
+    expect(result.text).toContain('✓ Pulumi: v3.261.0');
   });
 });

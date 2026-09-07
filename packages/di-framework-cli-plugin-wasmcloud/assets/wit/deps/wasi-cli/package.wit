@@ -1,4 +1,4 @@
-package wasi:cli@0.2.12;
+package wasi:cli@0.3.0;
 world command {
   include imports;
   export run;
@@ -6,18 +6,17 @@ world command {
 interface environment {
   get-environment: func() -> list<tuple<string, string>>;
   get-arguments: func() -> list<string>;
-  initial-cwd: func() -> option<string>;
+  get-initial-cwd: func() -> option<string>;
 }
 interface exit {
   exit: func(status: result);
   exit-with-code: func(status-code: u8);
 }
 world imports {
-  include wasi:clocks/imports@0.2.12;
-  include wasi:filesystem/imports@0.2.12;
-  include wasi:sockets/imports@0.2.12;
-  include wasi:random/imports@0.2.12;
-  include wasi:io/imports@0.2.12;
+  include wasi:clocks/imports@0.3.0;
+  include wasi:filesystem/imports@0.3.0;
+  include wasi:sockets/imports@0.3.0;
+  include wasi:random/imports@0.3.0;
   import environment;
   import exit;
   import stdin;
@@ -30,19 +29,26 @@ world imports {
   import terminal-stderr;
 }
 interface run {
-  run: func() -> result;
+  run: async func() -> result;
+}
+interface types {
+  enum error-code {
+    io,
+    illegal-byte-sequence,
+    pipe,
+  }
 }
 interface stdin {
-  use wasi:io/streams@0.2.12.{input-stream};
-  get-stdin: func() -> input-stream;
+  use types.{error-code};
+  read-via-stream: func() -> tuple<stream<u8>, future<result<_, error-code>>>;
 }
 interface stdout {
-  use wasi:io/streams@0.2.12.{output-stream};
-  get-stdout: func() -> output-stream;
+  use types.{error-code};
+  write-via-stream: func(data: stream<u8>) -> future<result<_, error-code>>;
 }
 interface stderr {
-  use wasi:io/streams@0.2.12.{output-stream};
-  get-stderr: func() -> output-stream;
+  use types.{error-code};
+  write-via-stream: func(data: stream<u8>) -> future<result<_, error-code>>;
 }
 interface terminal-input {
     resource terminal-input;

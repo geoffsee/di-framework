@@ -18,7 +18,7 @@ export function createWasmcloudCommand(deps: WasmcloudDeps = DEFAULT_DEPS): Comm
         run: ({ args, io }) => runWasmcloudBuild(args, io, deps),
       },
       dev: {
-        description: 'Build, then serve the component locally with jco',
+        description: 'Build, then serve the component locally (wasmtime, wash, or jco)',
         usage: 'di-framework wasmcloud dev [--host <address>] [--port <port>]',
         options: [
           '--host <address>  Bind address (default: 127.0.0.1)',

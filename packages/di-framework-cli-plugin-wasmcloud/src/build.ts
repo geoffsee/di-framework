@@ -3,20 +3,38 @@ import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } f
 import { dirname, join, relative, sep } from 'node:path';
 import { type CliIo, CommandFailure, type CommandResult } from '@di-framework/cli-extension';
 import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
+import { OCI_ARTIFACT_PLATFORM } from './oci.js';
 import { loadProject, type WasmcloudProject } from './project.js';
 import { invalidUsage, requireNodeBinary, toolFailed } from './support.js';
+import {
+  buildWitLock,
+  COMPONENT_MODEL,
+  defaultProjectRequirements,
+  digestBytes,
+  renderWorldWit,
+  WASI_HTTP_INTERFACE,
+  WASI_HTTP_VERSION,
+  type WitLock,
+  type WitRequirement,
+} from './wit.js';
 
-export const BUILD_PROFILE = 'wasmcloud-http';
-export const WASI_HTTP_VERSION = '0.2.12';
+export { COMPONENT_MODEL, WASI_HTTP_INTERFACE, WASI_HTTP_VERSION };
+export const BUILD_PROFILE_NAME = 'wasmcloud-http';
+export { BUILD_PROFILE_NAME as BUILD_PROFILE };
 
 export type BuildSummary = {
   application: string;
   artifactDigest: string;
   component: string;
+  componentModel: string;
   deploymentDigest: string;
   entry: string;
   profile: string;
 };
+
+export function requirementsForProject(_project: WasmcloudProject): WitRequirement[] {
+  return defaultProjectRequirements();
+}
 
 /** The disposable `.di-framework/` build directory: WIT world, bundle, and manifests. */
 export async function buildComponent(
@@ -27,6 +45,7 @@ export async function buildComponent(
   const generatedDirectory = join(project.projectRoot, '.di-framework');
   const generatedWit = join(generatedDirectory, 'wit');
   const bundledJavaScript = join(generatedDirectory, 'component.js');
+  const requirements = requirementsForProject(project);
 
   rmSync(generatedDirectory, { recursive: true, force: true });
   mkdirSync(join(generatedWit, 'deps'), { recursive: true });
@@ -37,11 +56,13 @@ export async function buildComponent(
 
   writeFileSync(
     join(generatedWit, 'world.wit'),
-    `package local:${project.witName}@${project.version};\n\nworld application {\n  export wasi:http/incoming-handler@${WASI_HTTP_VERSION};\n}\n`,
+    renderWorldWit(project.witName, project.version, requirements),
   );
+  const lock = buildWitLock(requirements, join(generatedWit, 'deps'));
+  writeFileSync(join(generatedDirectory, 'wit.lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
   writeFileSync(
     join(generatedDirectory, 'oci-config.json'),
-    `${JSON.stringify({ architecture: 'wasm', os: 'wasip2' }, null, 2)}\n`,
+    `${JSON.stringify(OCI_ARTIFACT_PLATFORM, null, 2)}\n`,
   );
 
   io.stdout.write(`Building ${project.applicationName}...\n`);
@@ -65,8 +86,12 @@ export async function buildComponent(
     [
       deps.jcoCliPath(),
       'componentize',
+      '--backend',
+      'qjs',
       '-w',
       generatedWit,
+      '-n',
+      'application',
       '-o',
       project.outputPath,
       bundledJavaScript,
@@ -81,17 +106,17 @@ export async function buildComponent(
     bundledJavaScript,
     generatedWit,
     join(generatedDirectory, 'oci-config.json'),
+    lock,
   );
-  const artifactDigest = createHash('sha256')
-    .update(readFileSync(project.outputPath))
-    .digest('hex');
+  const artifactDigest = digestBytes(readFileSync(project.outputPath));
   const summary: BuildSummary = {
     application: project.applicationName,
     artifactDigest,
     component: relative(project.projectRoot, project.outputPath),
+    componentModel: COMPONENT_MODEL,
     deploymentDigest,
     entry: relative(project.projectRoot, project.entryPath),
-    profile: BUILD_PROFILE,
+    profile: BUILD_PROFILE_NAME,
   };
   writeFileSync(
     join(generatedDirectory, 'build.json'),
@@ -105,15 +130,17 @@ export async function buildComponent(
 /**
  * Stable logical version for deployment. ComponentizeJS snapshots can contain
  * nondeterministic engine bytes, so the rollout key is the canonical bundle,
- * WIT, OCI configuration, and pinned build profile instead of the final bytes.
+ * WIT lock, OCI configuration, and pinned build profile instead of the final bytes.
  */
 export function canonicalBuildDigest(
   bundledJavaScript: string,
   witDirectory: string,
   ociConfig: string,
+  lock: WitLock,
 ): string {
   const hash = createHash('sha256');
-  addDigestEntry(hash, 'profile', `${BUILD_PROFILE}\n${WASI_HTTP_VERSION}`);
+  addDigestEntry(hash, 'profile', `${BUILD_PROFILE_NAME}\n${COMPONENT_MODEL}`);
+  addDigestEntry(hash, 'wit-lock', JSON.stringify(lock));
   addDigestEntry(hash, 'bundle', readFileSync(bundledJavaScript));
   addDigestEntry(hash, 'oci-config', readFileSync(ociConfig));
   for (const file of listFiles(witDirectory)) {

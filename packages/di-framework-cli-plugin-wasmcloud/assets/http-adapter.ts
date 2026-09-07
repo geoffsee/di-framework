@@ -1,30 +1,48 @@
+import './fetch-runtime.ts';
 import application from 'virtual:di-framework-application';
-import {
-  Fields,
-  IncomingBody,
-  OutgoingBody,
-  OutgoingResponse,
-  ResponseOutparam,
-} from 'wasi:http/types@0.2.12';
+import { Fields, Request as WasiRequest, Response as WasiResponse } from 'wasi:http/types@0.3.0';
 
 type Application =
   | ((request: Request) => Response | Promise<Response>)
   | { fetch(request: Request): Response | Promise<Response> };
 
-function methodName(method: { tag: string; val?: string }): string {
+type WasiResult<T> = { tag: 'ok'; val: T } | { tag: 'err'; val: unknown };
+type WasiOk = { tag: 'ok'; val: undefined };
+
+function methodName(method: { tag: string; val?: string } | undefined): string {
+  if (method === undefined) return 'GET';
   return method.tag === 'other' ? (method.val ?? 'GET') : method.tag.toUpperCase();
 }
 
-async function toWebRequest(incoming: any): Promise<Request> {
-  const method = methodName(incoming.method());
-  const schemeValue = incoming.scheme();
+function firstOfTuple<T>(value: T | [T, ...unknown[]] | { res: T }): T {
+  if (Array.isArray(value)) return value[0];
+  if (value !== null && typeof value === 'object' && 'res' in value) return value.res;
+  return value;
+}
+
+function isAsyncIterable(value: unknown): value is AsyncIterable<Uint8Array> {
+  return value != null && typeof value === 'object' && Symbol.asyncIterator in value;
+}
+
+async function* bytesAsStream(bytes: Uint8Array): AsyncGenerator<Uint8Array> {
+  if (bytes.length > 0) yield bytes;
+}
+
+async function toWebRequest(incoming: {
+  getMethod(): { tag: string; val?: string } | undefined;
+  getScheme(): { tag: string } | undefined | null;
+  getAuthority(): string | undefined | null;
+  getPathWithQuery(): string | undefined | null;
+  getHeaders(): { copyAll(): Array<[string, Uint8Array]> };
+}): Promise<Request> {
+  const method = methodName(incoming.getMethod());
+  const schemeValue = incoming.getScheme();
   const scheme = schemeValue?.tag === 'HTTPS' ? 'https' : 'http';
-  const authority = incoming.authority() ?? 'localhost';
-  const path = incoming.pathWithQuery() ?? '/';
+  const authority = incoming.getAuthority() ?? 'localhost';
+  const path = incoming.getPathWithQuery() ?? '/';
   const decoder = new TextDecoder();
   const headers = new Headers();
-
-  for (const [name, value] of incoming.headers().entries()) {
+  for (const [name, value] of incoming.getHeaders().copyAll()) {
     headers.append(name, decoder.decode(value));
   }
 
@@ -32,39 +50,25 @@ async function toWebRequest(incoming: any): Promise<Request> {
     return new Request(`${scheme}://${authority}${path}`, { method, headers });
   }
 
-  const incomingBody = incoming.consume();
-  const input = incomingBody.stream();
-  const chunks: Uint8Array[] = [];
-
+  let stream: AsyncIterable<Uint8Array> | undefined;
   try {
-    while (true) {
-      try {
-        const chunk = input.blockingRead(64n * 1024n);
-        if (chunk.length === 0) break;
-        chunks.push(chunk);
-      } catch (error) {
-        const payload = (error as { payload?: { tag?: string } })?.payload;
-        if (payload?.tag === 'closed') break;
-        throw error;
+    const consumed = (
+      WasiRequest as unknown as {
+        consumeBody(request: unknown, res: Promise<WasiOk>): unknown;
       }
-    }
-  } finally {
-    input[Symbol.dispose]();
-    IncomingBody.finish(incomingBody);
-  }
-
-  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const body = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.length;
+    ).consumeBody(incoming, Promise.resolve({ tag: 'ok', val: undefined }));
+    const body = firstOfTuple(
+      consumed as AsyncIterable<Uint8Array> | [AsyncIterable<Uint8Array>, ...unknown[]],
+    );
+    if (isAsyncIterable(body)) stream = body;
+  } catch {
+    stream = undefined;
   }
 
   return new Request(`${scheme}://${authority}${path}`, {
     method,
     headers,
-    body,
+    body: stream as BodyInit | undefined,
   });
 }
 
@@ -80,60 +84,46 @@ async function dispatch(request: Request): Promise<Response> {
   return response;
 }
 
-async function writeResponse(response: Response, outparam: any): Promise<void> {
+async function responseContents(response: Response): Promise<AsyncIterable<Uint8Array> | null> {
+  const body = response.body;
+  if (isAsyncIterable(body)) return body;
   const bytes = new Uint8Array(await response.arrayBuffer());
-  const encoder = new TextEncoder();
-  const fields = Fields.fromList(
-    [...response.headers.entries()].map(([name, value]) => [name, encoder.encode(value)]),
-  );
-  const outgoing = new OutgoingResponse(fields);
-  outgoing.setStatusCode(response.status);
-  const body = outgoing.body();
-  // Hand the response to the host before writing: the host only starts draining
-  // the body stream once the outparam is set, so writing the body first
-  // deadlocks on payloads larger than the host's stream buffer.
-  ResponseOutparam.set(outparam, { tag: 'ok', val: outgoing });
-  const output = body.write();
-
-  try {
-    // wasi:io permits at most check-write bytes per write (a larger chunk traps
-    // the component), so stream the body with the canonical subscribe/poll loop.
-    const pollable = output.subscribe();
-    try {
-      let offset = 0;
-      while (offset < bytes.length) {
-        pollable.block();
-        const permit = Number(output.checkWrite());
-        if (permit === 0) continue;
-        const end = Math.min(offset + permit, bytes.length);
-        output.write(bytes.subarray(offset, end));
-        offset = end;
-      }
-      output.blockingFlush();
-    } finally {
-      pollable[Symbol.dispose]();
-    }
-  } finally {
-    output[Symbol.dispose]();
-  }
-
-  OutgoingBody.finish(body, undefined);
+  return bytes.length > 0 ? bytesAsStream(bytes) : null;
 }
 
-export const incomingHandler = {
-  async handle(incoming: any, outparam: any): Promise<void> {
-    let response: Response;
-    try {
-      response = await dispatch(await toWebRequest(incoming));
-    } catch (error) {
-      // Only a response computed before the outparam is set can be replaced;
-      // failures while streaming the body have no recovery channel.
-      console.error('Unhandled DI Framework request error', error);
-      response = new Response(JSON.stringify({ error: 'Internal server error' }), {
-        status: 500,
-        headers: { 'content-type': 'application/json' },
-      });
+async function fromWebResponse(response: Response): Promise<unknown> {
+  const encoder = new TextEncoder();
+  const headerPairs: Array<[string, Uint8Array]> = [];
+  response.headers.forEach((value, name) => {
+    headerPairs.push([name, encoder.encode(value)]);
+  });
+  const fields = Fields.fromList(headerPairs);
+  const created = (
+    WasiResponse as unknown as {
+      new: (
+        headers: unknown,
+        contents: AsyncIterable<Uint8Array> | null,
+        trailers: Promise<WasiResult<null>>,
+      ) => unknown;
     }
-    await writeResponse(response, outparam);
+  ).new(fields, await responseContents(response), Promise.resolve({ tag: 'ok', val: null }));
+  const outgoing = firstOfTuple(created as { setStatusCode?(status: number): void });
+  outgoing.setStatusCode?.(response.status);
+  return outgoing;
+}
+
+export const handler = {
+  async handle(incoming: Parameters<typeof toWebRequest>[0]): Promise<unknown> {
+    try {
+      return await fromWebResponse(await dispatch(await toWebRequest(incoming)));
+    } catch (error) {
+      console.error('Unhandled DI Framework request error', error);
+      return await fromWebResponse(
+        new Response(JSON.stringify({ error: 'Internal server error' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    }
   },
 };

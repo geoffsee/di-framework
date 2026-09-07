@@ -53,8 +53,11 @@ export function makeProject(
 export function makeAssets(): string {
   const root = mkdtempSync(join(tmpdir(), 'wasmcloud-assets-'));
   mkdirSync(join(root, 'wit', 'deps', 'wasi-http'), { recursive: true });
-  writeFileSync(join(root, 'wit', 'deps', 'wasi-http', 'package.wit'), 'package wasi:http;\n');
-  writeFileSync(join(root, 'http-adapter.js'), 'export const incomingHandler = {};\n');
+  writeFileSync(
+    join(root, 'wit', 'deps', 'wasi-http', 'package.wit'),
+    'package wasi:http@0.3.0;\n',
+  );
+  writeFileSync(join(root, 'http-adapter.js'), 'export const handler = {};\n');
   return root;
 }
 
@@ -67,6 +70,9 @@ export function invocationKey(command: string, args: readonly string[]): string 
     return verb === undefined ? 'kubectl' : `kubectl ${verb}`;
   }
   if (command === 'oras') return args[0] === 'push' ? 'oras push' : 'oras manifest fetch';
+  if (command === 'wasmtime' || /(?:^|\/)wasmtime$/.test(command)) {
+    return args[0] === 'serve' ? 'wasmtime serve' : `wasmtime ${args[0]}`;
+  }
   return args[1] ?? command;
 }
 
@@ -83,6 +89,10 @@ export function fakeDeps(options: {
   componentOutput?: (buildNumber: number) => string;
   /** null = no node binary available. */
   nodeBinaryPath?: string | null;
+  /** null = no wasmtime binary available. */
+  wasmtimeBinaryPath?: string | null;
+  /** null = no wash binary available. */
+  washBinaryPath?: string | null;
 }): WasmcloudDeps {
   const invocations = options.invocations ?? [];
   let componentBuilds = 0;
@@ -136,6 +146,12 @@ export function fakeDeps(options: {
     jcoCliPath: () => '/fake/jco.js',
     nodeBinaryPath: () =>
       options.nodeBinaryPath === null ? undefined : (options.nodeBinaryPath ?? '/fake/node'),
+    wasmtimeBinaryPath: () =>
+      options.wasmtimeBinaryPath === null
+        ? undefined
+        : (options.wasmtimeBinaryPath ?? '/fake/wasmtime'),
+    washBinaryPath: () =>
+      options.washBinaryPath === null ? undefined : (options.washBinaryPath ?? undefined),
     assetsDirectory: () => options.assets ?? makeAssets(),
     resolveFromProject: (_projectRoot, specifier) => options.resolutions?.[specifier],
     env: options.env ?? {},

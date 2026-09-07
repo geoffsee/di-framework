@@ -17,17 +17,31 @@ describe('buildComponent', () => {
 
     const generated = join(root, '.di-framework');
     expect(readFileSync(join(generated, 'wit', 'world.wit'), 'utf8')).toBe(
-      'package local:demo-app@1.2.3;\n\nworld application {\n  export wasi:http/incoming-handler@0.2.12;\n}\n',
+      'package local:demo-app@1.2.3;\n\nworld application {\n  export wasi:http/handler@0.3.0;\n}\n',
     );
     expect(JSON.parse(readFileSync(join(generated, 'oci-config.json'), 'utf8'))).toEqual({
       architecture: 'wasm',
       os: 'wasip2',
     });
+    const lock = JSON.parse(readFileSync(join(generated, 'wit.lock.json'), 'utf8')) as {
+      componentModel: string;
+      requirements: Array<{ package: string; version: string; interfaces: string[] }>;
+    };
+    expect(lock.componentModel).toBe('0.3');
+    expect(lock.requirements).toEqual([
+      expect.objectContaining({
+        package: 'wasi:http',
+        version: '0.3.0',
+        interfaces: ['handler'],
+        direction: 'export',
+      }),
+    ]);
     expect(JSON.parse(readFileSync(join(generated, 'build.json'), 'utf8'))).toEqual({
       schemaVersion: 1,
       application: 'Demo App',
       artifactDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       component: join('dist', 'demo-app.wasm'),
+      componentModel: '0.3',
       deploymentDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       entry: join('src', 'app.ts'),
       profile: 'wasmcloud-http',
@@ -42,8 +56,12 @@ describe('buildComponent', () => {
       args: [
         '/fake/jco.js',
         'componentize',
+        '--backend',
+        'qjs',
         '-w',
         join(generated, 'wit'),
+        '-n',
+        'application',
         '-o',
         join(root, 'dist', 'demo-app.wasm'),
         join(generated, 'component.js'),
@@ -53,6 +71,7 @@ describe('buildComponent', () => {
       application: 'Demo App',
       artifactDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       component: join('dist', 'demo-app.wasm'),
+      componentModel: '0.3',
       deploymentDigest: expect.stringMatching(/^[a-f0-9]{64}$/),
       entry: join('src', 'app.ts'),
       profile: 'wasmcloud-http',
