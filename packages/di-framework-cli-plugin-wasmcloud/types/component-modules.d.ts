@@ -10,10 +10,14 @@ declare module 'virtual:di-framework-application' {
   export default application;
 }
 
-declare module 'wasi:http/types@0.2.12' {
-  export const Fields: any;
-  export const IncomingBody: any;
-  export const OutgoingBody: any;
-  export const OutgoingResponse: any;
-  export const ResponseOutparam: any;
+declare module 'wasi:http/types@0.3.0' {
+  export const Fields: {
+    fromList(entries: Array<[string, Uint8Array]>): unknown;
+  };
+  export const Request: {
+    consumeBody(request: unknown, res: Promise<unknown>): unknown;
+  };
+  export const Response: {
+    new(headers: unknown, contents: unknown, trailers: Promise<unknown>): unknown;
+  };
 }

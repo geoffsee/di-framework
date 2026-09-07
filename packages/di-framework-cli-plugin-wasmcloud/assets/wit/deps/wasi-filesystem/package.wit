@@ -1,14 +1,12 @@
-package wasi:filesystem@0.2.12;
+package wasi:filesystem@0.3.0;
 interface preopens {
     use types.{descriptor};
     get-directories: func() -> list<tuple<descriptor, string>>;
 }
 interface types {
-    use wasi:io/streams@0.2.12.{input-stream, output-stream, error};
-    use wasi:clocks/wall-clock@0.2.12.{datetime};
+    use wasi:clocks/system-clock@0.3.0.{instant};
     type filesize = u64;
-    enum descriptor-type {
-        unknown,
+    variant descriptor-type {
         block-device,
         character-device,
         directory,
@@ -16,6 +14,7 @@ interface types {
         symbolic-link,
         regular-file,
         socket,
+        other(option<string>),
     }
     flags descriptor-flags {
         read,
@@ -29,9 +28,9 @@ interface types {
         %type: descriptor-type,
         link-count: link-count,
         size: filesize,
-        data-access-timestamp: option<datetime>,
-        data-modification-timestamp: option<datetime>,
-        status-change-timestamp: option<datetime>,
+        data-access-timestamp: option<instant>,
+        data-modification-timestamp: option<instant>,
+        status-change-timestamp: option<instant>,
     }
     flags path-flags {
         symlink-follow,
@@ -46,15 +45,14 @@ interface types {
     variant new-timestamp {
         no-change,
         now,
-        timestamp(datetime),
+        timestamp(instant),
     }
     record directory-entry {
         %type: descriptor-type,
         name: string,
     }
-    enum error-code {
+    variant error-code {
         access,
-        would-block,
         already,
         bad-descriptor,
         busy,
@@ -90,6 +88,7 @@ interface types {
         invalid-seek,
         text-file-busy,
         cross-device,
+        other(option<string>),
     }
     enum advice {
         normal,
@@ -106,89 +105,78 @@ interface types {
     resource descriptor {
         read-via-stream: func(
             offset: filesize,
-        ) -> result<input-stream, error-code>;
+        ) -> tuple<stream<u8>, future<result<_, error-code>>>;
         write-via-stream: func(
+            data: stream<u8>,
             offset: filesize,
-        ) -> result<output-stream, error-code>;
-        append-via-stream: func() -> result<output-stream, error-code>;
-        advise: func(
+        ) -> future<result<_, error-code>>;
+        append-via-stream: func(data: stream<u8>) -> future<result<_, error-code>>;
+        advise: async func(
             offset: filesize,
             length: filesize,
             advice: advice
         ) -> result<_, error-code>;
-        sync-data: func() -> result<_, error-code>;
-        get-flags: func() -> result<descriptor-flags, error-code>;
-        get-type: func() -> result<descriptor-type, error-code>;
-        set-size: func(size: filesize) -> result<_, error-code>;
-        set-times: func(
+        sync-data: async func() -> result<_, error-code>;
+        get-flags: async func() -> result<descriptor-flags, error-code>;
+        get-type: async func() -> result<descriptor-type, error-code>;
+        set-size: async func(size: filesize) -> result<_, error-code>;
+        set-times: async func(
             data-access-timestamp: new-timestamp,
             data-modification-timestamp: new-timestamp,
         ) -> result<_, error-code>;
-        read: func(
-            length: filesize,
-            offset: filesize,
-        ) -> result<tuple<list<u8>, bool>, error-code>;
-        write: func(
-            buffer: list<u8>,
-            offset: filesize,
-        ) -> result<filesize, error-code>;
-        read-directory: func() -> result<directory-entry-stream, error-code>;
-        sync: func() -> result<_, error-code>;
-        create-directory-at: func(
+        read-directory: func() -> tuple<stream<directory-entry>, future<result<_, error-code>>>;
+        sync: async func() -> result<_, error-code>;
+        create-directory-at: async func(
             path: string,
         ) -> result<_, error-code>;
-        stat: func() -> result<descriptor-stat, error-code>;
-        stat-at: func(
+        stat: async func() -> result<descriptor-stat, error-code>;
+        stat-at: async func(
             path-flags: path-flags,
             path: string,
         ) -> result<descriptor-stat, error-code>;
-        set-times-at: func(
+        set-times-at: async func(
             path-flags: path-flags,
             path: string,
             data-access-timestamp: new-timestamp,
             data-modification-timestamp: new-timestamp,
         ) -> result<_, error-code>;
-        link-at: func(
+        link-at: async func(
             old-path-flags: path-flags,
             old-path: string,
             new-descriptor: borrow<descriptor>,
             new-path: string,
         ) -> result<_, error-code>;
-        open-at: func(
+        open-at: async func(
             path-flags: path-flags,
             path: string,
             open-flags: open-flags,
             %flags: descriptor-flags,
         ) -> result<descriptor, error-code>;
-        readlink-at: func(
+        readlink-at: async func(
             path: string,
         ) -> result<string, error-code>;
-        remove-directory-at: func(
+        remove-directory-at: async func(
             path: string,
         ) -> result<_, error-code>;
-        rename-at: func(
+        rename-at: async func(
             old-path: string,
             new-descriptor: borrow<descriptor>,
             new-path: string,
         ) -> result<_, error-code>;
-        symlink-at: func(
+        symlink-at: async func(
             old-path: string,
             new-path: string,
         ) -> result<_, error-code>;
-        unlink-file-at: func(
+        unlink-file-at: async func(
             path: string,
         ) -> result<_, error-code>;
-        is-same-object: func(other: borrow<descriptor>) -> bool;
-        metadata-hash: func() -> result<metadata-hash-value, error-code>;
-        metadata-hash-at: func(
+        is-same-object: async func(other: borrow<descriptor>) -> bool;
+        metadata-hash: async func() -> result<metadata-hash-value, error-code>;
+        metadata-hash-at: async func(
             path-flags: path-flags,
             path: string,
         ) -> result<metadata-hash-value, error-code>;
     }
-    resource directory-entry-stream {
-        read-directory-entry: func() -> result<option<directory-entry>, error-code>;
-    }
-    filesystem-error-code: func(err: borrow<error>) -> option<error-code>;
 }
 world imports {
     import types;

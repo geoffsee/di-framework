@@ -2,9 +2,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { type CliIo, CommandFailure } from '@di-framework/cli-extension';
 import type { WasmcloudDeps } from './deps.js';
+import { hostInterfacesFromRequirements, renderHostInterfacesYaml } from './host-interface.js';
 import { captureKubectl, runKubectl } from './kubernetes.js';
 import type { WasmcloudProject } from './project.js';
 import type { ClusterConnection } from './target.js';
+import { defaultProjectRequirements } from './wit.js';
 
 export const MANAGED_BY_LABEL = 'di-framework';
 export const WAIT_ATTEMPTS = 30;
@@ -66,13 +68,11 @@ spec:
       components:
         - name: ${name}
           image: ${yamlQuote(image)}
-      hostInterfaces:
-        - namespace: wasi
-          package: http
-          interfaces:
-            - incoming-handler
-          config:
-            host: ${yamlQuote(project.applicationName)}
+${renderHostInterfacesYaml(
+  hostInterfacesFromRequirements(defaultProjectRequirements(), {
+    httpHost: project.applicationName,
+  }),
+)}
 `;
 }
 

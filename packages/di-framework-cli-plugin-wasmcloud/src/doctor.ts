@@ -1,6 +1,7 @@
 import { relative } from 'node:path';
 import type { CliIo, CommandResult } from '@di-framework/cli-extension';
 import { DEFAULT_DEPS, type WasmcloudDeps } from './deps.js';
+import { resolveDevRunner } from './dev-runner.js';
 import { loadProject } from './project.js';
 import { invalidUsage } from './support.js';
 
@@ -27,6 +28,13 @@ export async function runWasmcloudDoctor(
     check('kubectl', deps.capture('kubectl', ['version', '--client', '--output=yaml'])),
     check('oras', deps.capture('oras', ['version'])),
   ];
+  let runnerDetail: string | undefined;
+  try {
+    runnerDetail = resolveDevRunner(deps).kind;
+  } catch {
+    runnerDetail = undefined;
+  }
+  checks.push(check('dev runner', runnerDetail));
   const failed = checks.some((entry) => !entry.ok);
   const lines = [
     `${project.applicationName}`,

@@ -22,7 +22,7 @@ describe('parseDevArgs', () => {
 });
 
 describe('runWasmcloudDev', () => {
-  it('builds and then serves the component with jco', async () => {
+  it('builds and then serves the component with wasmtime', async () => {
     const root = makeProject();
     const invocations: RunnerInvocation[] = [];
     const output = captureIo();
@@ -31,28 +31,67 @@ describe('runWasmcloudDev', () => {
       output.io,
       fakeDeps({ cwd: root, invocations }),
     );
-    expect(invocations.map((invocation) => invocation.args[1])).toEqual(['componentize', 'serve']);
-    expect(invocations[1]?.args).toEqual([
-      '/fake/jco.js',
-      'serve',
-      join(root, 'dist', 'demo-app.wasm'),
-      '--host',
-      '127.0.0.1',
-      '--port',
-      '9123',
-    ]);
+    expect(invocations[1]).toMatchObject({
+      command: '/fake/wasmtime',
+      args: ['serve', '--addr', '127.0.0.1:9123', join(root, 'dist', 'demo-app.wasm')],
+    });
     expect(output.stdout.join('')).toContain('http://127.0.0.1:9123');
-    expect(result.data).toMatchObject({ host: '127.0.0.1', port: '9123' });
+    expect(output.stdout.join('')).toContain('(wasmtime)');
+    expect(result.data).toMatchObject({ host: '127.0.0.1', port: '9123', runner: 'wasmtime' });
   });
 
   it('maps a failing dev server to WASMCLOUD_TOOL_FAILED', async () => {
     const root = makeProject();
     await expect(
-      runWasmcloudDev([], captureIo().io, fakeDeps({ cwd: root, exitCodes: { serve: 7 } })),
+      runWasmcloudDev(
+        [],
+        captureIo().io,
+        fakeDeps({ cwd: root, exitCodes: { 'wasmtime serve': 7 } }),
+      ),
     ).rejects.toMatchObject({
       code: 'WASMCLOUD_TOOL_FAILED',
       exitCode: 3,
-      details: { command: 'jco serve', exitCode: 7 },
+      details: { command: 'wasmtime serve', exitCode: 7 },
+    });
+  });
+
+  it('falls back to jco when wasmtime is unavailable', async () => {
+    const root = makeProject();
+    const invocations: RunnerInvocation[] = [];
+    await runWasmcloudDev(
+      [],
+      captureIo().io,
+      fakeDeps({ cwd: root, invocations, wasmtimeBinaryPath: null }),
+    );
+    expect(invocations[1]).toMatchObject({
+      command: '/fake/node',
+      args: [
+        '/fake/jco.js',
+        'serve',
+        join(root, 'dist', 'demo-app.wasm'),
+        '--host',
+        '127.0.0.1',
+        '--port',
+        '8000',
+      ],
+    });
+  });
+
+  it('honors DI_FRAMEWORK_WASMCLOUD_DEV_RUNNER and fails if that runner is missing', async () => {
+    const root = makeProject();
+    await expect(
+      runWasmcloudDev(
+        [],
+        captureIo().io,
+        fakeDeps({
+          cwd: root,
+          wasmtimeBinaryPath: null,
+          env: { DI_FRAMEWORK_WASMCLOUD_DEV_RUNNER: 'wasmtime' },
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'WASMCLOUD_DEV_RUNNER_REQUIRED',
+      exitCode: 3,
     });
   });
 });

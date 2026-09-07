@@ -73,10 +73,26 @@ describe('DEFAULT_DEPS', () => {
     expect(readFileSync(outFile, 'utf8')).toContain('handler');
   });
 
+  it('leaves wasi and wasmcloud WIT specifiers as component imports', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'wasmcloud-bundle-ext-'));
+    const adapterPath = join(root, 'adapter.ts');
+    const entryPath = join(root, 'entry.ts');
+    const outFile = join(root, 'out', 'component.js');
+    writeFileSync(
+      adapterPath,
+      "import { handle } from 'wasi:http/handler@0.3.0';\nimport { query } from 'wasmcloud:postgres/query@0.2.0';\nexport const handler = { handle, query };\n",
+    );
+    writeFileSync(entryPath, 'export default 1;\n');
+    await DEFAULT_DEPS.bundler({ adapterPath, entryPath, outFile });
+    const bundled = readFileSync(outFile, 'utf8');
+    expect(bundled).toContain('wasi:http/handler@0.3.0');
+    expect(bundled).toContain('wasmcloud:postgres/query@0.2.0');
+  });
+
   it('locates the jco CLI, shipped assets, and project resolutions', () => {
     // A node_modules path (not bun's install cache) so Node can run jco directly.
     expect(DEFAULT_DEPS.jcoCliPath()).toEndWith(
-      join('node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js'),
+      join('node_modules', '@bytecodealliance', 'jco', 'dist', 'jco.js'),
     );
     expect(findJcoEntry(mkdtempSync(join(tmpdir(), 'wasmcloud-nojco-')))).toBeUndefined();
     expect(['string', 'undefined']).toContain(typeof DEFAULT_DEPS.nodeBinaryPath());

@@ -34,7 +34,11 @@ describe('workload manifests', () => {
     expect(yaml).toContain('name: greeter');
     expect(yaml).toContain('registry.example.com/team/greeter:sha256-abc');
     expect(yaml).toContain('hostInterfaces:');
+    expect(yaml).toContain('package: http');
+    expect(yaml).toContain('version: "0.3.0"');
+    expect(yaml).toContain('- handler');
     expect(yaml).toContain('host: "greeter"');
+    expect(yaml).not.toContain('incoming-handler');
     expect(yaml).not.toContain('Pulumi');
   });
 

@@ -6,7 +6,9 @@ export {
   BUILD_PROFILE,
   buildComponent,
   canonicalBuildDigest,
+  requirementsForProject,
   runWasmcloudBuild,
+  WASI_HTTP_INTERFACE,
   WASI_HTTP_VERSION,
 } from './build.js';
 export { createWasmcloudCommand } from './command.js';
@@ -16,18 +18,21 @@ export {
   type WasmcloudDeployResult,
 } from './deploy.js';
 export {
+  COMPONENT_IMPORT_EXTERNAL,
   DEFAULT_DEPS,
   nodeCompatibilityPlugin,
   type WasmcloudDeps,
 } from './deps.js';
 export { runWasmcloudDestroy } from './destroy.js';
 export { parseDevArgs, runWasmcloudDev } from './dev.js';
+export { DEV_RUNNER_ENV, resolveDevRunner } from './dev-runner.js';
 export {
   discoverProjects,
   findConfigFiles,
   resolveApplication,
 } from './discovery.js';
 export { runWasmcloudDoctor } from './doctor.js';
+export { hostInterfacesFromRequirements } from './host-interface.js';
 export {
   DEPLOY_MANIFEST_NAME,
   type DeployManifest,
@@ -35,6 +40,7 @@ export {
   loadDeployManifest,
   parseDeployManifest,
 } from './manifest.js';
+export { OCI_ARTIFACT_PLATFORM } from './oci.js';
 export {
   loadPlatformOutputs,
   PLATFORM_OUTPUT_SCHEMA_VERSION,
@@ -68,6 +74,14 @@ export {
   registryUsesPlainHttp,
 } from './registry.js';
 export { resolveConnection, resolveTarget } from './target.js';
+export {
+  aggregateRequirements,
+  COMPONENT_MODEL,
+  defaultProjectRequirements,
+  HTTP_ADAPTER_REQUIREMENTS,
+  renderWorldWit,
+  type WitRequirement,
+} from './wit.js';
 export {
   applyWorkload,
   deleteWorkload,
