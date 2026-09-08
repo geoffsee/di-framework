@@ -62,10 +62,12 @@ describe('WIT requirement registry', () => {
     );
   });
 
-  it('preserves named instances of the same interface as distinct labeled imports', () => {
+  it('keeps named hostInterfaces while the guest world stays unlabeled', () => {
     const world = renderWorldWit('demo-app', '1.0.0', namedStores);
-    expect(world).toContain('import cache: wasi:keyvalue/store@0.2.0-draft;');
-    expect(world).toContain('import durable: wasi:keyvalue/store@0.2.0-draft;');
+    expect(world).toContain('import wasi:keyvalue/store@0.2.0-draft;');
+    expect(world).not.toContain('import cache:');
+    expect(world).not.toContain('import durable:');
+    expect(world.match(/import wasi:keyvalue\/store@0\.2\.0-draft;/g)).toHaveLength(1);
     const hosts = hostInterfacesFromRequirements(namedStores);
     expect(hosts.map((entry) => entry.name)).toEqual(['cache', 'durable']);
     expect(hosts.every((entry) => entry.version === '0.2.0-draft')).toBe(true);
@@ -182,6 +184,32 @@ describe('WIT requirement registry', () => {
     writeFileSync(join(root, 'wasi-http', 'package.wit'), 'package wasi:http@0.3.0;\n');
     const lock = buildWitLock(defaultProjectRequirements(), root);
     expect(lock.packages.map((entry) => entry.id)).toEqual(['wasi:http']);
+  });
+
+  it('dedupes unlabeled imports when two named instances share a package', () => {
+    const world = renderWorldWit('orders', '1.0.0', [
+      {
+        package: 'wasmcloud:keyvalue',
+        version: '0.2.0',
+        interfaces: ['store', 'atomics', 'types'],
+        direction: 'import',
+        instanceName: 'sessions',
+        source: 'Sessions',
+      },
+      {
+        package: 'wasmcloud:keyvalue',
+        version: '0.2.0',
+        interfaces: ['store', 'atomics', 'types'],
+        direction: 'import',
+        instanceName: 'cache',
+        source: 'Cache',
+      },
+    ]);
+    expect(world).toContain('import wasmcloud:keyvalue/store@0.2.0;');
+    expect(world).not.toContain('import sessions:');
+    expect(world).not.toContain('import cache:');
+    expect(world.match(/import wasmcloud:keyvalue\/store@0\.2\.0;/g)).toHaveLength(1);
+    expect(world.match(/import wasmcloud:keyvalue\/atomics@0\.2\.0;/g)).toHaveLength(1);
   });
 
   it('renders named host interface YAML entries', () => {

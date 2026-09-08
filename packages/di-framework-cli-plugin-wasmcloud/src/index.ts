@@ -3,6 +3,13 @@ import { createWasmcloudCommand } from './command.js';
 
 export { parseAppCommandArgs, parsePlatformCommandArgs, parsePlatformInitArgs } from './args.js';
 export {
+  type BindingRecord,
+  defaultSecretName,
+  discoverBindings,
+  parseBindingsFile,
+  requirementsFromBindings,
+} from './bindings.js';
+export {
   BUILD_PROFILE,
   buildComponent,
   canonicalBuildDigest,
@@ -19,8 +26,14 @@ export {
 } from './deploy.js';
 export {
   COMPONENT_IMPORT_EXTERNAL,
+  COMPONENTIZE_QJS_ENV,
+  COMPONENTIZE_QJS_PACKAGE,
+  componentizeQjsPlatformPackageName,
   DEFAULT_DEPS,
+  findInstalledComponentizeQjsCli,
+  nativeComponentizeQjsOnPath,
   nodeCompatibilityPlugin,
+  resolveComponentizeQjsPath,
   type WasmcloudDeps,
 } from './deps.js';
 export { runWasmcloudDestroy } from './destroy.js';
@@ -32,6 +45,7 @@ export {
   resolveApplication,
 } from './discovery.js';
 export { runWasmcloudDoctor } from './doctor.js';
+export { emptyGuestsModule, renderGuestsModule, WASMCLOUD_GUESTS_GLOBAL } from './guests.js';
 export { hostInterfacesFromRequirements } from './host-interface.js';
 export {
   DEPLOY_MANIFEST_NAME,
@@ -74,6 +88,7 @@ export {
   registryUsesPlainHttp,
 } from './registry.js';
 export { resolveConnection, resolveTarget } from './target.js';
+export { renderWashDevYaml, writeWashDevConfig } from './wash-dev.js';
 export {
   aggregateRequirements,
   COMPONENT_MODEL,

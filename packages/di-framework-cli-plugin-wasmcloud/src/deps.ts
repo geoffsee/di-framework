@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { rolldown } from 'rolldown';
+import { emptyGuestsModule } from './guests.js';
 
 export type ProcessRunOptions = {
   cwd: string;
@@ -35,6 +36,7 @@ export type BundleOptions = {
   adapterPath: string;
   entryPath: string;
   outFile: string;
+  guestsPath?: string;
 };
 
 export type Bundler = (options: BundleOptions) => Promise<void>;
@@ -51,6 +53,13 @@ export type WasmcloudDeps = {
   wait(ms: number): Promise<void>;
   bundler: Bundler;
   jcoCliPath(): string;
+  /**
+   * Optional componentize-qjs CLI built against wasmtime 48+ with
+   * `concurrency_support`. Resolved from `DI_FRAMEWORK_COMPONENTIZE_QJS`,
+   * `@di-framework/componentize-qjs`, or `PATH`. Stock jco 1.32.1 uses
+   * wasmtime 47, which cannot stub imported `async func`s during wizer.
+   */
+  componentizeQjsPath(): string | undefined;
   /** jco needs real Node.js; it uses node internals Bun does not implement. */
   nodeBinaryPath(): string | undefined;
   /** wasmtime serve hosts WASI 0.3 HTTP components locally. */
@@ -63,15 +72,19 @@ export type WasmcloudDeps = {
 };
 
 /** Resolves `virtual:di-framework-application` to the app entry and stubs node built-ins. */
-export function nodeCompatibilityPlugin(entryPath: string) {
+export function nodeCompatibilityPlugin(entryPath: string, guestsPath?: string) {
   return {
     name: 'di-framework-component-runtime',
     resolveId(source: string) {
       if (source === 'virtual:di-framework-application') return entryPath;
+      if (source === 'virtual:di-framework-wasmcloud-guests') {
+        return guestsPath ?? '\0virtual:di-framework-wasmcloud-guests-empty';
+      }
       if (source === 'node:fs' || source === 'node:path') return `\0${source}`;
       return null;
     },
     load(id: string) {
+      if (id === '\0virtual:di-framework-wasmcloud-guests-empty') return emptyGuestsModule();
       if (id === '\0node:fs') {
         return "export const writeFileSync = () => { throw new Error('node:fs is unavailable in a WebAssembly component'); };";
       }
@@ -83,8 +96,116 @@ export function nodeCompatibilityPlugin(entryPath: string) {
   };
 }
 
+/** Points at a wasmtime-48+ componentize-qjs CLI that can stub imported `async func`s. */
+export const COMPONENTIZE_QJS_ENV = 'DI_FRAMEWORK_COMPONENTIZE_QJS';
+
+/** npm wrapper that selects the matching optional platform CLI package. */
+export const COMPONENTIZE_QJS_PACKAGE = '@di-framework/componentize-qjs';
+
 // Real path, not a store symlink, so walking up reaches this package's node_modules.
 const packageRoot = resolve(dirname(realpathSync(fileURLToPath(import.meta.url))), '..');
+
+export function componentizeQjsPlatformPackageName(): string {
+  return COMPONENTIZE_QJS_PACKAGE;
+}
+
+export function componentizeQjsPlatformPackageVersion(
+  platform = process.platform,
+  arch = process.arch,
+  wrapperVersion = '0.4.4-di.2',
+): string {
+  return `${wrapperVersion}-${platform}-${arch}`;
+}
+
+function platformPackageBinMatches(
+  packageDirectory: string,
+  platform: string,
+  arch: string,
+): boolean {
+  const packageJsonPath = join(packageDirectory, 'package.json');
+  if (!existsSync(packageJsonPath)) return true;
+  try {
+    const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      os?: string[];
+      cpu?: string[];
+      version?: string;
+    };
+    if (Array.isArray(pkg.os) && pkg.os.length > 0 && !pkg.os.includes(platform)) {
+      return false;
+    }
+    if (Array.isArray(pkg.cpu) && pkg.cpu.length > 0 && !pkg.cpu.includes(arch)) {
+      return false;
+    }
+    if (
+      typeof pkg.version === 'string' &&
+      /-(?:darwin|linux|win32|android)-(?:arm64|x64)$/.test(pkg.version)
+    ) {
+      return pkg.version.endsWith(`-${platform}-${arch}`);
+    }
+  } catch {
+    return true;
+  }
+  return true;
+}
+
+/**
+ * Locate the native CLI shipped as `@di-framework/componentize-qjs@<version>-<os>-<arch>`.
+ * Walks `node_modules` from `startDirectory` (same strategy as `findJcoEntry`)
+ * so Bun's install cache is not required. The wrapper aliases that version into
+ * an unscoped `componentize-qjs-<os>-<arch>` folder.
+ */
+export function findInstalledComponentizeQjsCli(
+  startDirectory = packageRoot,
+  platform = process.platform,
+  arch = process.arch,
+): string | undefined {
+  const packageDirectories = (nodeModules: string) => [
+    join(nodeModules, `componentize-qjs-${platform}-${arch}`),
+    join(nodeModules, '@di-framework', 'componentize-qjs'),
+  ];
+  const binName = platform === 'win32' ? 'componentize-qjs.exe' : 'componentize-qjs';
+  let previous = '';
+  let current = startDirectory;
+  while (current !== previous) {
+    for (const packageDirectory of packageDirectories(join(current, 'node_modules'))) {
+      const bin = join(packageDirectory, 'bin', binName);
+      if (existsSync(bin) && platformPackageBinMatches(packageDirectory, platform, arch)) {
+        return bin;
+      }
+    }
+    previous = current;
+    current = dirname(current);
+  }
+  try {
+    const require = createRequire(join(startDirectory, 'package.json'));
+    const loaded = require(COMPONENTIZE_QJS_PACKAGE) as {
+      nativeCliPath?: (os?: string, cpu?: string) => string | undefined;
+    };
+    const fromPackage = loaded.nativeCliPath?.(platform, arch);
+    return fromPackage !== undefined && existsSync(fromPackage) ? fromPackage : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function resolveComponentizeQjsPath(
+  env: Record<string, string | undefined> = process.env,
+  installedCliPath?: string,
+  pathCli?: string,
+): string | undefined {
+  const explicit = env[COMPONENTIZE_QJS_ENV]?.trim();
+  if (explicit !== undefined && explicit !== '') return explicit;
+  return installedCliPath ?? pathCli;
+}
+
+/** PATH entries inside node_modules are the npm wrapper, not a native wasmtime-48 CLI. */
+export function nativeComponentizeQjsOnPath(
+  whichPath = Bun.which('componentize-qjs') ?? undefined,
+): string | undefined {
+  if (whichPath === undefined) return undefined;
+  if (whichPath.split(/[/\\]/).includes('node_modules')) return undefined;
+  return whichPath;
+}
 
 /**
  * jco's entry inside a real node_modules tree, walking up from this package.
@@ -135,12 +256,23 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
     return { exitCode: await child.exited, stdout, stderr };
   },
   wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-  bundler: async ({ adapterPath, entryPath, outFile }) => {
+  bundler: async ({ adapterPath, entryPath, outFile, guestsPath }) => {
     const bundle = await rolldown({
       input: adapterPath,
       external: COMPONENT_IMPORT_EXTERNAL,
-      plugins: [nodeCompatibilityPlugin(entryPath)],
-      treeshake: { moduleSideEffects: false },
+      plugins: [nodeCompatibilityPlugin(entryPath, guestsPath)],
+      transform: {
+        decorator: { legacy: true },
+      },
+      treeshake: {
+        moduleSideEffects(id) {
+          return (
+            id.includes('virtual:di-framework-wasmcloud-guests') ||
+            id.endsWith('/guests.js') ||
+            id.endsWith('\\guests.js')
+          );
+        },
+      },
     });
     try {
       await bundle.write({ file: outFile, format: 'esm' });
@@ -151,6 +283,12 @@ export const DEFAULT_DEPS: WasmcloudDeps = {
   jcoCliPath: () =>
     findJcoEntry(packageRoot) ??
     join(dirname(fileURLToPath(import.meta.resolve('@bytecodealliance/jco'))), 'jco.js'),
+  componentizeQjsPath: () =>
+    resolveComponentizeQjsPath(
+      process.env,
+      findInstalledComponentizeQjsCli(),
+      nativeComponentizeQjsOnPath(),
+    ),
   nodeBinaryPath: () => Bun.which('node') ?? undefined,
   wasmtimeBinaryPath: () => Bun.which('wasmtime') ?? undefined,
   washBinaryPath: () => Bun.which('wash') ?? undefined,

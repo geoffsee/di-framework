@@ -24,11 +24,14 @@ describe('resolveDevRunner', () => {
     );
     expect(runner.kind).toBe('wash');
     expect(runner.command).toBe('/fake/wash');
-    expect(runner.args({ componentPath: 'app.wasm', host: '127.0.0.1', port: '8000' })).toEqual([
-      'dev',
-      '--address',
-      '127.0.0.1:8000',
-    ]);
+    expect(
+      runner.args({
+        componentPath: 'app.wasm',
+        host: '127.0.0.1',
+        port: '8000',
+        washConfigPath: '/tmp/wash-dev.yaml',
+      }),
+    ).toEqual(['dev', '--user-config', '/tmp/wash-dev.yaml']);
   });
 
   it('uses wasmtime and jco argument conventions when those runners are selected', () => {
@@ -36,6 +39,12 @@ describe('resolveDevRunner', () => {
     const wasmtime = resolveDevRunner(fakeDeps({ cwd, env: { [DEV_RUNNER_ENV]: 'wasmtime' } }));
     expect(wasmtime.args({ componentPath: 'app.wasm', host: '0.0.0.0', port: '9000' })).toEqual([
       'serve',
+      '-S',
+      'cli',
+      '-S',
+      'p3',
+      '-S',
+      'config',
       '--addr',
       '0.0.0.0:9000',
       'app.wasm',

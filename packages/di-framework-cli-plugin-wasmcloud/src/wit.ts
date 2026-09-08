@@ -104,9 +104,8 @@ function importClause(requirement: AggregatedRequirement, iface: string): string
   const { namespace, name } = parsePackageId(requirement.package);
   const target = `${namespace}:${name}/${iface}@${requirement.version}`;
   if (requirement.direction === 'export') return `export ${target};`;
-  if (requirement.instanceName !== undefined && requirement.interfaces.length === 1) {
-    return `import ${requirement.instanceName}: ${target};`;
-  }
+  // qjs cannot encode `import name: pkg/iface` (cm-implements). Named instances
+  // still appear on hostInterfaces; the guest world is unlabeled.
   return `import ${target};`;
 }
 
@@ -116,9 +115,13 @@ export function renderWorldWit(
   requirements: readonly WitRequirement[],
 ): string {
   const lines = [`package local:${packageName}@${version};`, '', 'world application {'];
+  const seen = new Set<string>();
   for (const requirement of aggregateRequirements(requirements)) {
     for (const iface of requirement.interfaces) {
-      lines.push(`  ${importClause(requirement, iface)}`);
+      const clause = importClause(requirement, iface);
+      if (seen.has(clause)) continue;
+      seen.add(clause);
+      lines.push(`  ${clause}`);
     }
   }
   lines.push('}', '');

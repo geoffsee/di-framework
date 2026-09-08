@@ -11,7 +11,7 @@ semver ranges rather than monorepo-only `workspace:` protocols.
 | Package | Published files | Classification |
 | --- | --- | --- |
 | `core` | `dist`, README, licenses, migration guide | runtime |
-| `repo`, `http`, `graphql`, `events`, `config`, `auth`, `authz`, `socket`, `rpc`, `codegen`, `ai-utils` | `dist`, README | runtime |
+| `repo`, `http`, `graphql`, `events`, `config`, `auth`, `authz`, `socket`, `rpc`, `codegen`, `ai-utils`, `cloudfoundry`, `wasmcloud` | `dist`, README | runtime |
 | `ai` | `src`, README | intentional TypeScript source package |
 | `cli` | `main.ts`, `command.ts`, `cmd`, `extensions`, `scripts`, README | intentional Bun source CLI |
 | `cli-extension` | `dist`, `src`, README | runtime with a TypeScript `bun` export condition |
@@ -51,6 +51,12 @@ packed tarballs. Intentional cross-major relationships must be listed in
 `INTERNAL_CROSS_MAJOR_ALLOWLIST` in `scripts/internal-framework-deps.ts` as
 `@di-framework/consuming>@di-framework/dependency` and documented here when
 added.
+
+Current allowlist:
+
+- `@di-framework/cli-plugin-wasmcloud>@di-framework/componentize-qjs` — the
+  wasmCloud plugin pins the wasmtime-48 `componentize-qjs` fork at `0.4.4-di.2`.
+  That package is versioned with upstream qjs, not the framework 5.x line.
 
 `release/v*` pull requests run the same prepublish gate without uploading:
 `bun run release:dry-run` (`--sync-versions`, packed-manifest audit, and

@@ -8,7 +8,7 @@ type ApplicationHandler =
 type Outgoing = {
   headers: unknown;
   contents: unknown;
-  trailers: Promise<unknown>;
+  trailers: unknown;
   statusCode: number;
   setStatusCode(status: number): void;
 };
@@ -17,11 +17,7 @@ const applicationState: { current: ApplicationHandler } = {
   current: () => new Response('ok'),
 };
 
-function defaultOutgoing(
-  headers: unknown,
-  contents: unknown,
-  trailers: Promise<unknown>,
-): Outgoing {
+function defaultOutgoing(headers: unknown, contents: unknown, trailers: unknown): Outgoing {
   const outgoing: Outgoing = {
     headers,
     contents,
@@ -38,9 +34,13 @@ const wasiState = {
   consumeBody: (_request: unknown, _res: Promise<unknown>): unknown => {
     throw new Error('consumeBody was not stubbed');
   },
-  newResponse: (headers: unknown, contents: unknown, trailers: Promise<unknown>): unknown =>
+  newResponse: (headers: unknown, contents: unknown, trailers: unknown): unknown =>
     defaultOutgoing(headers, contents, trailers),
 };
+
+mock.module('virtual:di-framework-wasmcloud-guests', () => ({
+  guests: {},
+}));
 
 mock.module('virtual:di-framework-application', () => ({
   default: (request: Request) => {
@@ -61,13 +61,13 @@ mock.module('wasi:http/types@0.3.0', () => ({
     },
   },
   Response: {
-    new(headers: unknown, contents: unknown, trailers: Promise<unknown>) {
+    new(headers: unknown, contents: unknown, trailers: unknown) {
       return wasiState.newResponse(headers, contents, trailers);
     },
   },
 }));
 
-const { handler } = await import('../assets/http-adapter.ts');
+const { handler, requireGuestsObject } = await import('../assets/http-adapter.ts');
 
 function readable(...values: Uint8Array[]): ReadableStream<Uint8Array> {
   return new ReadableStream({
@@ -105,6 +105,7 @@ afterEach(() => {
   };
   wasiState.newResponse = (headers, contents, trailers) =>
     defaultOutgoing(headers, contents, trailers);
+  delete (globalThis as { wit?: unknown }).wit;
 });
 
 describe('http adapter', () => {
@@ -278,5 +279,93 @@ describe('http adapter', () => {
     expect(JSON.parse(new TextDecoder().decode(new Uint8Array(collected)))).toEqual({
       error: 'Internal server error',
     });
+  });
+
+  it('lowers trailers and consume-body through wit.Future when qjs is present', async () => {
+    const written: unknown[] = [];
+    const trailersReadable = { kind: 'trailers' };
+    const consumeReadable = { kind: 'consume' };
+    const Future = Object.assign(
+      (type: unknown) => {
+        const readable = type === 'trailers-type' ? trailersReadable : consumeReadable;
+        return {
+          readable,
+          writable: {
+            write(value: unknown) {
+              written.push({ type, value });
+            },
+          },
+        };
+      },
+      {
+        RESULT_OPTION_OTHER_ERROR_CODE: 'trailers-type',
+        RESULT_VOID_ERROR_CODE: 'void-type',
+      },
+    );
+    (globalThis as { wit?: unknown }).wit = { Future };
+
+    const captured: unknown[] = [];
+    wasiState.consumeBody = (_request, res) => {
+      captured.push(res);
+      return [readable(new TextEncoder().encode('payload'))];
+    };
+
+    const getOutgoing = (await handler.handle(incoming({ method: { tag: 'get' } }))) as Outgoing;
+    expect(getOutgoing.trailers).toBe(trailersReadable);
+
+    const postOutgoing = (await handler.handle(
+      incoming({ method: { tag: 'post' }, path: '/body' }),
+    )) as Outgoing;
+    expect(captured).toEqual([consumeReadable]);
+    expect(postOutgoing.statusCode).toBe(200);
+    expect(written).toEqual([
+      { type: 'trailers-type', value: { tag: 'ok', val: null } },
+      { type: 'void-type', value: { tag: 'ok', val: undefined } },
+      { type: 'trailers-type', value: { tag: 'ok', val: null } },
+    ]);
+  });
+
+  it('rejects a missing guests object', () => {
+    expect(() => requireGuestsObject(null)).toThrow(TypeError);
+    expect(() => requireGuestsObject('guests')).toThrow(
+      'wasmCloud guests module must export a guests object',
+    );
+    expect(() => requireGuestsObject({})).not.toThrow();
+  });
+
+  it('picks a non-preferred wit.Future type and falls back when none remain', async () => {
+    const written: unknown[] = [];
+    const fallbackReadable = { kind: 'fallback' };
+    const FutureWithFallback = Object.assign(
+      (type: unknown) => ({
+        readable: type === 'custom-type' ? fallbackReadable : { kind: 'other', type },
+        writable: {
+          write(value: unknown) {
+            written.push({ type, value });
+          },
+        },
+      }),
+      { types: true, from: true, CUSTOM: 'custom-type' },
+    );
+    (globalThis as { wit?: unknown }).wit = { Future: FutureWithFallback };
+
+    const outgoing = (await handler.handle(incoming({ method: { tag: 'get' } }))) as Outgoing;
+    expect(outgoing.trailers).toBe(fallbackReadable);
+    expect(written).toEqual([{ type: 'custom-type', value: { tag: 'ok', val: null } }]);
+
+    const FutureEmpty = Object.assign(
+      (type: unknown) => ({
+        readable: { kind: 'empty', type },
+        writable: {
+          write(value: unknown) {
+            written.push({ type, value });
+          },
+        },
+      }),
+      { types: true, from: true },
+    );
+    (globalThis as { wit?: unknown }).wit = { Future: FutureEmpty };
+    const emptyOutgoing = (await handler.handle(incoming({ method: { tag: 'get' } }))) as Outgoing;
+    expect(emptyOutgoing.trailers).toEqual({ kind: 'empty', type: undefined });
   });
 });

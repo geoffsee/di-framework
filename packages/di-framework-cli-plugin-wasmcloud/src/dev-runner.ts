@@ -8,6 +8,7 @@ export type DevServeTarget = {
   componentPath: string;
   host: string;
   port: string;
+  washConfigPath?: string;
 };
 
 export type ResolvedDevRunner = {
@@ -32,9 +33,28 @@ function binaryFor(kind: DevRunnerKind, deps: WasmcloudDeps): string | undefined
 function argsFor(kind: DevRunnerKind, deps: WasmcloudDeps, target: DevServeTarget): string[] {
   switch (kind) {
     case 'wasmtime':
-      return ['serve', '--addr', `${target.host}:${target.port}`, target.componentPath];
-    case 'wash':
-      return ['dev', '--address', `${target.host}:${target.port}`];
+      // qjs guests import wasi:cli@0.2.x; WASI 0.3 HTTP is off unless -S p3 is set.
+      // `-S config` hosts unlabeled wasi:config@0.2.0-rc.1 (sync) locally.
+      return [
+        'serve',
+        '-S',
+        'cli',
+        '-S',
+        'p3',
+        '-S',
+        'config',
+        '--addr',
+        `${target.host}:${target.port}`,
+        target.componentPath,
+      ];
+    case 'wash': {
+      // wash 2.5.x has no --address flag; address and hostInterfaces live in config.
+      const args = ['dev'];
+      if (target.washConfigPath !== undefined) {
+        args.push('--user-config', target.washConfigPath);
+      }
+      return args;
+    }
     case 'jco':
       return [
         deps.jcoCliPath(),
